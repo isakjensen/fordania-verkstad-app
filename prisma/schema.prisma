@@ -30,7 +30,7 @@ model User {
   invitations   Invitation[]
 
   @@unique([email])
-  @@map("user")
+  @@map("users")
 }
 
 model Session {
@@ -48,7 +48,7 @@ model Session {
 
   @@unique([token])
   @@index([userId])
-  @@map("session")
+  @@map("sessions")
 }
 
 model Account {
@@ -68,7 +68,7 @@ model Account {
   updatedAt             DateTime  @updatedAt
 
   @@index([userId])
-  @@map("account")
+  @@map("accounts")
 }
 
 model Verification {
@@ -80,7 +80,7 @@ model Verification {
   updatedAt  DateTime @updatedAt
 
   @@index([identifier])
-  @@map("verification")
+  @@map("verifications")
 }
 
 model Organization {
@@ -101,7 +101,7 @@ model Organization {
   jobs        Job[]
 
   @@unique([slug])
-  @@map("organization")
+  @@map("organizations")
 }
 
 model Member {
@@ -115,7 +115,7 @@ model Member {
 
   @@index([organizationId])
   @@index([userId])
-  @@map("member")
+  @@map("members")
 }
 
 model Invitation {
@@ -132,7 +132,7 @@ model Invitation {
 
   @@index([organizationId])
   @@index([email])
-  @@map("invitation")
+  @@map("invitations")
 }
 
 // ------------------------------------------------------------------ //
@@ -151,7 +151,7 @@ model Vehicle {
   jobs           Job[]
 
   @@index([organizationId])
-  @@map("vehicle")
+  @@map("vehicles")
 }
 
 model Mechanic {
@@ -166,7 +166,7 @@ model Mechanic {
   jobs           Job[]
 
   @@index([organizationId])
-  @@map("mechanic")
+  @@map("mechanics")
 }
 
 model Job {
@@ -188,5 +188,5 @@ model Job {
   updatedAt      DateTime     @updatedAt
 
   @@index([organizationId])
-  @@map("job")
+  @@map("jobs")
 }
