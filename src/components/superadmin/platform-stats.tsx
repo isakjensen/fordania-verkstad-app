@@ -1,14 +1,14 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Building2, Users, Car, Wallet } from "lucide-react";
+import { Building2, BadgeCheck, Users, Car } from "lucide-react";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { staggerContainer } from "@/components/dashboard/motion";
-import { platformStats } from "@/lib/tenants";
+import type { PlatformStats as Stats } from "@/lib/data/platform";
 
 const nf = new Intl.NumberFormat("sv-SE");
 
-export function PlatformStats() {
+export function PlatformStats({ stats }: { stats: Stats }) {
   return (
     <motion.div
       variants={staggerContainer}
@@ -18,33 +18,31 @@ export function PlatformStats() {
     >
       <StatCard
         icon={Building2}
-        label="Aktiva kunder"
-        value={platformStats.activeTenants}
-        hint={`av ${platformStats.totalTenants} anslutna företag`}
+        label="Anslutna kunder"
+        value={stats.totalTenants}
+        hint="företag på plattformen"
         tone="brand"
-        trend={{ value: "+2", up: true }}
+      />
+      <StatCard
+        icon={BadgeCheck}
+        label="Aktiva kunder"
+        value={stats.activeTenants}
+        hint={`av ${stats.totalTenants} anslutna`}
+        tone="success"
       />
       <StatCard
         icon={Users}
         label="Användare totalt"
-        value={platformStats.totalUsers}
+        value={stats.totalUsers}
         hint="över alla tenants"
         tone="violet"
       />
       <StatCard
         icon={Car}
         label="Fordon i plattformen"
-        value={nf.format(platformStats.totalVehicles)}
+        value={nf.format(stats.totalVehicles)}
         hint="under hantering"
-        tone="success"
-      />
-      <StatCard
-        icon={Wallet}
-        label="Intäkt per månad"
-        value={`${nf.format(platformStats.mrr)} kr`}
-        hint={`${platformStats.trialTenants} i testperiod`}
-        tone="success"
-        trend={{ value: "+8%", up: true }}
+        tone="warning"
       />
     </motion.div>
   );

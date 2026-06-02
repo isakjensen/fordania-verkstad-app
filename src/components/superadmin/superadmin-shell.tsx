@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { Menu, ArrowLeft, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar } from "@/components/ui/avatar";
+import { UserMenu } from "@/components/layout/user-menu";
 import { superadminGroups } from "./nav";
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
@@ -136,13 +136,7 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
             </span>
           </div>
           <div className="flex-1" />
-          <button className="flex items-center gap-2 rounded-xl p-1 pr-2 transition-colors hover:bg-slate-100">
-            <Avatar initials="P" size="size-9" />
-            <span className="hidden flex-col items-start leading-tight sm:flex">
-              <span className="text-sm font-semibold text-ink">Philip</span>
-              <span className="text-xs text-muted-foreground">Plattformsägare</span>
-            </span>
-          </button>
+          <UserMenu subtitle="Plattform" />
         </header>
         <main className="flex-1">{children}</main>
       </div>

@@ -1,42 +1,46 @@
-import { Search, Plus, MoreHorizontal } from "lucide-react";
+import { Search, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TenantLogo } from "@/components/ui/tenant-logo";
-import { tenants, tenantStatusMeta, planMeta } from "@/lib/tenants";
+import {
+  tenantStatusMeta,
+  planMeta,
+  type TenantStatus,
+  type TenantPlan,
+} from "@/lib/tenants";
+import type { TenantRow } from "@/lib/data/platform";
+import { CreateTenantButton } from "./create-tenant-button";
 
-const nf = new Intl.NumberFormat("sv-SE");
+const df = new Intl.DateTimeFormat("sv-SE", {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+});
+
+const defaultStatus = { label: "Okänd", className: "bg-slate-100 text-slate-500", dot: "bg-slate-400" };
 
 interface TenantTableProps {
+  tenants: TenantRow[];
   title?: string;
   subtitle?: string;
-  /** Visa endast de N första raderna */
-  limit?: number;
   showToolbar?: boolean;
 }
 
 export function TenantTable({
+  tenants,
   title = "Kunder",
   subtitle,
-  limit,
   showToolbar = true,
 }: TenantTableProps) {
-  const rows = limit ? tenants.slice(0, limit) : tenants;
-
   return (
     <Card>
       <CardHeader
         tone="brand"
         title={title}
         subtitle={subtitle ?? `${tenants.length} anslutna företag`}
-        action={
-          <Button size="sm" variant="success">
-            <Plus className="size-4" />
-            <span className="hidden sm:inline">Lägg till kund</span>
-          </Button>
-        }
+        action={<CreateTenantButton />}
       />
 
       {showToolbar ? (
@@ -67,81 +71,81 @@ export function TenantTable({
         <span className="w-24">Plan</span>
         <span className="w-28">Status</span>
         <span className="w-32 text-right">Användare / fordon</span>
-        <span className="w-28 text-right">Intäkt/mån</span>
-        <span className="w-28">Senast aktiv</span>
+        <span className="w-28">Skapad</span>
         <span className="w-9" />
       </div>
 
-      <ul className="divide-y divide-line">
-        {rows.map((t) => {
-          const status = tenantStatusMeta[t.status];
-          return (
-            <li
-              key={t.id}
-              className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-surface-muted sm:gap-4"
-            >
-              {/* Företag */}
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <TenantLogo tenant={t} />
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-ink">{t.name}</p>
-                  <p className="truncate text-sm text-muted-foreground">{t.city}</p>
+      {tenants.length === 0 ? (
+        <p className="px-5 py-10 text-center text-sm text-muted-foreground">
+          Inga kunder ännu. Klicka på "Lägg till kund" för att skapa den första.
+        </p>
+      ) : (
+        <ul className="divide-y divide-line">
+          {tenants.map((t) => {
+            const status = tenantStatusMeta[t.status as TenantStatus] ?? defaultStatus;
+            return (
+              <li
+                key={t.id}
+                className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-surface-muted sm:gap-4"
+              >
+                {/* Företag */}
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <TenantLogo tenant={t} />
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-ink">{t.name}</p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {t.city ?? "—"}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Plan */}
-              <Badge
-                className={cn(
-                  "hidden w-24 justify-center lg:inline-flex",
-                  planMeta[t.plan],
-                )}
-              >
-                {t.plan}
-              </Badge>
-
-              {/* Status */}
-              <div className="hidden w-28 sm:block">
-                <Badge className={status.className} dot={status.dot}>
-                  {status.label}
+                {/* Plan */}
+                <Badge
+                  className={cn(
+                    "hidden w-24 justify-center lg:inline-flex",
+                    planMeta[t.plan as TenantPlan] ?? "bg-slate-100 text-slate-600",
+                  )}
+                >
+                  {t.plan}
                 </Badge>
-              </div>
 
-              {/* Användare / fordon */}
-              <div className="hidden w-32 text-right lg:block">
-                <p className="text-sm font-semibold text-ink tabular-nums">
-                  {t.users} / {t.vehicles}
+                {/* Status */}
+                <div className="hidden w-28 sm:block">
+                  <Badge className={status.className} dot={status.dot}>
+                    {status.label}
+                  </Badge>
+                </div>
+
+                {/* Användare / fordon */}
+                <div className="hidden w-32 text-right lg:block">
+                  <p className="text-sm font-semibold text-ink tabular-nums">
+                    {t.users} / {t.vehicles}
+                  </p>
+                  <p className="text-xs text-muted-foreground">anv. / fordon</p>
+                </div>
+
+                {/* Skapad */}
+                <p className="hidden w-28 truncate text-sm text-muted-foreground lg:block">
+                  {df.format(t.createdAt)}
                 </p>
-                <p className="text-xs text-muted-foreground">anv. / fordon</p>
-              </div>
 
-              {/* MRR */}
-              <div className="hidden w-28 text-right lg:block">
-                <p className="text-sm font-semibold text-ink tabular-nums">
-                  {t.mrr > 0 ? `${nf.format(t.mrr)} kr` : "–"}
-                </p>
-              </div>
-
-              {/* Senast aktiv */}
-              <p className="hidden w-28 truncate text-sm text-muted-foreground lg:block">
-                {t.lastActive}
-              </p>
-
-              {/* Status (mobil) + åtgärd */}
-              <div className="flex shrink-0 items-center gap-2 sm:hidden">
-                <Badge className={status.className} dot={status.dot}>
-                  {status.label}
-                </Badge>
-              </div>
-              <button
-                className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-slate-100 hover:text-ink"
-                aria-label={`Hantera ${t.name}`}
-              >
-                <MoreHorizontal className="size-5" />
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+                {/* Status (mobil) + åtgärd */}
+                <div className="sm:hidden">
+                  <Badge className={status.className} dot={status.dot}>
+                    {status.label}
+                  </Badge>
+                </div>
+                <button
+                  className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-slate-100 hover:text-ink"
+                  aria-label={`Hantera ${t.name}`}
+                >
+                  <MoreHorizontal className="size-5" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </Card>
   );
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import { Menu, Search, Bell, Plus, ChevronDown } from "lucide-react";
+import { Menu, Search, Bell, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import { UserMenu } from "./user-menu";
 
 interface TopbarProps {
   onOpenMobile: () => void;
@@ -54,14 +54,7 @@ export function Topbar({ onOpenMobile }: TopbarProps) {
 
         <div className="mx-1 hidden h-7 w-px bg-line sm:block" />
 
-        <button className="flex items-center gap-2 rounded-xl p-1 pr-2 transition-colors hover:bg-slate-100">
-          <Avatar initials="P" size="size-9" />
-          <span className="hidden flex-col items-start leading-tight lg:flex">
-            <span className="text-sm font-semibold text-ink">Philip</span>
-            <span className="text-xs text-muted-foreground">Verkstadschef</span>
-          </span>
-          <ChevronDown className="hidden size-4 text-muted-foreground lg:block" />
-        </button>
+        <UserMenu subtitle="Verkstad" />
       </div>
     </header>
   );
