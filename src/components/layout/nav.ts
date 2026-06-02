@@ -2,10 +2,12 @@ import {
   LayoutDashboard,
   CalendarRange,
   ClipboardList,
+  ClipboardCheck,
   Car,
   Users,
   Package,
   BarChart3,
+  Contact,
   Settings,
   HelpCircle,
   type LucideIcon,
@@ -30,7 +32,8 @@ export const navGroups: NavGroup[] = [
     label: "Verkstad",
     items: [
       { label: "Översikt", href: "/", icon: LayoutDashboard },
-      { label: "Planering", href: "/planering", icon: CalendarRange },
+      { label: "Dagens uppdrag", href: "/dagens-uppdrag", icon: ClipboardCheck },
+      { label: "Arbetskalender", href: "/planering", icon: CalendarRange },
       {
         label: "Arbetsordrar",
         href: "/arbetsordrar",
@@ -42,8 +45,9 @@ export const navGroups: NavGroup[] = [
   {
     label: "Register",
     items: [
+      { label: "Kunder", href: "/kunder", icon: Contact },
       { label: "Fordon", href: "/fordon", icon: Car },
-      { label: "Mekaniker", href: "/mekaniker", icon: Users },
+      { label: "Användare", href: "/anvandare", icon: Users },
       { label: "Lager & delar", href: "/lager", icon: Package },
       { label: "Rapporter", href: "/rapporter", icon: BarChart3 },
     ],

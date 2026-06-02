@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { requireUser } from "@/lib/session";
+import { getSwitcherData } from "@/lib/data/tenant-context";
 
 /**
  * Layout för verkstadsappen – det skal som en inloggad tenant-användare ser.
@@ -12,5 +13,6 @@ export default async function WorkshopLayout({
 }) {
   // Kräver inloggad användare
   await requireUser();
-  return <AppShell>{children}</AppShell>;
+  const switcher = await getSwitcherData();
+  return <AppShell switcher={switcher}>{children}</AppShell>;
 }

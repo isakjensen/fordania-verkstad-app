@@ -15,13 +15,14 @@ import { CreateUserButton } from "./create-user-button";
 import { UserRowActions } from "./user-row-actions";
 
 const roleLabels: Record<string, string> = {
-  owner: "Ägare",
+  // owner är alias för admin (äldre konton).
+  owner: "Admin",
   admin: "Admin",
   member: "Användare",
 };
 
 const roleClass: Record<string, string> = {
-  owner: "bg-violet-100 text-violet-700",
+  owner: "bg-brand-50 text-brand-700",
   admin: "bg-brand-50 text-brand-700",
   member: "bg-slate-100 text-slate-600",
 };

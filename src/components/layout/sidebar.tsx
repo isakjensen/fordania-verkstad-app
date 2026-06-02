@@ -7,8 +7,10 @@ import { cn } from "@/lib/utils";
 import { Logo } from "@/components/ui/logo";
 import { TenantSwitcher } from "./tenant-switcher";
 import { navGroups, secondaryNav, type NavItem } from "./nav";
+import type { SwitcherData } from "@/lib/data/tenant-context";
 
 interface SidebarProps {
+  switcher: SwitcherData;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   /** Anropas när en länk klickas – används för att stänga mobil-drawern */
@@ -91,6 +93,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 export function Sidebar({
+  switcher,
   collapsed = false,
   onToggleCollapse,
   onNavigate,
@@ -114,7 +117,7 @@ export function Sidebar({
 
       {/* Aktiv tenant / byt verkstad */}
       <div className="border-b border-line">
-        <TenantSwitcher collapsed={collapsed} />
+        <TenantSwitcher data={switcher} collapsed={collapsed} />
       </div>
 
       {/* Navigation */}

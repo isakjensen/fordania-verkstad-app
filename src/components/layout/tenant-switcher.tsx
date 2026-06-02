@@ -1,6 +1,8 @@
 "use client";
 
-import { Check, ChevronsUpDown } from "lucide-react";
+import { useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { TenantLogo } from "@/components/ui/tenant-logo";
 import {
   DropdownMenu,
@@ -10,14 +12,46 @@ import {
   DropdownMenuGroup,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { tenants, currentTenant } from "@/lib/tenants";
+import { setActiveTenant } from "@/lib/tenant-actions";
+import type { SwitcherData } from "@/lib/data/tenant-context";
 
-export function TenantSwitcher({ collapsed = false }: { collapsed?: boolean }) {
+export function TenantSwitcher({
+  data,
+  collapsed = false,
+}: {
+  data: SwitcherData;
+  collapsed?: boolean;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
+  const active =
+    data.tenants.find((t) => t.id === data.activeId) ?? data.tenants[0] ?? null;
+
+  function select(id: string) {
+    if (id === active?.id) return;
+    startTransition(async () => {
+      await setActiveTenant(id);
+      router.refresh();
+    });
+  }
+
+  if (!active) {
+    if (collapsed) return null;
+    return (
+      <div className="px-3 py-3">
+        <p className="rounded-lg border border-dashed border-line px-2.5 py-2 text-xs text-muted-foreground">
+          Ingen verkstad
+        </p>
+      </div>
+    );
+  }
+
   if (collapsed) {
     return (
       <div className="flex justify-center px-2 py-3">
         <span className="flex size-8 items-center justify-center rounded-lg bg-ink text-xs font-bold text-white">
-          {currentTenant.initials}
+          {active.initials}
         </span>
       </div>
     );
@@ -27,35 +61,45 @@ export function TenantSwitcher({ collapsed = false }: { collapsed?: boolean }) {
     <div className="px-3 py-3">
       <DropdownMenu>
         <DropdownMenuTrigger className="flex w-full items-center gap-2.5 rounded-lg border border-line bg-surface px-2.5 py-2 text-left transition-colors hover:bg-surface-muted data-popup-open:border-brand-300 data-popup-open:bg-surface-muted">
-          <TenantLogo tenant={currentTenant} size="sm" />
+          <TenantLogo tenant={active} size="sm" />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-semibold text-ink">
-              {currentTenant.name}
+              {active.name}
             </span>
             <span className="block truncate text-xs text-muted-foreground">
-              {currentTenant.plan} · {currentTenant.city}
+              {data.isSuperadmin ? "Superadmin · " : ""}
+              {active.plan}
+              {active.city ? ` · ${active.city}` : ""}
             </span>
           </span>
-          <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
+          {pending ? (
+            <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
+          ) : (
+            <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
+          )}
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="start" sideOffset={6} className="min-w-60">
+        <DropdownMenuContent align="start" sideOffset={6} className="min-w-64">
           <DropdownMenuGroup>
             <DropdownMenuLabel className="text-[0.66rem] font-semibold uppercase tracking-[0.13em] text-muted-foreground/60">
-              Byt verkstad
+              {data.isSuperadmin ? "Välj verkstad (superadmin)" : "Byt verkstad"}
             </DropdownMenuLabel>
-            {tenants.map((t) => (
-              <DropdownMenuItem key={t.id} className="gap-2.5 py-2">
+            {data.tenants.map((t) => (
+              <DropdownMenuItem
+                key={t.id}
+                onClick={() => select(t.id)}
+                className="gap-2.5 py-2"
+              >
                 <TenantLogo tenant={t} size="sm" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-ink">
                     {t.name}
                   </span>
                   <span className="block truncate text-xs text-muted-foreground">
-                    {t.city}
+                    {t.city ?? t.plan}
                   </span>
                 </span>
-                {t.id === currentTenant.id ? (
+                {t.id === active.id ? (
                   <Check className="size-4 shrink-0 text-brand-600" />
                 ) : null}
               </DropdownMenuItem>

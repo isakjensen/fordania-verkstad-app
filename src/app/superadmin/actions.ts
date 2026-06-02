@@ -144,7 +144,7 @@ export async function createUserInTenant(
       id: randomUUID(),
       organizationId: org.id,
       userId: created.user.id,
-      role: ["owner", "admin", "member"].includes(role) ? role : "member",
+      role: ["admin", "member"].includes(role) ? role : "member",
       createdAt: new Date(),
     },
   });
@@ -154,7 +154,7 @@ export async function createUserInTenant(
   return { success: true };
 }
 
-const VALID_MEMBER_ROLES = ["owner", "admin", "member"];
+const VALID_MEMBER_ROLES = ["admin", "member"];
 
 /**
  * Superadmin redigerar en användare: namn, roll i företaget och aktiv/inaktiv

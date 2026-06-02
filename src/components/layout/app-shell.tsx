@@ -5,10 +5,17 @@ import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
+import type { SwitcherData } from "@/lib/data/tenant-context";
 
 const COLLAPSE_KEY = "fv-sidebar-collapsed";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  switcher,
+}: {
+  children: React.ReactNode;
+  switcher: SwitcherData;
+}) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -52,7 +59,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           collapsed ? "w-20" : "w-64",
         )}
       >
-        <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapse} />
+        <Sidebar
+          switcher={switcher}
+          collapsed={collapsed}
+          onToggleCollapse={toggleCollapse}
+        />
       </aside>
 
       {/* Innehållskolumn */}
@@ -82,7 +93,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 380, damping: 38 }}
             >
-              <Sidebar collapsed={false} onNavigate={closeMobile} />
+              <Sidebar
+                switcher={switcher}
+                collapsed={false}
+                onNavigate={closeMobile}
+              />
             </motion.aside>
           </>
         ) : null}

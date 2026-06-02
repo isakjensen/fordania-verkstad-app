@@ -6,6 +6,7 @@ import { MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldSelect } from "@/components/ui/field-select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,8 +26,15 @@ import {
 import { updateUser, removeUserFromTenant } from "@/app/superadmin/actions";
 import type { PlatformUserRow } from "@/lib/data/platform";
 
-const selectClass =
-  "h-9 w-full rounded-lg border border-line bg-surface-muted px-3 text-sm text-ink focus:border-brand-300 focus:bg-surface focus:outline-none";
+const roleOptions = [
+  { value: "member", label: "Användare" },
+  { value: "admin", label: "Admin" },
+];
+
+const statusOptions = [
+  { value: "active", label: "Aktiv" },
+  { value: "inactive", label: "Inaktiv" },
+];
 
 export function UserRowActions({ user }: { user: PlatformUserRow }) {
   const router = useRouter();
@@ -116,28 +124,21 @@ export function UserRowActions({ user }: { user: PlatformUserRow }) {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor={`urole-${user.memberId}`}>Roll</Label>
-                <select
+                <FieldSelect
                   id={`urole-${user.memberId}`}
                   name="role"
                   defaultValue={user.role}
-                  className={selectClass}
-                >
-                  <option value="member">Användare</option>
-                  <option value="admin">Admin</option>
-                  <option value="owner">Ägare</option>
-                </select>
+                  options={roleOptions}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor={`ustatus-${user.memberId}`}>Status</Label>
-                <select
+                <FieldSelect
                   id={`ustatus-${user.memberId}`}
                   name="status"
                   defaultValue={user.status}
-                  className={selectClass}
-                >
-                  <option value="active">Aktiv</option>
-                  <option value="inactive">Inaktiv</option>
-                </select>
+                  options={statusOptions}
+                />
               </div>
             </div>
 

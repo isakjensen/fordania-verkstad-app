@@ -1,15 +1,71 @@
 import type { Metadata } from "next";
-import { CalendarRange } from "lucide-react";
-import { Placeholder } from "@/components/layout/placeholder";
+import { getActiveOrganizationId, getTenantRole, canManageUsers } from "@/lib/session";
+import { getMechanics, getScheduleJobs } from "@/lib/data/schedule";
+import { ScheduleCalendar } from "./schedule-calendar";
 
-export const metadata: Metadata = { title: "Planering" };
+export const metadata: Metadata = { title: "Arbetskalender" };
 
-export default function Page() {
+type View = "day" | "week" | "month";
+
+/** Räknar ut synligt intervall [from, to) utifrån vy och ankardatum. */
+function rangeFor(view: View, anchor: Date) {
+  const from = new Date(anchor);
+  from.setHours(0, 0, 0, 0);
+  const to = new Date(from);
+  if (view === "day") {
+    to.setDate(to.getDate() + 1);
+  } else if (view === "week") {
+    const dow = (from.getDay() + 6) % 7; // 0 = måndag
+    from.setDate(from.getDate() - dow);
+    to.setTime(from.getTime());
+    to.setDate(to.getDate() + 7);
+  } else {
+    from.setDate(1);
+    to.setTime(from.getTime());
+    to.setMonth(to.getMonth() + 1);
+  }
+  return { from, to };
+}
+
+function parseAnchor(value?: string) {
+  if (value) {
+    const d = new Date(value);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  return new Date();
+}
+
+export default async function PlaneringPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string; date?: string }>;
+}) {
+  const sp = await searchParams;
+  const view: View =
+    sp.view === "day" || sp.view === "month" ? sp.view : "week";
+  const anchor = parseAnchor(sp.date);
+  const { from, to } = rangeFor(view, anchor);
+
+  const organizationId = await getActiveOrganizationId();
+  const role = organizationId ? await getTenantRole(organizationId) : null;
+
+  const [mechanics, jobs] = organizationId
+    ? await Promise.all([
+        getMechanics(organizationId),
+        getScheduleJobs(organizationId, from, to),
+      ])
+    : [[], []];
+
   return (
-    <Placeholder
-      icon={CalendarRange}
-      title="Planering"
-      description="Här planerar du in jobb på mekaniker och tidsluckor i en tidslinje med dra-och-släpp. Vyn byggs i nästa steg."
+    <ScheduleCalendar
+      view={view}
+      anchorISO={anchor.toISOString()}
+      fromISO={from.toISOString()}
+      toISO={to.toISOString()}
+      mechanics={mechanics}
+      jobs={jobs}
+      canManage={canManageUsers(role)}
+      hasOrg={!!organizationId}
     />
   );
 }

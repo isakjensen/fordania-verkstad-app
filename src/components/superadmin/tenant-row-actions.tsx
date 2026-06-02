@@ -6,6 +6,7 @@ import { MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldSelect } from "@/components/ui/field-select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,8 +26,11 @@ import {
 import { updateTenant, deleteTenant } from "@/app/superadmin/actions";
 import type { TenantRow } from "@/lib/data/platform";
 
-const selectClass =
-  "h-9 w-full rounded-lg border border-line bg-surface-muted px-3 text-sm text-ink focus:border-brand-300 focus:bg-surface focus:outline-none";
+const planOptions = [
+  { value: "Bas", label: "Bas" },
+  { value: "Plus", label: "Plus" },
+  { value: "Enterprise", label: "Enterprise" },
+];
 
 const statusOptions = [
   { value: "active", label: "Aktiv" },
@@ -132,31 +136,21 @@ export function TenantRowActions({ tenant }: { tenant: TenantRow }) {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor={`plan-${tenant.id}`}>Plan</Label>
-                <select
+                <FieldSelect
                   id={`plan-${tenant.id}`}
                   name="plan"
                   defaultValue={tenant.plan}
-                  className={selectClass}
-                >
-                  <option value="Bas">Bas</option>
-                  <option value="Plus">Plus</option>
-                  <option value="Enterprise">Enterprise</option>
-                </select>
+                  options={planOptions}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor={`status-${tenant.id}`}>Status</Label>
-                <select
+                <FieldSelect
                   id={`status-${tenant.id}`}
                   name="status"
                   defaultValue={tenant.status}
-                  className={selectClass}
-                >
-                  {statusOptions.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
+                  options={statusOptions}
+                />
               </div>
             </div>
 

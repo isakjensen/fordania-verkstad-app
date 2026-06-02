@@ -6,6 +6,7 @@ import { Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldSelect } from "@/components/ui/field-select";
 import {
   Dialog,
   DialogContent,
@@ -18,8 +19,10 @@ import {
 } from "@/components/ui/dialog";
 import { createUserInTenant } from "@/app/superadmin/actions";
 
-const selectClass =
-  "h-9 w-full rounded-lg border border-line bg-surface-muted px-3 text-sm text-ink focus:border-brand-300 focus:bg-surface focus:outline-none";
+const ROLE_OPTIONS = [
+  { value: "member", label: "Användare" },
+  { value: "admin", label: "Admin" },
+];
 
 export function CreateUserButton({
   tenants,
@@ -93,21 +96,21 @@ export function CreateUserButton({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="u-org">Tenant</Label>
-              <select id="u-org" name="organizationId" required className={selectClass}>
-                {tenants.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
+              <FieldSelect
+                id="u-org"
+                name="organizationId"
+                defaultValue={tenants[0]?.id}
+                options={tenants.map((t) => ({ value: t.id, label: t.name }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="u-role">Roll</Label>
-              <select id="u-role" name="role" defaultValue="member" className={selectClass}>
-                <option value="member">Användare</option>
-                <option value="admin">Admin</option>
-                <option value="owner">Ägare</option>
-              </select>
+              <FieldSelect
+                id="u-role"
+                name="role"
+                defaultValue="member"
+                options={ROLE_OPTIONS}
+              />
             </div>
           </div>
 

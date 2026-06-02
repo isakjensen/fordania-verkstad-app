@@ -1,0 +1,46 @@
+/** Delad styling och etiketter för arbetsorderstatus i kalendern och drawern. */
+
+export const statusMeta: Record<
+  string,
+  { badge: string; dot: string; box: string }
+> = {
+  planned: {
+    badge: "bg-slate-100 text-slate-600",
+    dot: "bg-slate-400",
+    box: "bg-slate-50 border-slate-300 text-slate-700",
+  },
+  in_progress: {
+    badge: "bg-info-soft text-info",
+    dot: "bg-info",
+    box: "bg-info-soft border-info text-info",
+  },
+  waiting_parts: {
+    badge: "bg-warning-soft text-warning",
+    dot: "bg-warning",
+    box: "bg-warning-soft border-warning text-warning",
+  },
+  done: {
+    badge: "bg-success-soft text-success",
+    dot: "bg-success",
+    box: "bg-success-soft border-success text-success",
+  },
+  delayed: {
+    badge: "bg-danger-soft text-danger",
+    dot: "bg-danger",
+    box: "bg-danger-soft border-danger text-danger",
+  },
+};
+
+export const statusLabels: Record<string, string> = {
+  planned: "Planerad",
+  in_progress: "Pågår",
+  waiting_parts: "Väntar på delar",
+  done: "Klar",
+  delayed: "Försenad",
+};
+
+export const priorityLabels: Record<string, string> = {
+  low: "Låg",
+  normal: "Normal",
+  high: "Hög",
+};
