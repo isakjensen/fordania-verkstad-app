@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ *
+ *  Fordania Verkstad – designsystem
+ *  Ren, professionell SaaS-estetik i Fordania-anda: kobolt-blå
+ *  primärfärg, svala neutraler, mjuka ytor och tydlig hierarki.
+ * ------------------------------------------------------------------ */
+
+@theme {
+  /* Primär – Fordania-blå (lugn azure) */
+  --color-brand-50: #edf4fc;
+  --color-brand-100: #d4e6f9;
+  --color-brand-200: #aecef2;
+  --color-brand-300: #7eafe8;
+  --color-brand-400: #4a8bd9;
+  --color-brand-500: #2a72c9;
+  --color-brand-600: #1a64bd; /* primär (knappar, länkar) */
+  --color-brand-700: #17539d;
+  --color-brand-800: #18477f;
+  --color-brand-900: #173d69;
+  --color-brand-950: #0f2545;
+
+  /* Ytor & struktur */
+  --color-canvas: #eef3f9; /* app-/sektionsbakgrund (ljus blågrå) */
+  --color-surface: #ffffff; /* kort/paneler */
+  --color-surface-muted: #f4f8fc; /* nedtonad yta / input */
+  --color-line: #e2e9f1; /* kantlinjer */
+  --color-line-strong: #d0d9e5;
+
+  /* Text – mörk navy i Fordania-anda */
+  --color-ink: #0f2a43; /* rubriker / primär text */
+  --color-ink-soft: #33485f; /* sekundär text */
+  --color-muted: #6a7889; /* dämpad text */
+  --color-navy: #0e2741; /* mörka sektioner (footer m.m.) */
+
+  /* Semantiska status */
+  --color-success: #21a35b;
+  --color-success-soft: #e3f5ea;
+  --color-warning: #d9881f;
+  --color-warning-soft: #fbeedb;
+  --color-danger: #d63b3b;
+  --color-danger-soft: #fbe7e7;
+  --color-info: #1a64bd;
+  --color-info-soft: #e6effa;
+
+  /* Typografi */
+  --font-sans: var(--font-sans-app), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Hårfina, återhållsamma skuggor – proffsig look bärs av kantlinjer */
+  --shadow-soft: 0 1px 1px rgb(15 23 41 / 0.04);
+  --shadow-card: 0 1px 2px rgb(15 23 41 / 0.04);
+  --shadow-lift: 0 12px 32px -12px rgb(15 23 41 / 0.16);
+
+  /* Rörelse */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Animationer */
+  --animate-fade-up: fade-up 0.5s var(--ease-out-soft) both;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Subtil, modern scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-line-strong);
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: #b9c1d2;
+  }
+
+  /* Tydlig, varumärkesfärgad fokusring för tillgänglighet */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer utilities {
+  /* Respektera användare som föredragit reducerad rörelse */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

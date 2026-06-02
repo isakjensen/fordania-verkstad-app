@@ -1,0 +1,41 @@
+import {
+  LayoutDashboard,
+  Building2,
+  Users,
+  CreditCard,
+  Settings2,
+  type LucideIcon,
+} from "lucide-react";
+
+export interface SuperNavItem {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+}
+
+export interface SuperNavGroup {
+  label: string;
+  items: SuperNavItem[];
+}
+
+export const superadminGroups: SuperNavGroup[] = [
+  {
+    label: "Plattform",
+    items: [
+      { label: "Översikt", href: "/superadmin", icon: LayoutDashboard },
+      { label: "Kunder", href: "/superadmin/tenants", icon: Building2 },
+      { label: "Användare", href: "/superadmin/anvandare", icon: Users },
+    ],
+  },
+  {
+    label: "System",
+    items: [
+      { label: "Fakturering", href: "/superadmin/fakturering", icon: CreditCard },
+      {
+        label: "Inställningar",
+        href: "/superadmin/installningar",
+        icon: Settings2,
+      },
+    ],
+  },
+];

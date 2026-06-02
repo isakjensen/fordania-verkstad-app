@@ -1,0 +1,146 @@
+import { Search, Plus, MoreHorizontal } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Card, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { TenantLogo } from "@/components/ui/tenant-logo";
+import { tenants, tenantStatusMeta, planMeta } from "@/lib/tenants";
+
+const nf = new Intl.NumberFormat("sv-SE");
+
+interface TenantTableProps {
+  title?: string;
+  subtitle?: string;
+  /** Visa endast de N första raderna */
+  limit?: number;
+  showToolbar?: boolean;
+}
+
+export function TenantTable({
+  title = "Kunder",
+  subtitle,
+  limit,
+  showToolbar = true,
+}: TenantTableProps) {
+  const rows = limit ? tenants.slice(0, limit) : tenants;
+
+  return (
+    <Card>
+      <CardHeader
+        tone="brand"
+        title={title}
+        subtitle={subtitle ?? `${tenants.length} anslutna företag`}
+        action={
+          <Button size="sm" variant="success">
+            <Plus className="size-4" />
+            <span className="hidden sm:inline">Lägg till kund</span>
+          </Button>
+        }
+      />
+
+      {showToolbar ? (
+        <div className="flex flex-col gap-2 border-b border-line px-5 py-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1 sm:max-w-xs">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+            <input
+              type="search"
+              placeholder="Sök företag eller stad…"
+              className="h-9 w-full rounded-lg border border-line bg-surface-muted pl-9 pr-3 text-sm text-ink placeholder:text-muted focus:border-brand-300 focus:bg-surface focus:outline-none"
+            />
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted">
+            <span className="hidden sm:inline">Filter:</span>
+            <span className="rounded-md bg-surface-muted px-2 py-1 font-medium text-ink-soft">
+              Alla status
+            </span>
+            <span className="rounded-md bg-surface-muted px-2 py-1 font-medium text-ink-soft">
+              Alla planer
+            </span>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Kolumnrubriker (desktop) */}
+      <div className="hidden items-center gap-4 border-b border-line px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted lg:flex">
+        <span className="flex-1">Företag</span>
+        <span className="w-24">Plan</span>
+        <span className="w-28">Status</span>
+        <span className="w-32 text-right">Användare / fordon</span>
+        <span className="w-28 text-right">Intäkt/mån</span>
+        <span className="w-28">Senast aktiv</span>
+        <span className="w-9" />
+      </div>
+
+      <ul className="divide-y divide-line">
+        {rows.map((t) => {
+          const status = tenantStatusMeta[t.status];
+          return (
+            <li
+              key={t.id}
+              className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-surface-muted sm:gap-4"
+            >
+              {/* Företag */}
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <TenantLogo tenant={t} />
+                <div className="min-w-0">
+                  <p className="truncate font-semibold text-ink">{t.name}</p>
+                  <p className="truncate text-sm text-muted">{t.city}</p>
+                </div>
+              </div>
+
+              {/* Plan */}
+              <Badge
+                className={cn(
+                  "hidden w-24 justify-center lg:inline-flex",
+                  planMeta[t.plan],
+                )}
+              >
+                {t.plan}
+              </Badge>
+
+              {/* Status */}
+              <div className="hidden w-28 sm:block">
+                <Badge className={status.className} dot={status.dot}>
+                  {status.label}
+                </Badge>
+              </div>
+
+              {/* Användare / fordon */}
+              <div className="hidden w-32 text-right lg:block">
+                <p className="text-sm font-semibold text-ink tabular-nums">
+                  {t.users} / {t.vehicles}
+                </p>
+                <p className="text-xs text-muted">anv. / fordon</p>
+              </div>
+
+              {/* MRR */}
+              <div className="hidden w-28 text-right lg:block">
+                <p className="text-sm font-semibold text-ink tabular-nums">
+                  {t.mrr > 0 ? `${nf.format(t.mrr)} kr` : "–"}
+                </p>
+              </div>
+
+              {/* Senast aktiv */}
+              <p className="hidden w-28 truncate text-sm text-muted lg:block">
+                {t.lastActive}
+              </p>
+
+              {/* Status (mobil) + åtgärd */}
+              <div className="flex shrink-0 items-center gap-2 sm:hidden">
+                <Badge className={status.className} dot={status.dot}>
+                  {status.label}
+                </Badge>
+              </div>
+              <button
+                className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-slate-100 hover:text-ink"
+                aria-label={`Hantera ${t.name}`}
+              >
+                <MoreHorizontal className="size-5" />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
+  );
+}
