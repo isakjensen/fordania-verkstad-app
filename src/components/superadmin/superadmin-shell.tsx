@@ -131,7 +131,7 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
               <ShieldCheck className="size-3.5 text-brand-300" />
               Plattform
             </span>
-            <span className="hidden text-sm text-muted sm:inline">
+            <span className="hidden text-sm text-muted-foreground sm:inline">
               Fordania superadmin
             </span>
           </div>
@@ -140,7 +140,7 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
             <Avatar initials="P" size="size-9" />
             <span className="hidden flex-col items-start leading-tight sm:flex">
               <span className="text-sm font-semibold text-ink">Philip</span>
-              <span className="text-xs text-muted">Plattformsägare</span>
+              <span className="text-xs text-muted-foreground">Plattformsägare</span>
             </span>
           </button>
         </header>

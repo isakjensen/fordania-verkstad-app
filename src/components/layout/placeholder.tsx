@@ -24,7 +24,7 @@ export function Placeholder({ icon: Icon, title, description }: PlaceholderProps
         <h1 className="mt-6 text-2xl font-bold tracking-tight text-ink">
           {title}
         </h1>
-        <p className="mt-2 max-w-md text-sm text-muted">{description}</p>
+        <p className="mt-2 max-w-md text-sm text-muted-foreground">{description}</p>
         <div className="mt-6 flex items-center gap-3">
           <Link
             href="/"
@@ -34,7 +34,7 @@ export function Placeholder({ icon: Icon, title, description }: PlaceholderProps
             Till översikten
           </Link>
         </div>
-        <p className="mt-8 text-xs font-medium uppercase tracking-wider text-muted/70">
+        <p className="mt-8 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
           Under uppbyggnad
         </p>
       </div>

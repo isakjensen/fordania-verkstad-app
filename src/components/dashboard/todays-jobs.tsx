@@ -81,7 +81,7 @@ export function TodaysJobs() {
                 </div>
                 <p className="mt-1 truncate text-sm font-medium text-ink-soft">
                   {job.vehicle}
-                  <span className="text-muted md:hidden"> · {job.type}</span>
+                  <span className="text-muted-foreground md:hidden"> · {job.type}</span>
                 </p>
               </div>
 
@@ -100,7 +100,7 @@ export function TodaysJobs() {
                     </span>
                   </>
                 ) : (
-                  <span className="text-sm text-muted">Ej tilldelad</span>
+                  <span className="text-sm text-muted-foreground">Ej tilldelad</span>
                 )}
               </div>
 
@@ -109,7 +109,7 @@ export function TodaysJobs() {
                 <p className="text-sm font-medium text-ink tabular-nums">
                   {job.start}
                 </p>
-                <p className="text-xs text-muted">{duration(job.durationMin)}</p>
+                <p className="text-xs text-muted-foreground">{duration(job.durationMin)}</p>
               </div>
 
               {/* Status */}

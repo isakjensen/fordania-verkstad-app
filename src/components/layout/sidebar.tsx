@@ -55,7 +55,7 @@ function NavLink({
       <Icon
         className={cn(
           "size-[18px] shrink-0 transition-colors",
-          active ? "text-brand-600" : "text-muted group-hover:text-ink-soft",
+          active ? "text-brand-600" : "text-muted-foreground group-hover:text-ink-soft",
         )}
         strokeWidth={active ? 2.25 : 2}
       />
@@ -84,7 +84,7 @@ function NavLink({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-1 px-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.13em] text-muted/55">
+    <p className="mb-1 px-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.13em] text-muted-foreground/55">
       {children}
     </p>
   );
@@ -176,7 +176,7 @@ export function Sidebar({
               collapsed ? "h-9 w-9 justify-center" : "h-9 gap-3 px-2.5",
             )}
           >
-            <ShieldCheck className="size-[18px] shrink-0 text-muted group-hover:text-ink-soft" />
+            <ShieldCheck className="size-[18px] shrink-0 text-muted-foreground group-hover:text-ink-soft" />
             {!collapsed ? <span>Superadmin</span> : null}
           </Link>
         </div>
@@ -188,7 +188,7 @@ export function Sidebar({
           <button
             onClick={onToggleCollapse}
             className={cn(
-              "hidden h-9 items-center rounded-lg text-[0.875rem] font-medium text-muted lg:flex",
+              "hidden h-9 items-center rounded-lg text-[0.875rem] font-medium text-muted-foreground lg:flex",
               "transition-colors hover:bg-surface-muted hover:text-ink",
               collapsed ? "w-full justify-center" : "w-full gap-2 px-2.5",
             )}

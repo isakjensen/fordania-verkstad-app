@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
 
 const sans = Hanken_Grotesk({
-  variable: "--font-sans-app",
+  variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
   weight: ["400", "500", "600", "700", "800"],
@@ -39,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       lang="sv"
-      className={`${sans.variable} ${geistMono.variable} h-full antialiased`}
+      className={cn("h-full antialiased", sans.variable, geistMono.variable)}
     >
       <body className="min-h-full">{children}</body>
     </html>

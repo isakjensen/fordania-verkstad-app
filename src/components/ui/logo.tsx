@@ -32,7 +32,7 @@ export function Logo({ iconOnly = false, className }: LogoProps) {
       <span className="text-[1.2rem] font-extrabold tracking-[-0.02em] text-brand-600">
         Fordania
       </span>
-      <span className="mt-1 text-[0.64rem] font-semibold uppercase tracking-[0.22em] text-muted">
+      <span className="mt-1 text-[0.64rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
         Verkstad
       </span>
     </div>

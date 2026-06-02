@@ -51,10 +51,10 @@ export function StatCard({
       />
 
       <div className="flex items-center justify-between">
-        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted">
+        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
           {label}
         </p>
-        <Icon className="size-4 text-muted/50" strokeWidth={2} />
+        <Icon className="size-4 text-muted-foreground/50" strokeWidth={2} />
       </div>
 
       <div className="mt-4 flex items-baseline gap-2.5">
@@ -78,7 +78,7 @@ export function StatCard({
         ) : null}
       </div>
 
-      {hint ? <p className="mt-2.5 text-xs text-muted">{hint}</p> : null}
+      {hint ? <p className="mt-2.5 text-xs text-muted-foreground">{hint}</p> : null}
     </motion.div>
   );
 }

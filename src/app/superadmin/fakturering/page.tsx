@@ -17,7 +17,7 @@ export default function SuperadminBillingPage() {
           <CreditCard className="size-6" />
         </span>
         <p className="mt-5 text-lg font-bold text-ink">Fakturering kommer snart</p>
-        <p className="mt-1 max-w-md text-sm text-muted">
+        <p className="mt-1 max-w-md text-sm text-muted-foreground">
           Här samlas abonnemang, planer och intäkter för alla tenants.
         </p>
       </div>

@@ -1,42 +1,46 @@
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { Tenant } from "@/lib/tenants";
 
 interface TenantLogoProps {
-  tenant: Pick<Tenant, "name" | "initials" | "logo">;
+  tenant: Pick<Tenant, "name" | "initials">;
   size?: "sm" | "md";
   className?: string;
 }
 
-const boxSize = {
-  sm: "h-8 w-20",
-  md: "h-10 w-28",
+/** Kurerad, dämpad palett – varje företag får en egen, lugn ton. */
+const palettes = [
+  "bg-blue-100 text-blue-700",
+  "bg-emerald-100 text-emerald-700",
+  "bg-amber-100 text-amber-700",
+  "bg-violet-100 text-violet-700",
+  "bg-rose-100 text-rose-700",
+  "bg-cyan-100 text-cyan-700",
+  "bg-indigo-100 text-indigo-700",
+  "bg-teal-100 text-teal-700",
+];
+
+function paletteFor(name: string) {
+  let sum = 0;
+  for (let i = 0; i < name.length; i++) sum += name.charCodeAt(i);
+  return palettes[sum % palettes.length];
+}
+
+const sizes = {
+  sm: "size-8 text-xs rounded-lg",
+  md: "size-10 text-sm rounded-xl",
 };
 
 /**
- * Visar företagets logotyp fritt (utan ram eller bakgrundsruta), vänsterställd.
- * Saknas logotyp visas ett monogram med initialerna som reserv.
+ * Företagsmonogram – en rundad bricka med initialer i företagets egen ton.
+ * Konsekvent och rent, utan externa logotypbilder.
  */
 export function TenantLogo({ tenant, size = "md", className }: TenantLogoProps) {
-  if (tenant.logo) {
-    return (
-      <span className={cn("relative block shrink-0", boxSize[size], className)}>
-        <Image
-          src={tenant.logo}
-          alt={tenant.name}
-          fill
-          sizes={size === "sm" ? "80px" : "112px"}
-          className="object-contain object-left"
-        />
-      </span>
-    );
-  }
-
   return (
     <span
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-md bg-ink font-bold text-white",
-        size === "sm" ? "h-8 w-9 text-xs" : "h-10 w-11 text-sm",
+        "flex shrink-0 items-center justify-center font-bold tracking-wide",
+        sizes[size],
+        paletteFor(tenant.name),
         className,
       )}
     >

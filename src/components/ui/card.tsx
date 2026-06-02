@@ -51,7 +51,7 @@ export function CardHeader({
             {title}
           </h3>
           {subtitle ? (
-            <p className="mt-0.5 text-sm text-muted">{subtitle}</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
           ) : null}
         </div>
       </div>

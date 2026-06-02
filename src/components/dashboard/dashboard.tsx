@@ -34,17 +34,17 @@ export function Dashboard() {
       {/* Sidhuvud */}
       <div className="flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted first-letter:uppercase">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground first-letter:uppercase">
             {date || " "}
           </p>
           <h1 className="mt-2 text-[1.75rem] font-extrabold tracking-tight text-ink sm:text-[2.1rem]">
             Översikt
           </h1>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1 text-sm text-muted-foreground">
             Här är läget i verkstaden just nu.
           </p>
         </div>
-        <p className="hidden text-sm text-muted sm:block">
+        <p className="hidden text-sm text-muted-foreground sm:block">
           Uppdaterad{" "}
           <span className="font-semibold text-ink-soft">just nu</span>
         </p>

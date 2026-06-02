@@ -90,7 +90,7 @@ export function FleetStatus() {
             <span className="text-3xl font-bold tracking-tight text-ink tabular-nums">
               {Math.round((stats.fleetReady / total) * 100)}%
             </span>
-            <span className="text-xs font-medium text-muted">tillgängliga</span>
+            <span className="text-xs font-medium text-muted-foreground">tillgängliga</span>
           </div>
         </div>
 

@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { TenantLogo } from "@/components/ui/tenant-logo";
 import { tenants, tenantStatusMeta, planMeta } from "@/lib/tenants";
 
@@ -41,14 +42,14 @@ export function TenantTable({
       {showToolbar ? (
         <div className="flex flex-col gap-2 border-b border-line px-5 py-3 sm:flex-row sm:items-center">
           <div className="relative flex-1 sm:max-w-xs">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
-            <input
+            <Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
               type="search"
               placeholder="Sök företag eller stad…"
-              className="h-9 w-full rounded-lg border border-line bg-surface-muted pl-9 pr-3 text-sm text-ink placeholder:text-muted focus:border-brand-300 focus:bg-surface focus:outline-none"
+              className="h-9 rounded-lg bg-surface-muted pl-9"
             />
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="hidden sm:inline">Filter:</span>
             <span className="rounded-md bg-surface-muted px-2 py-1 font-medium text-ink-soft">
               Alla status
@@ -61,7 +62,7 @@ export function TenantTable({
       ) : null}
 
       {/* Kolumnrubriker (desktop) */}
-      <div className="hidden items-center gap-4 border-b border-line px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted lg:flex">
+      <div className="hidden items-center gap-4 border-b border-line px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground lg:flex">
         <span className="flex-1">Företag</span>
         <span className="w-24">Plan</span>
         <span className="w-28">Status</span>
@@ -84,7 +85,7 @@ export function TenantTable({
                 <TenantLogo tenant={t} />
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-ink">{t.name}</p>
-                  <p className="truncate text-sm text-muted">{t.city}</p>
+                  <p className="truncate text-sm text-muted-foreground">{t.city}</p>
                 </div>
               </div>
 
@@ -110,7 +111,7 @@ export function TenantTable({
                 <p className="text-sm font-semibold text-ink tabular-nums">
                   {t.users} / {t.vehicles}
                 </p>
-                <p className="text-xs text-muted">anv. / fordon</p>
+                <p className="text-xs text-muted-foreground">anv. / fordon</p>
               </div>
 
               {/* MRR */}
@@ -121,7 +122,7 @@ export function TenantTable({
               </div>
 
               {/* Senast aktiv */}
-              <p className="hidden w-28 truncate text-sm text-muted lg:block">
+              <p className="hidden w-28 truncate text-sm text-muted-foreground lg:block">
                 {t.lastActive}
               </p>
 
@@ -132,7 +133,7 @@ export function TenantTable({
                 </Badge>
               </div>
               <button
-                className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-slate-100 hover:text-ink"
+                className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-slate-100 hover:text-ink"
                 aria-label={`Hantera ${t.name}`}
               >
                 <MoreHorizontal className="size-5" />

@@ -46,7 +46,7 @@ export function UserTable() {
       />
 
       {/* Kolumnrubriker (desktop) */}
-      <div className="hidden items-center gap-4 border-b border-line px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted lg:flex">
+      <div className="hidden items-center gap-4 border-b border-line px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground lg:flex">
         <span className="flex-1">Användare</span>
         <span className="w-36">Roll</span>
         <span className="w-44">Företag</span>
@@ -68,7 +68,7 @@ export function UserTable() {
                 <Avatar initials={u.initials} size="size-9 text-sm" />
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-ink">{u.name}</p>
-                  <p className="truncate text-sm text-muted">{u.email}</p>
+                  <p className="truncate text-sm text-muted-foreground">{u.email}</p>
                 </div>
               </div>
 
@@ -90,7 +90,7 @@ export function UserTable() {
               </div>
 
               {/* Senast sedd */}
-              <span className="hidden w-28 truncate text-sm text-muted lg:block">
+              <span className="hidden w-28 truncate text-sm text-muted-foreground lg:block">
                 {u.lastSeen}
               </span>
 
@@ -101,7 +101,7 @@ export function UserTable() {
                 </Badge>
               </div>
               <button
-                className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-slate-100 hover:text-ink"
+                className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-slate-100 hover:text-ink"
                 aria-label={`Hantera ${u.name}`}
               >
                 <MoreHorizontal className="size-5" />

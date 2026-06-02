@@ -3,6 +3,7 @@
 import { Menu, Search, Bell, Plus, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 
 interface TopbarProps {
   onOpenMobile: () => void;
@@ -22,11 +23,11 @@ export function Topbar({ onOpenMobile }: TopbarProps) {
 
       {/* Sökfält */}
       <div className="relative hidden flex-1 sm:block sm:max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
-        <input
+        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
           type="search"
           placeholder="Sök fordon, reg.nr eller order…"
-          className="h-10 w-full rounded-xl border border-line bg-surface-muted pl-9 pr-3 text-sm text-ink placeholder:text-muted transition-colors focus:border-brand-300 focus:bg-surface focus:outline-none"
+          className="h-10 rounded-lg bg-surface-muted pl-9"
         />
       </div>
 
@@ -57,9 +58,9 @@ export function Topbar({ onOpenMobile }: TopbarProps) {
           <Avatar initials="P" size="size-9" />
           <span className="hidden flex-col items-start leading-tight lg:flex">
             <span className="text-sm font-semibold text-ink">Philip</span>
-            <span className="text-xs text-muted">Verkstadschef</span>
+            <span className="text-xs text-muted-foreground">Verkstadschef</span>
           </span>
-          <ChevronDown className="hidden size-4 text-muted lg:block" />
+          <ChevronDown className="hidden size-4 text-muted-foreground lg:block" />
         </button>
       </div>
     </header>

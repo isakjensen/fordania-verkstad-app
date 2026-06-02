@@ -46,7 +46,7 @@ export function MechanicLoad() {
                     }}
                   />
                 </div>
-                <span className="w-16 shrink-0 text-right text-xs text-muted">
+                <span className="w-16 shrink-0 text-right text-xs text-muted-foreground">
                   {m.activeJobs} jobb
                 </span>
               </div>
