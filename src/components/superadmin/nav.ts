@@ -1,5 +1,4 @@
 import {
-  LayoutDashboard,
   Building2,
   Users,
   CreditCard,
@@ -22,8 +21,7 @@ export const superadminGroups: SuperNavGroup[] = [
   {
     label: "Plattform",
     items: [
-      { label: "Översikt", href: "/superadmin", icon: LayoutDashboard },
-      { label: "Kunder", href: "/superadmin/tenants", icon: Building2 },
+      { label: "Företag", href: "/superadmin", icon: Building2 },
       { label: "Användare", href: "/superadmin/anvandare", icon: Users },
     ],
   },

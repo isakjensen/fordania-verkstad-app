@@ -48,6 +48,7 @@ export async function getTenants(limit?: number): Promise<TenantRow[]> {
 
 export interface PlatformUserRow {
   id: string;
+  memberId: string;
   name: string;
   email: string;
   initials: string;
@@ -64,6 +65,7 @@ export async function getPlatformUsers(): Promise<PlatformUserRow[]> {
   });
   return members.map((m) => ({
     id: m.user.id,
+    memberId: m.id,
     name: m.user.name,
     email: m.user.email,
     initials: initialsFromName(m.user.name),
@@ -71,23 +73,4 @@ export async function getPlatformUsers(): Promise<PlatformUserRow[]> {
     tenantName: m.organization.name,
     status: m.user.banned ? "inactive" : "active",
   }));
-}
-
-export interface PlatformStats {
-  totalTenants: number;
-  activeTenants: number;
-  totalUsers: number;
-  totalVehicles: number;
-}
-
-/** Härledda nyckeltal till superadmin-översikten. */
-export async function getPlatformStats(): Promise<PlatformStats> {
-  const [totalTenants, activeTenants, totalUsers, totalVehicles] =
-    await Promise.all([
-      db.organization.count(),
-      db.organization.count({ where: { status: "active" } }),
-      db.user.count(),
-      db.vehicle.count(),
-    ]);
-  return { totalTenants, activeTenants, totalUsers, totalVehicles };
 }

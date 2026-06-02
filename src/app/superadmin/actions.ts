@@ -9,6 +9,9 @@ import { requireSuperadmin } from "@/lib/session";
 
 export type ActionResult = { success: true } | { error: string };
 
+const VALID_PLANS = ["Bas", "Plus", "Enterprise"];
+const VALID_STATUSES = ["active", "trial", "paused", "invited"];
+
 /** Gör om ett namn till en URL-vänlig slug (hanterar å/ä/ö). */
 function slugify(name: string) {
   return name
@@ -45,14 +48,64 @@ export async function createTenant(formData: FormData): Promise<ActionResult> {
       name,
       slug,
       city: city || null,
-      plan: ["Bas", "Plus", "Enterprise"].includes(plan) ? plan : "Bas",
+      plan: VALID_PLANS.includes(plan) ? plan : "Bas",
       status: "active",
       createdAt: new Date(),
     },
   });
 
   revalidatePath("/superadmin");
-  revalidatePath("/superadmin/tenants");
+  return { success: true };
+}
+
+/** Superadmin redigerar ett företags namn, stad, plan och status. */
+export async function updateTenant(formData: FormData): Promise<ActionResult> {
+  await requireSuperadmin();
+
+  const id = String(formData.get("id") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim();
+  const plan = String(formData.get("plan") ?? "").trim();
+  const status = String(formData.get("status") ?? "").trim();
+
+  if (!id) return { error: "Företags-id saknas." };
+  if (!name) return { error: "Företagsnamn krävs." };
+
+  const org = await db.organization.findUnique({ where: { id } });
+  if (!org) return { error: "Företaget hittades inte." };
+
+  await db.organization.update({
+    where: { id },
+    data: {
+      name,
+      city: city || null,
+      plan: VALID_PLANS.includes(plan) ? plan : org.plan,
+      status: VALID_STATUSES.includes(status) ? status : org.status,
+    },
+  });
+
+  revalidatePath("/superadmin");
+  revalidatePath("/superadmin/anvandare");
+  return { success: true };
+}
+
+/**
+ * Superadmin tar bort ett företag. Tack vare onDelete: Cascade försvinner
+ * även medlemskap, fordon, mekaniker och jobb. Globala användarkonton (User)
+ * ligger kvar eftersom de kan tillhöra flera företag.
+ */
+export async function deleteTenant(id: string): Promise<ActionResult> {
+  await requireSuperadmin();
+
+  if (!id) return { error: "Företags-id saknas." };
+
+  const org = await db.organization.findUnique({ where: { id } });
+  if (!org) return { error: "Företaget hittades inte." };
+
+  await db.organization.delete({ where: { id } });
+
+  revalidatePath("/superadmin");
+  revalidatePath("/superadmin/anvandare");
   return { success: true };
 }
 
@@ -95,6 +148,77 @@ export async function createUserInTenant(
       createdAt: new Date(),
     },
   });
+
+  revalidatePath("/superadmin");
+  revalidatePath("/superadmin/anvandare");
+  return { success: true };
+}
+
+const VALID_MEMBER_ROLES = ["owner", "admin", "member"];
+
+/**
+ * Superadmin redigerar en användare: namn, roll i företaget och aktiv/inaktiv
+ * (inaktiv = bannad i Better Auth, kan inte logga in).
+ */
+export async function updateUser(formData: FormData): Promise<ActionResult> {
+  await requireSuperadmin();
+
+  const memberId = String(formData.get("memberId") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const role = String(formData.get("role") ?? "");
+  const status = String(formData.get("status") ?? "");
+
+  if (!memberId) return { error: "Medlems-id saknas." };
+  if (!name) return { error: "Namn krävs." };
+
+  const member = await db.member.findUnique({ where: { id: memberId } });
+  if (!member) return { error: "Användaren hittades inte." };
+
+  await db.user.update({
+    where: { id: member.userId },
+    data: {
+      name,
+      banned: status === "inactive",
+      ...(status === "inactive" ? {} : { banReason: null, banExpires: null }),
+    },
+  });
+
+  await db.member.update({
+    where: { id: memberId },
+    data: {
+      role: VALID_MEMBER_ROLES.includes(role) ? role : member.role,
+    },
+  });
+
+  revalidatePath("/superadmin/anvandare");
+  return { success: true };
+}
+
+/**
+ * Superadmin tar bort en användare från ett företag (raderar medlemskapet).
+ * Om det var användarens enda medlemskap – och den inte är superadmin –
+ * raderas även det globala kontot så att inga föräldralösa konton lämnas kvar.
+ */
+export async function removeUserFromTenant(
+  memberId: string,
+): Promise<ActionResult> {
+  await requireSuperadmin();
+
+  if (!memberId) return { error: "Medlems-id saknas." };
+
+  const member = await db.member.findUnique({
+    where: { id: memberId },
+    include: { user: true },
+  });
+  if (!member) return { error: "Användaren hittades inte." };
+
+  await db.member.delete({ where: { id: memberId } });
+
+  // Städa bort föräldralösa konton (men aldrig superadmins).
+  const remaining = await db.member.count({ where: { userId: member.userId } });
+  if (remaining === 0 && member.user.role !== "admin") {
+    await db.user.delete({ where: { id: member.userId } });
+  }
 
   revalidatePath("/superadmin");
   revalidatePath("/superadmin/anvandare");

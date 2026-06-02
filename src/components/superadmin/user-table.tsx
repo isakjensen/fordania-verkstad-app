@@ -1,4 +1,3 @@
-import { MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import type { PlatformUserRow } from "@/lib/data/platform";
 import { CreateUserButton } from "./create-user-button";
+import { UserRowActions } from "./user-row-actions";
 
 const roleLabels: Record<string, string> = {
   owner: "Ägare",
@@ -85,7 +85,7 @@ export function UserTable({ users, tenants }: UserTableProps) {
             {users.map((u) => {
               const status = userStatusMeta[u.status] ?? userStatusMeta.active;
               return (
-                <TableRow key={u.id + u.tenantName}>
+                <TableRow key={u.memberId}>
                   <TableCell className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <Avatar initials={u.initials} size="size-9 text-sm" />
@@ -118,12 +118,7 @@ export function UserTable({ users, tenants }: UserTableProps) {
                     </Badge>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-right">
-                    <button
-                      className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-slate-100 hover:text-ink"
-                      aria-label={`Hantera ${u.name}`}
-                    >
-                      <MoreHorizontal className="size-5" />
-                    </button>
+                    <UserRowActions user={u} />
                   </TableCell>
                 </TableRow>
               );

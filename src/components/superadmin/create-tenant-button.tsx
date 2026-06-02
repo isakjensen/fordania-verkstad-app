@@ -45,15 +45,15 @@ export function CreateTenantButton() {
         render={
           <Button size="sm" variant="success">
             <Plus className="size-4" />
-            <span className="hidden sm:inline">Lägg till kund</span>
+            <span className="hidden sm:inline">Lägg till företag</span>
           </Button>
         }
       />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Ny kund</DialogTitle>
+          <DialogTitle>Nytt företag</DialogTitle>
           <DialogDescription>
-            Skapa ett nytt företag (tenant) på plattformen.
+            Skapa ett nytt företag på plattformen.
           </DialogDescription>
         </DialogHeader>
 
@@ -100,7 +100,7 @@ export function CreateTenantButton() {
               ) : (
                 <Plus className="size-4" />
               )}
-              Skapa kund
+              Skapa företag
             </Button>
           </DialogFooter>
         </form>

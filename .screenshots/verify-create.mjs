@@ -11,18 +11,18 @@ try {
     page.click('button[type="submit"]'),
   ]);
   await page.waitForURL(/superadmin/, { timeout: 40000 }).catch(() => {});
-  await page.goto("http://localhost:3000/superadmin/tenants", {
+  await page.goto("http://localhost:3000/superadmin", {
     waitUntil: "networkidle",
     timeout: 40000,
   });
   await page.waitForTimeout(1500);
 
-  // Öppna "Lägg till kund"-dialogen
-  await page.getByRole("button", { name: /Lägg till kund/ }).click();
+  // Öppna "Lägg till företag"-dialogen
+  await page.getByRole("button", { name: /Lägg till företag/ }).click();
   await page.waitForTimeout(600);
   await page.fill("#name", "Demo Verkstad AB");
   await page.fill("#city", "Malmö");
-  await page.getByRole("button", { name: /Skapa kund/ }).click();
+  await page.getByRole("button", { name: /Skapa företag/ }).click();
   await page.waitForTimeout(2500);
 
   const visible = await page.getByText("Demo Verkstad AB").count();

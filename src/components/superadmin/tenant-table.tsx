@@ -1,4 +1,4 @@
-import { Search, MoreHorizontal } from "lucide-react";
+import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,7 @@ import {
 } from "@/lib/tenants";
 import type { TenantRow } from "@/lib/data/platform";
 import { CreateTenantButton } from "./create-tenant-button";
+import { TenantRowActions } from "./tenant-row-actions";
 
 const df = new Intl.DateTimeFormat("sv-SE", {
   year: "numeric",
@@ -45,7 +46,7 @@ interface TenantTableProps {
 
 export function TenantTable({
   tenants,
-  title = "Kunder",
+  title = "Företag",
   subtitle,
   showToolbar = true,
 }: TenantTableProps) {
@@ -82,8 +83,8 @@ export function TenantTable({
 
       {tenants.length === 0 ? (
         <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-          Inga kunder ännu. Klicka på &quot;Lägg till kund&quot; för att skapa
-          den första.
+          Inga företag ännu. Klicka på &quot;Lägg till företag&quot; för att
+          skapa det första.
         </p>
       ) : (
         <Table>
@@ -157,12 +158,7 @@ export function TenantTable({
                     {df.format(t.createdAt)}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-right">
-                    <button
-                      className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-slate-100 hover:text-ink"
-                      aria-label={`Hantera ${t.name}`}
-                    >
-                      <MoreHorizontal className="size-5" />
-                    </button>
+                    <TenantRowActions tenant={t} />
                   </TableCell>
                 </TableRow>
               );

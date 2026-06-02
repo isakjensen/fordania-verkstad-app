@@ -1,28 +1,21 @@
+import type { Metadata } from "next";
 import { SuperBanner } from "@/components/superadmin/page-banner";
-import { PlatformStats } from "@/components/superadmin/platform-stats";
 import { TenantTable } from "@/components/superadmin/tenant-table";
-import { getTenants, getPlatformStats } from "@/lib/data/platform";
+import { getTenants } from "@/lib/data/platform";
 
-export default async function SuperadminOverviewPage() {
-  const [tenants, stats] = await Promise.all([
-    getTenants(5),
-    getPlatformStats(),
-  ]);
+export const metadata: Metadata = { title: "Företag · Superadmin" };
+
+export default async function SuperadminCompaniesPage() {
+  const tenants = await getTenants();
 
   return (
     <div className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <SuperBanner
-        eyebrow="Plattform"
-        title="Översikt"
-        description="Status för alla kunder som använder Fordania Verkstad – företag, användare och fordon."
+        eyebrow="Företag"
+        title="Hantera företag"
+        description="Alla företag som är anslutna till plattformen. Lägg till nya, redigera uppgifter, byt plan eller ta bort konton."
       />
-      <PlatformStats stats={stats} />
-      <TenantTable
-        tenants={tenants}
-        title="Senaste kunder"
-        subtitle="De senast skapade företagen"
-        showToolbar={false}
-      />
+      <TenantTable tenants={tenants} title="Alla företag" />
     </div>
   );
 }
