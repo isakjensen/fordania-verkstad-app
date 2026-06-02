@@ -5,6 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { TenantLogo } from "@/components/ui/tenant-logo";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   tenantStatusMeta,
   planMeta,
   type TenantStatus,
@@ -19,7 +27,14 @@ const df = new Intl.DateTimeFormat("sv-SE", {
   day: "numeric",
 });
 
-const defaultStatus = { label: "Okänd", className: "bg-slate-100 text-slate-500", dot: "bg-slate-400" };
+const defaultStatus = {
+  label: "Okänd",
+  className: "bg-slate-100 text-slate-500",
+  dot: "bg-slate-400",
+};
+
+const headClass =
+  "h-11 px-4 text-[0.7rem] font-semibold uppercase tracking-wider text-muted-foreground";
 
 interface TenantTableProps {
   tenants: TenantRow[];
@@ -65,86 +80,95 @@ export function TenantTable({
         </div>
       ) : null}
 
-      {/* Kolumnrubriker (desktop) */}
-      <div className="hidden items-center gap-4 border-b border-line px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground lg:flex">
-        <span className="flex-1">Företag</span>
-        <span className="w-24">Plan</span>
-        <span className="w-28">Status</span>
-        <span className="w-32 text-right">Användare / fordon</span>
-        <span className="w-28">Skapad</span>
-        <span className="w-9" />
-      </div>
-
       {tenants.length === 0 ? (
-        <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-          Inga kunder ännu. Klicka på "Lägg till kund" för att skapa den första.
+        <p className="px-5 py-12 text-center text-sm text-muted-foreground">
+          Inga kunder ännu. Klicka på &quot;Lägg till kund&quot; för att skapa
+          den första.
         </p>
       ) : (
-        <ul className="divide-y divide-line">
-          {tenants.map((t) => {
-            const status = tenantStatusMeta[t.status as TenantStatus] ?? defaultStatus;
-            return (
-              <li
-                key={t.id}
-                className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-surface-muted sm:gap-4"
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-surface-muted/40 hover:bg-surface-muted/40">
+              <TableHead className={cn(headClass, "min-w-[220px]")}>
+                Företag
+              </TableHead>
+              <TableHead className={cn(headClass, "hidden md:table-cell")}>
+                Plan
+              </TableHead>
+              <TableHead className={headClass}>Status</TableHead>
+              <TableHead
+                className={cn(headClass, "hidden text-right lg:table-cell")}
               >
-                {/* Företag */}
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <TenantLogo tenant={t} />
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-ink">{t.name}</p>
-                    <p className="truncate text-sm text-muted-foreground">
-                      {t.city ?? "—"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Plan */}
-                <Badge
-                  className={cn(
-                    "hidden w-24 justify-center lg:inline-flex",
-                    planMeta[t.plan as TenantPlan] ?? "bg-slate-100 text-slate-600",
-                  )}
-                >
-                  {t.plan}
-                </Badge>
-
-                {/* Status */}
-                <div className="hidden w-28 sm:block">
-                  <Badge className={status.className} dot={status.dot}>
-                    {status.label}
-                  </Badge>
-                </div>
-
-                {/* Användare / fordon */}
-                <div className="hidden w-32 text-right lg:block">
-                  <p className="text-sm font-semibold text-ink tabular-nums">
-                    {t.users} / {t.vehicles}
-                  </p>
-                  <p className="text-xs text-muted-foreground">anv. / fordon</p>
-                </div>
-
-                {/* Skapad */}
-                <p className="hidden w-28 truncate text-sm text-muted-foreground lg:block">
-                  {df.format(t.createdAt)}
-                </p>
-
-                {/* Status (mobil) + åtgärd */}
-                <div className="sm:hidden">
-                  <Badge className={status.className} dot={status.dot}>
-                    {status.label}
-                  </Badge>
-                </div>
-                <button
-                  className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-slate-100 hover:text-ink"
-                  aria-label={`Hantera ${t.name}`}
-                >
-                  <MoreHorizontal className="size-5" />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+                Användare
+              </TableHead>
+              <TableHead
+                className={cn(headClass, "hidden text-right lg:table-cell")}
+              >
+                Fordon
+              </TableHead>
+              <TableHead className={cn(headClass, "hidden xl:table-cell")}>
+                Skapad
+              </TableHead>
+              <TableHead className={cn(headClass, "w-12")} />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {tenants.map((t) => {
+              const status =
+                tenantStatusMeta[t.status as TenantStatus] ?? defaultStatus;
+              return (
+                <TableRow key={t.id}>
+                  <TableCell className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <TenantLogo tenant={t} size="sm" />
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-ink">
+                          {t.name}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {t.city ?? "—"}
+                        </p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden px-4 py-3 md:table-cell">
+                    <Badge
+                      className={cn(
+                        "justify-center",
+                        planMeta[t.plan as TenantPlan] ??
+                          "bg-slate-100 text-slate-600",
+                      )}
+                    >
+                      {t.plan}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="px-4 py-3">
+                    <Badge className={status.className} dot={status.dot}>
+                      {status.label}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="hidden px-4 py-3 text-right font-semibold text-ink tabular-nums lg:table-cell">
+                    {t.users}
+                  </TableCell>
+                  <TableCell className="hidden px-4 py-3 text-right font-semibold text-ink tabular-nums lg:table-cell">
+                    {t.vehicles}
+                  </TableCell>
+                  <TableCell className="hidden px-4 py-3 text-sm text-muted-foreground xl:table-cell">
+                    {df.format(t.createdAt)}
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-right">
+                    <button
+                      className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-slate-100 hover:text-ink"
+                      aria-label={`Hantera ${t.name}`}
+                    >
+                      <MoreHorizontal className="size-5" />
+                    </button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       )}
     </Card>
   );

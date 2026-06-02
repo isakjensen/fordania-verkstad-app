@@ -3,6 +3,14 @@ import { cn } from "@/lib/utils";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { PlatformUserRow } from "@/lib/data/platform";
 import { CreateUserButton } from "./create-user-button";
 
@@ -10,6 +18,12 @@ const roleLabels: Record<string, string> = {
   owner: "Ägare",
   admin: "Admin",
   member: "Användare",
+};
+
+const roleClass: Record<string, string> = {
+  owner: "bg-violet-100 text-violet-700",
+  admin: "bg-brand-50 text-brand-700",
+  member: "bg-slate-100 text-slate-600",
 };
 
 const userStatusMeta: Record<
@@ -28,6 +42,9 @@ const userStatusMeta: Record<
   },
 };
 
+const headClass =
+  "h-11 px-4 text-[0.7rem] font-semibold uppercase tracking-wider text-muted-foreground";
+
 interface UserTableProps {
   users: PlatformUserRow[];
   tenants: { id: string; name: string }[];
@@ -43,72 +60,76 @@ export function UserTable({ users, tenants }: UserTableProps) {
         action={<CreateUserButton tenants={tenants} />}
       />
 
-      {/* Kolumnrubriker (desktop) */}
-      <div className="hidden items-center gap-4 border-b border-line px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground lg:flex">
-        <span className="flex-1">Användare</span>
-        <span className="w-36">Roll</span>
-        <span className="w-48">Företag</span>
-        <span className="w-28">Status</span>
-        <span className="w-9" />
-      </div>
-
       {users.length === 0 ? (
-        <p className="px-5 py-10 text-center text-sm text-muted-foreground">
+        <p className="px-5 py-12 text-center text-sm text-muted-foreground">
           Inga användare ännu.
         </p>
       ) : (
-        <ul className="divide-y divide-line">
-          {users.map((u) => {
-            const status = userStatusMeta[u.status] ?? userStatusMeta.active;
-            return (
-              <li
-                key={u.id + u.tenantName}
-                className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-surface-muted sm:gap-4"
-              >
-                {/* Användare */}
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <Avatar initials={u.initials} size="size-9 text-sm" />
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-ink">{u.name}</p>
-                    <p className="truncate text-sm text-muted-foreground">
-                      {u.email}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Roll */}
-                <span className="hidden w-36 text-sm font-medium text-ink-soft lg:block">
-                  {roleLabels[u.role] ?? u.role}
-                </span>
-
-                {/* Företag */}
-                <span className="hidden w-48 truncate text-sm text-ink-soft lg:block">
-                  {u.tenantName}
-                </span>
-
-                {/* Status */}
-                <div className="hidden w-28 sm:block">
-                  <Badge className={status.className} dot={status.dot}>
-                    {status.label}
-                  </Badge>
-                </div>
-
-                {/* Status (mobil) + åtgärd */}
-                <div className="sm:hidden">
-                  <Badge className={cn(status.className)} dot={status.dot}>
-                    {status.label}
-                  </Badge>
-                </div>
-                <button
-                  className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-slate-100 hover:text-ink"
-                  aria-label={`Hantera ${u.name}`}
-                >
-                  <MoreHorizontal className="size-5" />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-surface-muted/40 hover:bg-surface-muted/40">
+              <TableHead className={cn(headClass, "min-w-[240px]")}>
+                Användare
+              </TableHead>
+              <TableHead className={cn(headClass, "hidden sm:table-cell")}>
+                Roll
+              </TableHead>
+              <TableHead className={cn(headClass, "hidden lg:table-cell")}>
+                Företag
+              </TableHead>
+              <TableHead className={headClass}>Status</TableHead>
+              <TableHead className={cn(headClass, "w-12")} />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {users.map((u) => {
+              const status = userStatusMeta[u.status] ?? userStatusMeta.active;
+              return (
+                <TableRow key={u.id + u.tenantName}>
+                  <TableCell className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar initials={u.initials} size="size-9 text-sm" />
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-ink">
+                          {u.name}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {u.email}
+                        </p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden px-4 py-3 sm:table-cell">
+                    <Badge
+                      className={cn(
+                        "justify-center",
+                        roleClass[u.role] ?? "bg-slate-100 text-slate-600",
+                      )}
+                    >
+                      {roleLabels[u.role] ?? u.role}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="hidden px-4 py-3 text-sm text-ink-soft lg:table-cell">
+                    {u.tenantName}
+                  </TableCell>
+                  <TableCell className="px-4 py-3">
+                    <Badge className={status.className} dot={status.dot}>
+                      {status.label}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-right">
+                    <button
+                      className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-slate-100 hover:text-ink"
+                      aria-label={`Hantera ${u.name}`}
+                    >
+                      <MoreHorizontal className="size-5" />
+                    </button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       )}
     </Card>
   );
