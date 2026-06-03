@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
+import { PageTransition } from "./page-transition";
 import type { SwitcherData } from "@/lib/data/tenant-context";
 
 const COLLAPSE_KEY = "fv-sidebar-collapsed";
@@ -69,7 +70,9 @@ export function AppShell({
       {/* Innehållskolumn */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <Topbar onOpenMobile={() => setMobileOpen(true)} />
-        <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
+        <main className="min-h-0 flex-1 overflow-hidden">
+          <PageTransition>{children}</PageTransition>
+        </main>
       </div>
 
       {/* Mobil off-canvas-meny */}
