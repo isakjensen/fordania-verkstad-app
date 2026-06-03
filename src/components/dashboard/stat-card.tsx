@@ -7,13 +7,13 @@ import { fadeUpItem } from "./motion";
 
 type Tone = "brand" | "success" | "warning" | "danger" | "violet";
 
-/** Tunn accentlinje upptill – enda färgmarkören, annars monokromt. */
-const accent: Record<Tone, string> = {
-  brand: "bg-brand-500",
-  success: "bg-success",
-  warning: "bg-warning",
-  danger: "bg-danger",
-  violet: "bg-violet-500",
+/** Mjukt tonat ikon-chip per ton – bär färgmarkören, annars svalt och rent. */
+const chip: Record<Tone, string> = {
+  brand: "bg-brand-50 text-brand-600",
+  success: "bg-success-soft text-success",
+  warning: "bg-warning-soft text-warning",
+  danger: "bg-danger-soft text-danger",
+  violet: "bg-violet-100 text-violet-600",
 };
 
 interface StatCardProps {
@@ -38,26 +38,26 @@ export function StatCard({
       variants={fadeUpItem}
       className={cn(
         "group relative overflow-hidden rounded-xl border border-line bg-surface",
-        "p-5 transition-colors duration-200 hover:border-line-strong",
+        "p-5 transition-all duration-200",
+        "hover:-translate-y-0.5 hover:border-line-strong hover:shadow-lift",
       )}
     >
-      {/* Hårfin accent upptill */}
-      <span
-        className={cn(
-          "absolute inset-x-0 top-0 h-0.5 opacity-70",
-          accent[tone],
-        )}
-        aria-hidden
-      />
-
-      <div className="flex items-center justify-between">
-        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+      <div className="flex items-start justify-between gap-3">
+        <p className="mt-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
           {label}
         </p>
-        <Icon className="size-4 text-muted-foreground/50" strokeWidth={2} />
+        <span
+          className={cn(
+            "flex size-10 shrink-0 items-center justify-center rounded-xl",
+            chip[tone],
+          )}
+          aria-hidden
+        >
+          <Icon className="size-[1.15rem]" strokeWidth={2} />
+        </span>
       </div>
 
-      <div className="mt-4 flex items-baseline gap-2.5">
+      <div className="mt-3 flex items-baseline gap-2.5">
         <span className="text-[2.25rem] font-bold leading-none tracking-tight text-ink tabular-nums">
           {value}
         </span>
