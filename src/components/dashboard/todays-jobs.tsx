@@ -10,7 +10,6 @@ import {
   ArrowRight,
   type LucideIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
@@ -131,13 +130,12 @@ export function TodaysJobs({ jobs }: { jobs: DashboardData["todaysJobs"] }) {
                   ) : null}
                 </div>
 
-                {/* Status */}
-                <Badge
-                  className={cn("shrink-0", status.className)}
-                  dot={status.dot}
-                >
-                  {status.label}
-                </Badge>
+                {/* Status – fast kolumnbredd så raderna linjerar */}
+                <div className="flex w-36 shrink-0 justify-end">
+                  <Badge className={status.className} dot={status.dot}>
+                    {status.label}
+                  </Badge>
+                </div>
               </li>
             );
           })}

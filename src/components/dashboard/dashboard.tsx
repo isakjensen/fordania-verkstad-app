@@ -9,6 +9,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { StatCard } from "./stat-card";
+import { QuickActions } from "./quick-actions";
 import { TodaysJobs } from "./todays-jobs";
 import { MechanicLoad } from "./mechanic-load";
 import { FleetStatus } from "./fleet-status";
@@ -43,9 +44,10 @@ export function Dashboard({
   };
 
   return (
-    // Fyller hela ytan på desktop (ingen sidscroll) – listorna scrollar internt.
-    // På mobil får sidan växa naturligt och skalets <main> sköter scrollen.
-    <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 lg:h-full lg:overflow-hidden lg:py-5">
+    // Fyller hela ytan utan sidscroll på desktop (mus) – listorna scrollar internt.
+    // På touch (iPad/mobil) får sidan i stället växa och scrolla naturligt, så
+    // de större tryckytorna alltid får plats.
+    <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 lg:py-5 pointer-fine:lg:h-full pointer-fine:lg:overflow-hidden">
       {/* Sidhuvud */}
       <header className="flex shrink-0 items-end justify-between gap-4">
         <div className="min-w-0">
@@ -111,6 +113,9 @@ export function Dashboard({
               tone="danger"
             />
           </motion.div>
+
+          {/* Snabbåtgärder */}
+          <QuickActions />
 
           {/* Innehåll – fyller resten av höjden */}
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-3">
