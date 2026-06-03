@@ -19,7 +19,7 @@ interface FieldSelectProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
-  /** Höjd: "md" (40px, standard) eller "sm" (32px, matchar kompakta knappar). */
+  /** Höjd: "sm" (32px, standard – matchar knapparnas höjd) eller "md" (40px). */
   size?: "sm" | "md";
 }
 
@@ -37,7 +37,7 @@ export function FieldSelect({
   placeholder = "Välj…",
   disabled,
   className,
-  size = "md",
+  size = "sm",
 }: FieldSelectProps) {
   // Mappning value→label så att Select.Value visar etiketten (inte råvärdet).
   const items = Object.fromEntries(options.map((o) => [o.value, o.label]));

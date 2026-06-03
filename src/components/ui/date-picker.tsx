@@ -21,7 +21,7 @@ interface DatePickerProps {
   clearable?: boolean;
   /** Spärra datum efter idag (t.ex. för avläsningar som inte kan ske i framtiden). */
   disableFuture?: boolean;
-  /** Höjd: "md" (40px, standard) eller "sm" (32px, matchar kompakta knappar). */
+  /** Höjd: "sm" (32px, standard – matchar knapparnas höjd) eller "md" (40px). */
   size?: "sm" | "md";
 }
 
@@ -80,7 +80,7 @@ export function DatePicker({
   className,
   clearable = true,
   disableFuture = false,
-  size = "md",
+  size = "sm",
 }: DatePickerProps) {
   const heightClass = size === "sm" ? "h-8" : "h-10";
   const today = new Date();

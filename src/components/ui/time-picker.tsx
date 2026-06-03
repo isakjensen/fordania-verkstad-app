@@ -12,7 +12,7 @@ interface TimePickerProps {
   id?: string;
   disabled?: boolean;
   className?: string;
-  /** Höjd: "md" (40px, standard) eller "sm" (32px). */
+  /** Höjd: "sm" (32px, standard – matchar knapparnas höjd) eller "md" (40px). */
   size?: "sm" | "md";
   /** Minutsteg i listan (standard 5). */
   minuteStep?: number;
@@ -81,7 +81,7 @@ export function TimePicker({
   id,
   disabled,
   className,
-  size = "md",
+  size = "sm",
   minuteStep = 5,
 }: TimePickerProps) {
   const heightClass = size === "sm" ? "h-8" : "h-10";
