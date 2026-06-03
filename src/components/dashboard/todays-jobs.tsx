@@ -38,7 +38,7 @@ function duration(min: number | null) {
 
 export function TodaysJobs({ jobs }: { jobs: DashboardData["todaysJobs"] }) {
   return (
-    <Card className="overflow-hidden">
+    <Card className="flex h-full flex-col">
       <CardHeader
         tone="brand"
         title="Dagens jobb"
@@ -54,11 +54,13 @@ export function TodaysJobs({ jobs }: { jobs: DashboardData["todaysJobs"] }) {
         }
       />
       {jobs.length === 0 ? (
-        <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-          Inga inplanerade arbetsordrar idag.
-        </p>
+        <div className="flex flex-1 items-center justify-center px-5 py-12">
+          <p className="text-center text-sm text-muted-foreground">
+            Inga inplanerade arbetsordrar idag.
+          </p>
+        </div>
       ) : (
-        <ul className="divide-y divide-line">
+        <ul className="min-h-0 flex-1 divide-y divide-line overflow-y-auto">
           {jobs.map((job) => {
             const Icon = typeIcon[job.type] ?? Wrench;
             const status =

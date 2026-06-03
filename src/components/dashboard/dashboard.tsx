@@ -12,7 +12,7 @@ import { StatCard } from "./stat-card";
 import { TodaysJobs } from "./todays-jobs";
 import { MechanicLoad } from "./mechanic-load";
 import { FleetStatus } from "./fleet-status";
-import { staggerContainer, fadeUpItem } from "./motion";
+import { staggerContainer } from "./motion";
 import type { DashboardData } from "@/lib/data/dashboard";
 
 function todayLabel() {
@@ -43,38 +43,44 @@ export function Dashboard({
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
+    // Fyller hela ytan på desktop (ingen sidscroll) – listorna scrollar internt.
+    // På mobil får sidan växa naturligt och skalets <main> sköter scrollen.
+    <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 lg:h-full lg:overflow-hidden lg:py-5">
       {/* Sidhuvud */}
-      <div className="flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground first-letter:uppercase">
-            {date || " "}
+      <header className="flex shrink-0 items-end justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            {date || " "}
           </p>
-          <h1 className="mt-2 text-[1.75rem] font-extrabold tracking-tight text-ink sm:text-[2.1rem]">
+          <h1 className="mt-1 text-[1.6rem] font-extrabold leading-none tracking-tight text-ink">
             Översikt
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Här är läget i verkstaden just nu.
-          </p>
         </div>
-        <p className="hidden text-sm text-muted-foreground sm:block">
-          Uppdaterad{" "}
-          <span className="font-semibold text-ink-soft">just nu</span>
-        </p>
-      </div>
+        <div className="hidden items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 shadow-soft sm:flex">
+          <span className="relative flex size-2">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-success/60" />
+            <span className="relative inline-flex size-2 rounded-full bg-success" />
+          </span>
+          <span className="text-xs font-medium text-ink-soft">
+            Uppdaterad just nu
+          </span>
+        </div>
+      </header>
 
       {!hasOrg ? (
-        <p className="mt-10 text-center text-sm text-muted-foreground">
-          Välj en verkstad för att se översikten.
-        </p>
+        <div className="flex flex-1 items-center justify-center py-20">
+          <p className="text-sm text-muted-foreground">
+            Välj en verkstad för att se översikten.
+          </p>
+        </div>
       ) : (
-        <>
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
           {/* KPI-kort */}
           <motion.div
             variants={staggerContainer}
             initial="hidden"
             animate="show"
-            className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+            className="grid shrink-0 grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4"
           >
             <StatCard
               icon={Wrench}
@@ -106,17 +112,12 @@ export function Dashboard({
             />
           </motion.div>
 
-          {/* Innehåll */}
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="show"
-            className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3"
-          >
-            <motion.div variants={fadeUpItem} className="lg:col-span-2">
+          {/* Innehåll – fyller resten av höjden */}
+          <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="min-h-0 lg:col-span-2">
               <TodaysJobs jobs={data?.todaysJobs ?? []} />
-            </motion.div>
-            <motion.div variants={fadeUpItem} className="space-y-6">
+            </div>
+            <div className="flex min-h-0 flex-col gap-4">
               <FleetStatus
                 fleet={
                   data?.fleet ?? {
@@ -129,9 +130,9 @@ export function Dashboard({
                 }
               />
               <MechanicLoad mechanics={data?.mechanicLoad ?? []} />
-            </motion.div>
-          </motion.div>
-        </>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

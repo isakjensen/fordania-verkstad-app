@@ -18,18 +18,20 @@ export function MechanicLoad({
   mechanics: DashboardData["mechanicLoad"];
 }) {
   return (
-    <Card>
+    <Card className="flex min-h-0 flex-1 flex-col">
       <CardHeader
         tone="brand"
         title="Beläggning"
         subtitle="Mekanikernas kapacitet idag"
       />
       {mechanics.length === 0 ? (
-        <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-          Inga mekaniker i verkstaden.
-        </p>
+        <div className="flex flex-1 items-center justify-center px-5 py-10">
+          <p className="text-center text-sm text-muted-foreground">
+            Inga mekaniker i verkstaden.
+          </p>
+        </div>
       ) : (
-        <ul className="space-y-4 px-5 pt-4 pb-5">
+        <ul className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 pt-4 pb-5">
           {mechanics.map((m) => (
             <li key={m.id} className="flex items-center gap-3">
               <Avatar initials={m.initials} size="size-9 text-sm" />

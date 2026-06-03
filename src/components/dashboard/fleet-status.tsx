@@ -41,7 +41,7 @@ export function FleetStatus({ fleet }: { fleet: DashboardData["fleet"] }) {
   let acc = 0;
 
   return (
-    <Card>
+    <Card className="shrink-0">
       <CardHeader
         tone="brand"
         title="Fordonsstatus"
