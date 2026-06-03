@@ -40,8 +40,8 @@ function NavLink({
         "transition-colors duration-150",
         collapsed ? "h-9 w-9 justify-center" : "h-9 gap-3 px-2.5",
         active
-          ? "bg-surface-muted font-semibold text-ink"
-          : "font-medium text-ink-soft hover:bg-surface-muted/70 hover:text-ink",
+          ? "bg-brand-50 font-semibold text-brand-700"
+          : "font-medium text-ink-soft hover:bg-surface-muted hover:text-ink",
       )}
     >
       {/* Blå accentstapel för aktiv vy */}
