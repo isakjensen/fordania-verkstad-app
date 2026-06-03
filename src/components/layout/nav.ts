@@ -5,8 +5,6 @@ import {
   ClipboardCheck,
   Car,
   Users,
-  Package,
-  BarChart3,
   Contact,
   Settings,
   HelpCircle,
@@ -43,8 +41,6 @@ export const navGroups: NavGroup[] = [
       { label: "Kunder", href: "/kunder", icon: Contact },
       { label: "Fordon", href: "/fordon", icon: Car },
       { label: "Användare", href: "/anvandare", icon: Users },
-      { label: "Lager & delar", href: "/lager", icon: Package },
-      { label: "Rapporter", href: "/rapporter", icon: BarChart3 },
     ],
   },
 ];
