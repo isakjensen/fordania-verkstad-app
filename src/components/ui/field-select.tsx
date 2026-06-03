@@ -19,6 +19,8 @@ interface FieldSelectProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  /** Höjd: "md" (40px, standard) eller "sm" (32px, matchar kompakta knappar). */
+  size?: "sm" | "md";
 }
 
 /**
@@ -35,13 +37,17 @@ export function FieldSelect({
   placeholder = "Välj…",
   disabled,
   className,
+  size = "md",
 }: FieldSelectProps) {
   // Mappning value→label så att Select.Value visar etiketten (inte råvärdet).
   const items = Object.fromEntries(options.map((o) => [o.value, o.label]));
+  const heightClass = size === "sm" ? "h-8" : "h-10";
 
   return (
     // Fast höjd så Base UI:s fokusvakter inte kan ändra radens layout.
-    <div className={cn("relative h-10 w-full", className)}>
+    // min-w-0 låter select:en krympa i flex-rader så långa värden inte
+    // knuffar ut intilliggande element.
+    <div className={cn("relative w-full min-w-0", heightClass, className)}>
     <Select.Root
       items={items}
       value={value}
@@ -53,9 +59,12 @@ export function FieldSelect({
         id={id}
         type="button"
         disabled={disabled}
-        className="flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-line bg-surface px-3 text-sm text-ink shadow-xs outline-none transition-colors hover:border-brand-300 focus-visible:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500/30 disabled:cursor-not-allowed disabled:opacity-50 data-[popup-open]:border-brand-500 data-[popup-open]:ring-2 data-[popup-open]:ring-brand-500/30 data-placeholder:text-muted-foreground"
+        className={cn(
+          "flex w-full items-center justify-between gap-2 rounded-lg border border-line bg-surface px-3 text-sm text-ink shadow-xs outline-none transition-colors hover:border-brand-300 focus-visible:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500/30 disabled:cursor-not-allowed disabled:opacity-50 data-[popup-open]:border-brand-500 data-[popup-open]:ring-2 data-[popup-open]:ring-brand-500/30 data-placeholder:text-muted-foreground",
+          heightClass,
+        )}
       >
-        <Select.Value placeholder={placeholder} className="truncate text-left" />
+        <Select.Value placeholder={placeholder} className="min-w-0 flex-1 truncate text-left" />
         <Select.Icon
           render={
             <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 [[data-popup-open]_&]:rotate-180" />

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldSelect } from "@/components/ui/field-select";
 import { DatePicker } from "@/components/ui/date-picker";
+import { TimePicker } from "@/components/ui/time-picker";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,8 @@ export function CreateWorkOrderButton({
 }) {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState("");
+  const [startTime, setStartTime] = useState("08:00");
+  const [endTime, setEndTime] = useState("10:00");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
   const router = useRouter();
@@ -39,6 +42,8 @@ export function CreateWorkOrderButton({
     setError("");
     const formData = new FormData(e.currentTarget);
     if (date) formData.set("date", date);
+    formData.set("startTime", startTime);
+    formData.set("endTime", endTime);
     startTransition(async () => {
       const res = await createWorkOrder(formData);
       if ("error" in res) {
@@ -56,6 +61,8 @@ export function CreateWorkOrderButton({
     if (next) {
       setError("");
       setDate("");
+      setStartTime("08:00");
+      setEndTime("10:00");
     }
   }
 
@@ -121,11 +128,11 @@ export function CreateWorkOrderButton({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="wo-start">Från</Label>
-              <Input id="wo-start" name="startTime" type="time" defaultValue="08:00" />
+              <TimePicker id="wo-start" value={startTime} onChange={setStartTime} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="wo-end">Till</Label>
-              <Input id="wo-end" name="endTime" type="time" defaultValue="10:00" />
+              <TimePicker id="wo-end" value={endTime} onChange={setEndTime} />
             </div>
           </div>
 

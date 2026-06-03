@@ -106,6 +106,7 @@ export function MechanicLinks({
         {available.length > 0 ? (
           <div className="flex gap-2 border-t border-line pt-3">
             <FieldSelect
+              size="sm"
               className="flex-1"
               placeholder="Välj mekaniker…"
               value={selected}

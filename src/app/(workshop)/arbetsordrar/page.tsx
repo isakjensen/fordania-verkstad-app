@@ -41,8 +41,8 @@ export default async function ArbetsordrarPage() {
     : [[], [], []];
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-[1440px] flex-col px-4 py-5 sm:px-6 lg:px-8">
+      <div className="flex shrink-0 flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             Verkstad
@@ -59,13 +59,14 @@ export default async function ArbetsordrarPage() {
         ) : null}
       </div>
 
-      <Card className="mt-6">
+      <Card className="mt-5 flex min-h-0 flex-1 flex-col">
         <CardHeader
           tone="brand"
           title="Alla arbetsordrar"
           subtitle={`${orders.length} arbetsordrar`}
         />
 
+        <div className="min-h-0 flex-1 overflow-auto">
         {!organizationId ? (
           <p className="px-5 py-12 text-center text-sm text-muted-foreground">
             Välj en verkstad för att se dess arbetsordrar.
@@ -83,7 +84,7 @@ export default async function ArbetsordrarPage() {
         ) : (
           <Table>
             <TableHeader>
-              <TableRow className="bg-surface-muted/40 hover:bg-surface-muted/40">
+              <TableRow className="sticky top-0 z-10 bg-surface-muted [&_th]:bg-surface-muted hover:bg-surface-muted">
                 <TableHead className={`${headClass} min-w-[140px]`}>Typ</TableHead>
                 <TableHead className={headClass}>Status</TableHead>
                 <TableHead className={`${headClass} hidden md:table-cell`}>
@@ -158,6 +159,7 @@ export default async function ArbetsordrarPage() {
             </TableBody>
           </Table>
         )}
+        </div>
       </Card>
     </div>
   );

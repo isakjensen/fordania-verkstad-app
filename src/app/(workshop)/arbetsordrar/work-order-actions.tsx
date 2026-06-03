@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldSelect } from "@/components/ui/field-select";
 import { DatePicker } from "@/components/ui/date-picker";
+import { TimePicker } from "@/components/ui/time-picker";
 import {
   Dialog,
   DialogContent,
@@ -47,6 +48,8 @@ export function WorkOrderActions({ job }: { job: JobInfo }) {
 
   const [editOpen, setEditOpen] = useState(false);
   const [date, setDate] = useState(start ? ymd(start) : "");
+  const [startTime, setStartTime] = useState(start ? hm(start) : "08:00");
+  const [endTime, setEndTime] = useState(end ? hm(end) : "10:00");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
   const router = useRouter();
@@ -56,6 +59,8 @@ export function WorkOrderActions({ job }: { job: JobInfo }) {
     setError("");
     const formData = new FormData(e.currentTarget);
     formData.set("date", date);
+    formData.set("startTime", startTime);
+    formData.set("endTime", endTime);
     startTransition(async () => {
       const res = await updateWorkOrder(formData);
       if ("error" in res) {
@@ -121,11 +126,11 @@ export function WorkOrderActions({ job }: { job: JobInfo }) {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="e-start">Från</Label>
-                <Input id="e-start" name="startTime" type="time" defaultValue={start ? hm(start) : "08:00"} />
+                <TimePicker id="e-start" value={startTime} onChange={setStartTime} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="e-end">Till</Label>
-                <Input id="e-end" name="endTime" type="time" defaultValue={end ? hm(end) : "10:00"} />
+                <TimePicker id="e-end" value={endTime} onChange={setEndTime} />
               </div>
             </div>
             <div className="space-y-1.5">
