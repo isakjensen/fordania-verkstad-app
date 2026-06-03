@@ -1,7 +1,12 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
+import { FieldSelect } from "@/components/ui/field-select";
 import {
   Table,
   TableBody,
@@ -52,18 +57,54 @@ interface UserTableProps {
 }
 
 export function UserTable({ users, tenants }: UserTableProps) {
+  // "all" = visa alla företag, annars filtreras till valt företag.
+  const [tenant, setTenant] = useState("all");
+
+  const filtered = useMemo(
+    () => (tenant === "all" ? users : users.filter((u) => u.tenantId === tenant)),
+    [users, tenant],
+  );
+
+  const activeTenant = tenants.find((t) => t.id === tenant);
+  const subtitle =
+    tenant === "all"
+      ? `${users.length} användare över alla företag`
+      : `${filtered.length} ${filtered.length === 1 ? "användare" : "användare"} · ${activeTenant?.name ?? ""}`;
+
+  const tenantOptions = [
+    { value: "all", label: "Alla företag" },
+    ...tenants.map((t) => ({ value: t.id, label: t.name })),
+  ];
+
   return (
     <Card>
       <CardHeader
         tone="brand"
         title="Användare"
-        subtitle={`${users.length} användare över alla tenants`}
+        subtitle={subtitle}
         action={<CreateUserButton tenants={tenants} />}
       />
 
-      {users.length === 0 ? (
+      {/* Filterrad: byt företag för att bara se dess användare */}
+      <div className="flex flex-wrap items-center gap-2.5 border-b border-line px-4 py-3">
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <Building2 className="size-3.5" />
+          Företag
+        </span>
+        <div className="w-full max-w-[16rem]">
+          <FieldSelect
+            options={tenantOptions}
+            value={tenant}
+            onValueChange={setTenant}
+          />
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
         <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-          Inga användare ännu.
+          {tenant === "all"
+            ? "Inga användare ännu."
+            : "Inga användare i det valda företaget."}
         </p>
       ) : (
         <Table>
@@ -83,7 +124,7 @@ export function UserTable({ users, tenants }: UserTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((u) => {
+            {filtered.map((u) => {
               const status = userStatusMeta[u.status] ?? userStatusMeta.active;
               return (
                 <TableRow key={u.memberId}>

@@ -53,6 +53,7 @@ export interface PlatformUserRow {
   email: string;
   initials: string;
   role: string;
+  tenantId: string;
   tenantName: string;
   status: string;
 }
@@ -70,6 +71,7 @@ export async function getPlatformUsers(): Promise<PlatformUserRow[]> {
     email: m.user.email,
     initials: initialsFromName(m.user.name),
     role: m.role,
+    tenantId: m.organizationId,
     tenantName: m.organization.name,
     status: m.user.banned ? "inactive" : "active",
   }));
