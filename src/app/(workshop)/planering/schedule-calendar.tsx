@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   useDraggable,
@@ -228,7 +229,7 @@ const MechanicGroup = memo(function MechanicGroup({
       >
         <div
           className={cn(
-            "sticky left-0 z-20 flex shrink-0 items-center gap-2.5 border-r border-line px-4 py-2.5",
+            "sticky left-0 z-30 flex shrink-0 items-center gap-2.5 border-r border-line px-4 py-2.5",
             isOver && canManage ? "bg-brand-50" : "bg-surface-muted/50",
           )}
           style={{ width: LABEL_W }}
@@ -265,7 +266,7 @@ const MechanicGroup = memo(function MechanicGroup({
           className="flex items-stretch border-t border-line/70"
         >
           <div
-            className="sticky left-0 z-20 flex shrink-0 items-center gap-2 border-r border-line bg-surface px-4 py-3"
+            className="sticky left-0 z-30 flex shrink-0 items-center gap-2 border-r border-line bg-surface px-4 py-3"
             style={{ width: LABEL_W }}
           >
             {row.vehicle ? (
@@ -339,8 +340,13 @@ export function ScheduleCalendar({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  // Mus: dra direkt (5px). Touch: håll in 200 ms för att dra, annars sveper
+  // man för att scrolla – så drag inte krockar med att bläddra i kalendern.
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 8 },
+    }),
   );
 
   const from = new Date(fromISO);
@@ -720,7 +726,13 @@ export function ScheduleCalendar({
         </DndContext>
       )}
 
-      <JobDetail job={selected} open={open} onOpenChange={setOpen} />
+      <JobDetail
+        job={selected}
+        open={open}
+        onOpenChange={setOpen}
+        mechanics={mechanics}
+        canManage={canManage}
+      />
     </div>
   );
 }
