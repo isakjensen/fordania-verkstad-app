@@ -1,9 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Search, Bell, Plus } from "lucide-react";
+import { Menu, Bell, BellOff, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import { GlobalSearch } from "./global-search";
 import { UserMenu } from "./user-menu";
 
 interface TopbarProps {
@@ -16,21 +23,14 @@ export function Topbar({ onOpenMobile }: TopbarProps) {
       {/* Hamburger – endast mobil/tablet */}
       <button
         onClick={onOpenMobile}
-        className="flex size-10 items-center justify-center rounded-xl text-ink-soft transition-colors hover:bg-slate-100 lg:hidden"
+        className="flex size-10 items-center justify-center rounded-xl text-ink-soft transition-colors hover:bg-surface-muted pointer-coarse:size-12 lg:hidden"
         aria-label="Öppna meny"
       >
-        <Menu className="size-5" />
+        <Menu className="size-5 pointer-coarse:size-6" />
       </button>
 
-      {/* Sökfält */}
-      <div className="relative hidden flex-1 sm:block sm:max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Sök fordon, reg.nr eller order…"
-          className="h-10 rounded-lg bg-surface-muted pl-9"
-        />
-      </div>
+      {/* Global sök */}
+      <GlobalSearch />
 
       {/* Spacer för mobil */}
       <div className="flex-1 sm:hidden" />
@@ -58,13 +58,26 @@ export function Topbar({ onOpenMobile }: TopbarProps) {
           <Plus className="size-5" />
         </Button>
 
-        <button
-          className="relative flex size-10 items-center justify-center rounded-xl text-ink-soft transition-colors hover:bg-slate-100"
-          aria-label="Notiser"
-        >
-          <Bell className="size-5" />
-          <span className="absolute right-2 top-2 size-2 rounded-full bg-danger ring-2 ring-surface" />
-        </button>
+        {/* Notiser */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className="flex size-10 items-center justify-center rounded-xl text-ink-soft transition-colors hover:bg-surface-muted data-popup-open:bg-surface-muted pointer-coarse:size-12"
+            aria-label="Notiser"
+          >
+            <Bell className="size-5 pointer-coarse:size-6" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" sideOffset={6} className="min-w-72">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Notiser</DropdownMenuLabel>
+              <div className="flex flex-col items-center gap-2 px-3 py-7 text-center">
+                <BellOff className="size-6 text-muted-foreground/40" />
+                <p className="text-sm text-muted-foreground">
+                  Inga nya notiser just nu.
+                </p>
+              </div>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <div className="mx-1 hidden h-7 w-px bg-line sm:block" />
 
