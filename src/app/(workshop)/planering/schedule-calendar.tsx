@@ -86,19 +86,25 @@ function JobBoxContent({ job }: { job: ScheduleJob }) {
 
 const JobBox = memo(function JobBox({
   job,
+  mechId,
+  vehicleId,
   left,
   width,
   canManage,
   onOpen,
 }: {
   job: ScheduleJob;
+  mechId: string;
+  vehicleId: string;
   left: number;
   width: number;
   canManage: boolean;
   onOpen: (job: ScheduleJob) => void;
 }) {
+  // id kodar (order | källmekaniker | fordon) så draget vet vilken mekaniker
+  // boxen ligger under, och så att samma order kan ritas på flera ställen.
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: job.id,
+    id: `${job.id}|${mechId}|${vehicleId}`,
     disabled: !canManage,
   });
   return (
@@ -158,21 +164,35 @@ const MechanicGroup = memo(function MechanicGroup({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `mech:${mech.id}` });
 
+  type VehicleInfo = ScheduleJob["vehicles"][number]["vehicle"];
   const vehicleMap = new Map<
     string,
-    { vehicle: ScheduleJob["vehicle"]; jobs: ScheduleJob[] }
+    { vehicle: VehicleInfo | null; jobs: ScheduleJob[] }
   >();
   for (const j of jobs) {
-    const key = j.vehicle?.id ?? "none";
-    const entry = vehicleMap.get(key) ?? { vehicle: j.vehicle, jobs: [] };
-    entry.jobs.push(j);
-    vehicleMap.set(key, entry);
+    if (j.vehicles.length === 0) {
+      const entry = vehicleMap.get("none") ?? { vehicle: null, jobs: [] };
+      entry.jobs.push(j);
+      vehicleMap.set("none", entry);
+      continue;
+    }
+    // En order med flera fordon ligger på flera rader.
+    for (const jv of j.vehicles) {
+      const entry = vehicleMap.get(jv.vehicleId) ?? {
+        vehicle: jv.vehicle,
+        jobs: [],
+      };
+      entry.jobs.push(j);
+      vehicleMap.set(jv.vehicleId, entry);
+    }
   }
   // Stabil radordning på regnummer – så raderna aldrig hoppar om när en
   // arbetsorders tid ändras.
-  const vehicleRows = [...vehicleMap.values()].sort((a, b) =>
-    (a.vehicle?.regNo ?? "~").localeCompare(b.vehicle?.regNo ?? "~", "sv"),
-  );
+  const vehicleRows = [...vehicleMap.entries()]
+    .map(([vehicleId, v]) => ({ vehicleId, ...v }))
+    .sort((a, b) =>
+      (a.vehicle?.regNo ?? "~").localeCompare(b.vehicle?.regNo ?? "~", "sv"),
+    );
 
   function GridLines() {
     return (
@@ -241,7 +261,7 @@ const MechanicGroup = memo(function MechanicGroup({
       {/* Fordonsrader */}
       {vehicleRows.map((row, ri) => (
         <div
-          key={(row.vehicle?.id ?? "none") + ri}
+          key={row.vehicleId + ri}
           className="flex items-stretch border-t border-line/70"
         >
           <div
@@ -273,6 +293,8 @@ const MechanicGroup = memo(function MechanicGroup({
                 <JobBox
                   key={job.id}
                   job={job}
+                  mechId={mech.id}
+                  vehicleId={row.vehicleId}
                   left={pos.left}
                   width={pos.width}
                   canManage={canManage}
@@ -396,11 +418,12 @@ export function ScheduleCalendar({
   const jobsByMechanic = useMemo(() => {
     const map = new Map<string, ScheduleJob[]>();
     for (const job of localJobs) {
-      const mid = job.assignedUser?.id;
-      if (!mid) continue;
-      const arr = map.get(mid) ?? [];
-      arr.push(job);
-      map.set(mid, arr);
+      // En order ligger under varje tilldelad mekaniker.
+      for (const jm of job.mechanics) {
+        const arr = map.get(jm.userId) ?? [];
+        arr.push(job);
+        map.set(jm.userId, arr);
+      }
     }
     return map;
   }, [localJobs]);
@@ -442,7 +465,9 @@ export function ScheduleCalendar({
   function onDragEnd(e: DragEndEvent) {
     setActiveId(null);
     if (!canManage) return;
-    const job = jobById.get(String(e.active.id));
+    // id = "jobId|sourceMechanicId|vehicleId"
+    const [jobId, fromUserId] = String(e.active.id).split("|");
+    const job = jobById.get(jobId);
     if (!job || !job.scheduledStart || !job.scheduledEnd) return;
 
     const oldStart = new Date(job.scheduledStart);
@@ -464,33 +489,44 @@ export function ScheduleCalendar({
     newStart.setHours(Math.floor(h), Math.round((h % 1) * 60), 0, 0);
     const newEnd = new Date(newStart.getTime() + durMs);
 
-    let assignedUserId: string | undefined;
+    // Målmekaniker från drop-zonen.
+    let toUserId: string | undefined;
     const overId = e.over ? String(e.over.id) : null;
     if (overId?.startsWith("mech:")) {
       const target = overId.slice(5);
-      if (target !== job.assignedUser?.id) assignedUserId = target;
+      const already = job.mechanics.some((m) => m.userId === target);
+      if (target !== fromUserId && !already) toUserId = target;
     }
 
     const movedTime = newStart.getTime() !== oldStart.getTime();
-    if (!movedTime && assignedUserId === undefined) return;
+    if (!movedTime && toUserId === undefined) return;
 
-    const targetMech =
-      assignedUserId !== undefined
-        ? mechanics.find((m) => m.id === assignedUserId)
-        : null;
+    const targetMech = toUserId
+      ? mechanics.find((m) => m.id === toUserId)
+      : null;
+    // Optimistiskt: byt ut källmekanikern mot målmekanikern + uppdatera tid.
     const optimistic: ScheduleJob = {
       ...job,
-      assignedUserId: assignedUserId ?? job.assignedUserId,
-      assignedUser: targetMech
-        ? { id: targetMech.id, name: targetMech.name }
-        : job.assignedUser,
+      mechanics:
+        targetMech && toUserId
+          ? [
+              ...job.mechanics.filter((m) => m.userId !== fromUserId),
+              {
+                id: `tmp-${toUserId}`,
+                jobId: job.id,
+                userId: toUserId,
+                createdAt: new Date(),
+                user: { id: targetMech.id, name: targetMech.name },
+              },
+            ]
+          : job.mechanics,
       scheduledStart: newStart,
       scheduledEnd: newEnd,
     };
     setLocalJobs((prev) => prev.map((j) => (j.id === job.id ? optimistic : j)));
 
     moveJob(job.id, {
-      ...(assignedUserId !== undefined ? { assignedUserId } : {}),
+      ...(toUserId ? { fromUserId, toUserId } : {}),
       scheduledStart: newStart.toISOString(),
       scheduledEnd: newEnd.toISOString(),
     }).then((res) => {
@@ -500,7 +536,9 @@ export function ScheduleCalendar({
     });
   }
 
-  const activeJob = activeId ? jobById.get(activeId) : null;
+  const activeJob = activeId
+    ? jobById.get(String(activeId).split("|")[0])
+    : null;
   const totalOrders = localJobs.length;
 
   const dropAnimation: DropAnimation = {

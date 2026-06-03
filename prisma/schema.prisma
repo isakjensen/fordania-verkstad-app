@@ -29,6 +29,7 @@ model User {
   members       Member[]
   invitations   Invitation[]
   assignedJobs  Job[]        @relation("AssignedJobs")
+  jobMechanics  JobMechanic[]
 
   @@unique([email])
   @@map("users")
@@ -159,6 +160,7 @@ model Vehicle {
   odometer       OdometerReading[]
   // Många-till-många: ett fordon kan kopplas till flera kunder
   customers      CustomerVehicle[]
+  jobVehicles    JobVehicle[]
 
   @@index([organizationId])
   @@map("vehicles")
@@ -246,10 +248,62 @@ model Job {
   priority       String       @default("normal")
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+  // Många-till-många: en arbetsorder kan ha flera mekaniker och flera fordon,
+  // samt en lista med inköp/delar.
+  mechanics      JobMechanic[]
+  vehicles       JobVehicle[]
+  parts          JobPart[]
 
   @@index([organizationId])
   @@index([assignedUserId])
   @@map("jobs")
+}
+
+/// Kopplingstabell arbetsorder ↔ mekaniker (= användare).
+model JobMechanic {
+  id        String   @id @default(cuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([jobId, userId])
+  @@index([jobId])
+  @@index([userId])
+  @@map("job_mechanics")
+}
+
+/// Kopplingstabell arbetsorder ↔ fordon.
+model JobVehicle {
+  id        String   @id @default(cuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  vehicleId String
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([jobId, vehicleId])
+  @@index([jobId])
+  @@index([vehicleId])
+  @@map("job_vehicles")
+}
+
+/// Inköp/del på en arbetsorder. Pris lagras exkl. moms i öre (heltal) plus
+/// momssats; inkl. moms och summor beräknas i koden.
+model JobPart {
+  id               String   @id @default(cuid())
+  jobId            String
+  job              Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  title            String
+  purchaseDate     DateTime @default(now())
+  quantity         Int      @default(1)
+  unitPriceExclOre Int
+  vatRate          Int      @default(25)
+  createdAt        DateTime @default(now())
+
+  @@index([jobId])
+  @@map("job_parts")
 }
 
 // ------------------------------------------------------------------ //

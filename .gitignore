@@ -40,5 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# genererade skärmbilder (verifieringsverktyg)
+# genererade skärmbilder + verifieringsskript (lokala verktyg, ej i repot)
 /.screenshots/*.png
+/.screenshots/*.mjs

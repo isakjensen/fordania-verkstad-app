@@ -120,18 +120,23 @@ export default async function DagensUppdragPage() {
                     </div>
 
                     <div className="mt-1.5 flex flex-wrap items-center gap-3 text-sm text-ink-soft">
-                      {job.vehicle ? (
-                        <span className="inline-flex items-center gap-2">
-                          <LicensePlate
-                            value={job.vehicle.regNo}
-                            className="shrink-0"
-                          />
-                          <span>
-                            {[job.vehicle.brand, job.vehicle.model]
-                              .filter(Boolean)
-                              .join(" ")}
+                      {job.vehicles.length > 0 ? (
+                        job.vehicles.map((jv) => (
+                          <span
+                            key={jv.vehicle.id}
+                            className="inline-flex items-center gap-2"
+                          >
+                            <LicensePlate
+                              value={jv.vehicle.regNo}
+                              className="shrink-0"
+                            />
+                            <span>
+                              {[jv.vehicle.brand, jv.vehicle.model]
+                                .filter(Boolean)
+                                .join(" ")}
+                            </span>
                           </span>
-                        </span>
+                        ))
                       ) : (
                         <span className="inline-flex items-center gap-1.5 text-muted-foreground">
                           <Car className="size-4" /> Inget fordon

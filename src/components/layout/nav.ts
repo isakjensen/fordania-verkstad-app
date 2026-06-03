@@ -34,12 +34,7 @@ export const navGroups: NavGroup[] = [
       { label: "Översikt", href: "/", icon: LayoutDashboard },
       { label: "Dagens uppdrag", href: "/dagens-uppdrag", icon: ClipboardCheck },
       { label: "Arbetskalender", href: "/planering", icon: CalendarRange },
-      {
-        label: "Arbetsordrar",
-        href: "/arbetsordrar",
-        icon: ClipboardList,
-        badge: 6,
-      },
+      { label: "Arbetsordrar", href: "/arbetsordrar", icon: ClipboardList },
     ],
   },
   {

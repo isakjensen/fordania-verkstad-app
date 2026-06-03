@@ -11,13 +11,28 @@ import { randomUUID } from "node:crypto";
 import { auth } from "../src/lib/auth";
 import { db } from "../src/lib/db";
 
-const SUPERADMIN_PASSWORD = "Fordania2026!";
-const TENANT_ADMIN_PASSWORD = "Verkstad2026!";
+// Lösenord läses ur miljövariabler (commitas aldrig). Fallback endast för
+// lokal utveckling – sätt riktiga värden i .env / Railway-variabler.
+const SUPERADMIN_PASSWORD =
+  process.env.SEED_SUPERADMIN_PASSWORD ?? "dev-superadmin-change-me";
+const TENANT_ADMIN_PASSWORD =
+  process.env.SEED_TENANT_ADMIN_PASSWORD ?? "dev-admin-change-me";
 
-/** Skapar en användare via Better Auth (idempotent) och returnerar dess id. */
+/**
+ * Skapar en användare via Better Auth, eller – om den redan finns – roterar
+ * dess lösenord till det aktuella (env-styrda) värdet. Returnerar användar-id.
+ */
 async function ensureUser(email: string, name: string, password: string) {
   const existing = await db.user.findUnique({ where: { email } });
-  if (existing) return existing.id;
+  if (existing) {
+    const ctx = await auth.$context;
+    const hash = await ctx.password.hash(password);
+    await db.account.updateMany({
+      where: { userId: existing.id, providerId: "credential" },
+      data: { password: hash },
+    });
+    return existing.id;
+  }
   const res = await auth.api.signUpEmail({ body: { email, name, password } });
   return res.user.id;
 }
@@ -62,7 +77,8 @@ const tenants: TenantSeed[] = [
   },
 ];
 
-const MECHANIC_PASSWORD = "Mekaniker2026!";
+const MECHANIC_PASSWORD =
+  process.env.SEED_MECHANIC_PASSWORD ?? "dev-mechanic-change-me";
 
 function initialsOf(name: string) {
   return name
@@ -193,12 +209,16 @@ async function seedCalendar(organizationId: string, slug: string) {
     const end = new Date(start.getTime() + s.dur * 3600 * 1000);
     const hh = String(start.getHours()).padStart(2, "0");
     const mm = String(start.getMinutes()).padStart(2, "0");
+    const jobId = randomUUID();
     await db.job.create({
       data: {
-        id: randomUUID(),
+        id: jobId,
         organizationId,
+        // Legacy enkel-relationer (behålls), samt m2m-länkar för nya modellen.
         vehicleId: v(s.v),
         assignedUserId: m(s.m),
+        mechanics: { create: { userId: m(s.m) } },
+        vehicles: { create: { vehicleId: v(s.v) } },
         type: s.type,
         status: s.status,
         priority: s.prio,
@@ -207,7 +227,61 @@ async function seedCalendar(organizationId: string, slug: string) {
         durationMin: Math.round(s.dur * 60),
         scheduledStart: start,
         scheduledEnd: end,
+        // Demo: ett par delar på reparations-/serviceordrar.
+        ...(s.type === "Reparation"
+          ? {
+              parts: {
+                create: [
+                  { title: "Bromsskivor fram (par)", quantity: 1, unitPriceExclOre: 89000, vatRate: 25 },
+                  { title: "Bromsbelägg fram", quantity: 1, unitPriceExclOre: 45000, vatRate: 25 },
+                  { title: "Arbetstid", quantity: 3, unitPriceExclOre: 79500, vatRate: 25 },
+                ],
+              },
+            }
+          : s.type === "Service"
+            ? {
+                parts: {
+                  create: [
+                    { title: "Motorolja 5W-30 (5 l)", quantity: 1, unitPriceExclOre: 39000, vatRate: 25 },
+                    { title: "Oljefilter", quantity: 1, unitPriceExclOre: 14900, vatRate: 25 },
+                    { title: "Arbetstid", quantity: 2, unitPriceExclOre: 79500, vatRate: 25 },
+                  ],
+                },
+              }
+            : {}),
       },
+    });
+  }
+}
+
+/** Lägger demo-delar på befintliga ordrar (idempotent – om inga delar finns). */
+async function topUpParts(organizationId: string) {
+  const partCount = await db.jobPart.count({
+    where: { job: { organizationId } },
+  });
+  if (partCount > 0) return;
+  const reparation = await db.job.findFirst({
+    where: { organizationId, type: "Reparation" },
+  });
+  if (reparation) {
+    await db.jobPart.createMany({
+      data: [
+        { jobId: reparation.id, title: "Bromsskivor fram (par)", quantity: 1, unitPriceExclOre: 89000, vatRate: 25 },
+        { jobId: reparation.id, title: "Bromsbelägg fram", quantity: 1, unitPriceExclOre: 45000, vatRate: 25 },
+        { jobId: reparation.id, title: "Arbetstid", quantity: 3, unitPriceExclOre: 79500, vatRate: 25 },
+      ],
+    });
+  }
+  const service = await db.job.findFirst({
+    where: { organizationId, type: "Service" },
+  });
+  if (service) {
+    await db.jobPart.createMany({
+      data: [
+        { jobId: service.id, title: "Motorolja 5W-30 (5 l)", quantity: 1, unitPriceExclOre: 39000, vatRate: 25 },
+        { jobId: service.id, title: "Oljefilter", quantity: 1, unitPriceExclOre: 14900, vatRate: 25 },
+        { jobId: service.id, title: "Arbetstid", quantity: 2, unitPriceExclOre: 79500, vatRate: 25 },
+      ],
     });
   }
 }
@@ -257,6 +331,7 @@ async function main() {
     await ensureMember(org.id, adminId, "admin");
 
     await seedCalendar(org.id, t.slug);
+    await topUpParts(org.id);
     console.log(`✓ Tenant: ${t.name} (admin: ${t.adminEmail})`);
   }
 

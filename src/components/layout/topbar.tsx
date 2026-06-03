@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Menu, Search, Bell, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,11 +37,24 @@ export function Topbar({ onOpenMobile }: TopbarProps) {
 
       {/* Höger: åtgärder */}
       <div className="flex items-center gap-1.5 sm:gap-2">
-        <Button size="md" variant="success" className="hidden sm:inline-flex">
+        <Button
+          size="md"
+          variant="success"
+          className="hidden sm:inline-flex"
+          nativeButton={false}
+          render={<Link href="/arbetsordrar" />}
+        >
           <Plus className="size-4" />
-          Nytt jobb
+          Ny arbetsorder
         </Button>
-        <Button size="icon" variant="success" className="sm:hidden">
+        <Button
+          size="icon"
+          variant="success"
+          className="sm:hidden"
+          aria-label="Ny arbetsorder"
+          nativeButton={false}
+          render={<Link href="/arbetsordrar" />}
+        >
           <Plus className="size-5" />
         </Button>
 

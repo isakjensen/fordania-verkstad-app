@@ -20,7 +20,12 @@ const NO_PERMISSION =
  */
 export async function moveJob(
   jobId: string,
-  data: { assignedUserId?: string | null; scheduledStart?: string; scheduledEnd?: string },
+  data: {
+    fromUserId?: string;
+    toUserId?: string;
+    scheduledStart?: string;
+    scheduledEnd?: string;
+  },
 ): Promise<ActionResult> {
   await requireUser();
   const organizationId = await getActiveOrganizationId();
@@ -34,18 +39,23 @@ export async function moveJob(
   const job = await db.job.findFirst({ where: { id: jobId, organizationId } });
   if (!job) return { error: "Arbetsordern hittades inte." };
 
-  // Validera ny mekaniker – måste vara medlem i samma verkstad.
-  let assignedUserId = job.assignedUserId;
-  if (data.assignedUserId !== undefined) {
-    if (data.assignedUserId === null) {
-      assignedUserId = null;
-    } else {
-      const member = await db.member.findFirst({
-        where: { organizationId, userId: data.assignedUserId },
+  // Byt mekaniker: ta bort källan, lägg till målet (måste vara medlem).
+  if (data.toUserId && data.toUserId !== data.fromUserId) {
+    const member = await db.member.findFirst({
+      where: { organizationId, userId: data.toUserId },
+    });
+    if (!member) return { error: "Mekanikern tillhör inte verkstaden." };
+
+    if (data.fromUserId) {
+      await db.jobMechanic.deleteMany({
+        where: { jobId, userId: data.fromUserId },
       });
-      if (!member) return { error: "Mekanikern tillhör inte verkstaden." };
-      assignedUserId = data.assignedUserId;
     }
+    await db.jobMechanic.upsert({
+      where: { jobId_userId: { jobId, userId: data.toUserId } },
+      create: { jobId, userId: data.toUserId },
+      update: {},
+    });
   }
 
   const start = data.scheduledStart ? new Date(data.scheduledStart) : job.scheduledStart;
@@ -55,11 +65,7 @@ export async function moveJob(
 
   await db.job.update({
     where: { id: jobId },
-    data: {
-      assignedUserId,
-      scheduledStart: start,
-      scheduledEnd: end,
-    },
+    data: { scheduledStart: start, scheduledEnd: end },
   });
 
   revalidatePath("/planering");

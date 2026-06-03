@@ -9,6 +9,7 @@ import {
   AlignLeft,
   Users,
 } from "lucide-react";
+import { Receipt } from "lucide-react";
 import { LicensePlate } from "@/components/ui/license-plate";
 import {
   Sheet,
@@ -19,6 +20,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import type { ScheduleJob } from "@/lib/data/schedule";
+import { orderTotals, formatOre } from "@/lib/pricing";
 import { statusMeta, statusLabels, priorityLabels } from "./calendar-meta";
 
 const dtf = new Intl.DateTimeFormat("sv-SE", {
@@ -64,6 +66,20 @@ export function JobDetail({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const vehicles = job?.vehicles.map((jv) => jv.vehicle) ?? [];
+  const mechanics = job?.mechanics.map((jm) => jm.user) ?? [];
+  const customers = job
+    ? [
+        ...new Map(
+          job.vehicles
+            .flatMap((jv) => jv.vehicle.customers)
+            .map((c) => [c.customer.id, c.customer]),
+        ).values(),
+      ]
+    : [];
+  const totals = job ? orderTotals(job.parts) : null;
+  const primary = vehicles[0];
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
@@ -72,17 +88,18 @@ export function JobDetail({
             <SheetHeader>
               <div className="flex items-center gap-3">
                 <LicensePlate
-                  value={job.vehicle?.regNo ?? "—"}
+                  value={primary?.regNo ?? "—"}
                   className="shrink-0"
                 />
                 <div>
                   <SheetTitle>{job.type}</SheetTitle>
                   <SheetDescription>
-                    {job.vehicle
-                      ? [job.vehicle.brand, job.vehicle.model]
+                    {primary
+                      ? [primary.brand, primary.model]
                           .filter(Boolean)
-                          .join(" ") || job.vehicle.regNo
+                          .join(" ") || primary.regNo
                       : "Inget fordon"}
+                    {vehicles.length > 1 ? ` +${vehicles.length - 1} fordon` : ""}
                   </SheetDescription>
                 </div>
               </div>
@@ -110,8 +127,13 @@ export function JobDetail({
                   "Ej tidsatt"
                 )}
               </Row>
-              <Row icon={UserIcon} label="Mekaniker">
-                {job.assignedUser?.name ?? "Ej tilldelad"}
+              <Row
+                icon={UserIcon}
+                label={mechanics.length > 1 ? "Mekaniker" : "Mekaniker"}
+              >
+                {mechanics.length > 0
+                  ? mechanics.map((m) => m.name).join(", ")
+                  : "Ej tilldelad"}
               </Row>
               <Row icon={Wrench} label="Typ">
                 {job.type}
@@ -119,18 +141,37 @@ export function JobDetail({
               <Row icon={Flag} label="Prioritet">
                 {priorityLabels[job.priority] ?? job.priority}
               </Row>
-              <Row icon={Car} label="Fordon">
-                {job.vehicle
-                  ? `${job.vehicle.regNo}${
-                      job.vehicle.brand || job.vehicle.model
-                        ? ` · ${[job.vehicle.brand, job.vehicle.model].filter(Boolean).join(" ")}`
-                        : ""
-                    }`
-                  : "—"}
+              <Row icon={Car} label={vehicles.length > 1 ? "Fordon" : "Fordon"}>
+                {vehicles.length > 0 ? (
+                  <ul className="space-y-1">
+                    {vehicles.map((v) => (
+                      <li key={v.id} className="flex items-center gap-2">
+                        <LicensePlate value={v.regNo} className="shrink-0" />
+                        <span className="text-ink-soft">
+                          {[v.brand, v.model].filter(Boolean).join(" ")}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  "—"
+                )}
               </Row>
-              {job.vehicle && job.vehicle.customers.length > 0 ? (
+              {customers.length > 0 ? (
                 <Row icon={Users} label="Kunder">
-                  {job.vehicle.customers.map((c) => c.customer.name).join(", ")}
+                  {customers.map((c) => c.name).join(", ")}
+                </Row>
+              ) : null}
+              {totals && job.parts.length > 0 ? (
+                <Row icon={Receipt} label="Delar / inköp">
+                  <span className="text-ink-soft">
+                    {job.parts.length}{" "}
+                    {job.parts.length === 1 ? "rad" : "rader"} · totalt{" "}
+                    <span className="font-semibold text-ink">
+                      {formatOre(totals.inclOre)}
+                    </span>{" "}
+                    inkl. moms
+                  </span>
                 </Row>
               ) : null}
               {job.description ? (
