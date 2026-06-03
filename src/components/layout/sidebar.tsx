@@ -37,8 +37,10 @@ function NavLink({
       aria-current={active ? "page" : undefined}
       className={cn(
         "group relative flex items-center rounded-lg text-[0.875rem] outline-none",
-        "transition-colors duration-150",
-        collapsed ? "h-9 w-9 justify-center" : "h-9 gap-3 px-2.5",
+        "transition-colors duration-150 pointer-coarse:text-[0.95rem]",
+        collapsed
+          ? "h-9 w-9 justify-center pointer-coarse:h-11 pointer-coarse:w-11"
+          : "h-9 gap-3 px-2.5 pointer-coarse:h-12 pointer-coarse:px-3",
         active
           ? "bg-brand-50 font-semibold text-brand-700"
           : "font-medium text-ink-soft hover:bg-surface-muted hover:text-ink",

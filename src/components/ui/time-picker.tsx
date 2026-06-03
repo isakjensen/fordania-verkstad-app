@@ -12,7 +12,7 @@ interface TimePickerProps {
   id?: string;
   disabled?: boolean;
   className?: string;
-  /** Höjd: "sm" (32px, standard – matchar knapparnas höjd) eller "md" (40px). */
+  /** Höjd: "md" (44px, standard – matchar knapparnas touch-höjd) eller "sm" (36px, kompakt). */
   size?: "sm" | "md";
   /** Minutsteg i listan (standard 5). */
   minuteStep?: number;
@@ -81,10 +81,11 @@ export function TimePicker({
   id,
   disabled,
   className,
-  size = "sm",
+  size = "md",
   minuteStep = 5,
 }: TimePickerProps) {
-  const heightClass = size === "sm" ? "h-8" : "h-10";
+  const heightClass =
+    size === "sm" ? "h-8 pointer-coarse:h-10" : "h-8 pointer-coarse:h-11";
   const [open, setOpen] = useState(false);
 
   const m = /^(\d{1,2}):(\d{2})$/.exec(value);

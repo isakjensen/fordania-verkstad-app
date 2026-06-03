@@ -19,7 +19,7 @@ interface FieldSelectProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
-  /** Höjd: "sm" (32px, standard – matchar knapparnas höjd) eller "md" (40px). */
+  /** Höjd: "md" (44px, standard – matchar knapparnas touch-höjd) eller "sm" (36px, kompakt). */
   size?: "sm" | "md";
 }
 
@@ -37,11 +37,12 @@ export function FieldSelect({
   placeholder = "Välj…",
   disabled,
   className,
-  size = "sm",
+  size = "md",
 }: FieldSelectProps) {
   // Mappning value→label så att Select.Value visar etiketten (inte råvärdet).
   const items = Object.fromEntries(options.map((o) => [o.value, o.label]));
-  const heightClass = size === "sm" ? "h-8" : "h-10";
+  const heightClass =
+    size === "sm" ? "h-8 pointer-coarse:h-10" : "h-8 pointer-coarse:h-11";
 
   return (
     // Fast höjd så Base UI:s fokusvakter inte kan ändra radens layout.
