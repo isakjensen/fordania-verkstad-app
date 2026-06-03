@@ -1,16 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import {
-  ArrowLeft,
-  IdCard,
-  Mail,
-  Phone,
-  MapPin,
-  CalendarDays,
-} from "lucide-react";
+import { IdCard, Mail, Phone, MapPin, CalendarDays } from "lucide-react";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
+import { BackButton } from "@/components/ui/back-button";
 import { getActiveOrganizationId } from "@/lib/session";
 import { getCustomer } from "@/lib/data/customers";
 import { getVehicleOptions } from "@/lib/data/vehicles";
@@ -89,13 +82,7 @@ export default async function CustomerDetailPage({
 
   return (
     <div className="mx-auto w-full max-w-[1100px] px-4 py-6 sm:px-6 lg:px-8">
-      <Link
-        href="/kunder"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-ink"
-      >
-        <ArrowLeft className="size-4" />
-        Tillbaka till kunder
-      </Link>
+      <BackButton fallbackHref="/kunder" />
 
       {/* Sidhuvud */}
       <div className="mt-4 flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-center sm:justify-between">

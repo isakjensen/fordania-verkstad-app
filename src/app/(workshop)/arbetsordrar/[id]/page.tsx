@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, Wrench, Flag, Clock, CalendarDays, Hash } from "lucide-react";
+import { Wrench, Flag, Clock, CalendarDays, Hash } from "lucide-react";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
+import { BackButton } from "@/components/ui/back-button";
 import { getActiveOrganizationId } from "@/lib/session";
 import { getJob, getMechanics } from "@/lib/data/schedule";
 import { getVehicleOptions } from "@/lib/data/vehicles";
@@ -56,13 +56,7 @@ export default async function WorkOrderDetailPage({
 
   return (
     <div className="mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-6 lg:px-8">
-      <Link
-        href="/arbetsordrar"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-ink"
-      >
-        <ArrowLeft className="size-4" />
-        Tillbaka till arbetsordrar
-      </Link>
+      <BackButton fallbackHref="/arbetsordrar" />
 
       <div className="mt-4 flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">

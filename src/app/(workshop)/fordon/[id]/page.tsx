@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { LicensePlate } from "@/components/ui/license-plate";
+import { BackButton } from "@/components/ui/back-button";
 import { getActiveOrganizationId } from "@/lib/session";
 import { getVehicle, getFieldDefinitions } from "@/lib/data/vehicles";
 import { getCustomerOptions } from "@/lib/data/customers";
@@ -48,13 +47,7 @@ export default async function VehicleDetailPage({
 
   return (
     <div className="mx-auto w-full max-w-[1100px] px-4 py-6 sm:px-6 lg:px-8">
-      <Link
-        href="/fordon"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-ink"
-      >
-        <ArrowLeft className="size-4" />
-        Tillbaka till fordon
-      </Link>
+      <BackButton fallbackHref="/fordon" />
 
       <div className="mt-4 flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
