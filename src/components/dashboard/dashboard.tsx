@@ -13,7 +13,7 @@ import { TodaysJobs } from "./todays-jobs";
 import { MechanicLoad } from "./mechanic-load";
 import { FleetStatus } from "./fleet-status";
 import { staggerContainer, fadeUpItem } from "./motion";
-import { stats } from "@/lib/data";
+import type { DashboardData } from "@/lib/data/dashboard";
 
 function todayLabel() {
   return new Intl.DateTimeFormat("sv-SE", {
@@ -24,10 +24,23 @@ function todayLabel() {
   }).format(new Date());
 }
 
-export function Dashboard() {
+export function Dashboard({
+  data,
+  hasOrg,
+}: {
+  data: DashboardData | null;
+  hasOrg: boolean;
+}) {
   // Formatera datumet efter mount för att undvika hydration-skillnader
   const [date, setDate] = useState("");
   useEffect(() => setDate(todayLabel()), []);
+
+  const stats = data?.stats ?? {
+    activeJobs: 0,
+    plannedToday: 0,
+    doneToday: 0,
+    needsAttention: 0,
+  };
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
@@ -35,7 +48,7 @@ export function Dashboard() {
       <div className="flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground first-letter:uppercase">
-            {date || " "}
+            {date || " "}
           </p>
           <h1 className="mt-2 text-[1.75rem] font-extrabold tracking-tight text-ink sm:text-[2.1rem]">
             Översikt
@@ -50,60 +63,76 @@ export function Dashboard() {
         </p>
       </div>
 
-      {/* KPI-kort */}
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="show"
-        className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
-      >
-        <StatCard
-          icon={Wrench}
-          label="Aktiva jobb just nu"
-          value={stats.activeJobs}
-          hint="Arbete pågår i verkstaden"
-          tone="brand"
-          trend={{ value: "+2", up: true }}
-        />
-        <StatCard
-          icon={CalendarClock}
-          label="Inplanerade idag"
-          value={stats.plannedToday}
-          hint="Hela dagens schema"
-          tone="violet"
-        />
-        <StatCard
-          icon={CheckCircle2}
-          label="Klara idag"
-          value={stats.doneToday}
-          hint="Återlämnade till uthyrning"
-          tone="success"
-          trend={{ value: "+1", up: true }}
-        />
-        <StatCard
-          icon={AlertTriangle}
-          label="Kräver åtgärd"
-          value={stats.needsAttention}
-          hint="Försenade eller väntar på delar"
-          tone="danger"
-        />
-      </motion.div>
+      {!hasOrg ? (
+        <p className="mt-10 text-center text-sm text-muted-foreground">
+          Välj en verkstad för att se översikten.
+        </p>
+      ) : (
+        <>
+          {/* KPI-kort */}
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="show"
+            className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+          >
+            <StatCard
+              icon={Wrench}
+              label="Aktiva jobb just nu"
+              value={stats.activeJobs}
+              hint="Arbete pågår i verkstaden"
+              tone="brand"
+            />
+            <StatCard
+              icon={CalendarClock}
+              label="Inplanerade idag"
+              value={stats.plannedToday}
+              hint="Hela dagens schema"
+              tone="violet"
+            />
+            <StatCard
+              icon={CheckCircle2}
+              label="Klara idag"
+              value={stats.doneToday}
+              hint="Återlämnade till uthyrning"
+              tone="success"
+            />
+            <StatCard
+              icon={AlertTriangle}
+              label="Kräver åtgärd"
+              value={stats.needsAttention}
+              hint="Försenade eller väntar på delar"
+              tone="danger"
+            />
+          </motion.div>
 
-      {/* Innehåll */}
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="show"
-        className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3"
-      >
-        <motion.div variants={fadeUpItem} className="lg:col-span-2">
-          <TodaysJobs />
-        </motion.div>
-        <motion.div variants={fadeUpItem} className="space-y-6">
-          <FleetStatus />
-          <MechanicLoad />
-        </motion.div>
-      </motion.div>
+          {/* Innehåll */}
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="show"
+            className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3"
+          >
+            <motion.div variants={fadeUpItem} className="lg:col-span-2">
+              <TodaysJobs jobs={data?.todaysJobs ?? []} />
+            </motion.div>
+            <motion.div variants={fadeUpItem} className="space-y-6">
+              <FleetStatus
+                fleet={
+                  data?.fleet ?? {
+                    total: 0,
+                    available: 0,
+                    inWorkshop: 0,
+                    waitingParts: 0,
+                    readyPct: 0,
+                  }
+                }
+              />
+              <MechanicLoad mechanics={data?.mechanicLoad ?? []} />
+            </motion.div>
+          </motion.div>
+        </>
+      )}
     </div>
   );
 }

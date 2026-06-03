@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { Card, CardHeader } from "@/components/ui/card";
-import { stats } from "@/lib/data";
+import type { DashboardData } from "@/lib/data/dashboard";
 
 interface Segment {
   label: string;
@@ -11,32 +11,33 @@ interface Segment {
   dot: string;
 }
 
-const segments: Segment[] = [
-  {
-    label: "Redo för uthyrning",
-    value: 38,
-    color: "var(--color-success)",
-    dot: "bg-success",
-  },
-  {
-    label: "Inne i verkstad",
-    value: 10,
-    color: "var(--color-brand-500)",
-    dot: "bg-brand-500",
-  },
-  {
-    label: "Tvätt & rekond",
-    value: 4,
-    color: "var(--color-warning)",
-    dot: "bg-warning",
-  },
-];
-
-const total = segments.reduce((sum, s) => sum + s.value, 0);
 const R = 42;
 const CIRC = 2 * Math.PI * R;
 
-export function FleetStatus() {
+export function FleetStatus({ fleet }: { fleet: DashboardData["fleet"] }) {
+  const segments: Segment[] = [
+    {
+      label: "Tillgängliga",
+      value: fleet.available,
+      color: "var(--color-success)",
+      dot: "bg-success",
+    },
+    {
+      label: "Inne i verkstad",
+      value: fleet.inWorkshop,
+      color: "var(--color-brand-500)",
+      dot: "bg-brand-500",
+    },
+    {
+      label: "Väntar på delar",
+      value: fleet.waitingParts,
+      color: "var(--color-warning)",
+      dot: "bg-warning",
+    },
+  ];
+
+  // Undvik division med noll om flottan är tom
+  const denom = fleet.total > 0 ? fleet.total : 1;
   let acc = 0;
 
   return (
@@ -44,7 +45,7 @@ export function FleetStatus() {
       <CardHeader
         tone="brand"
         title="Fordonsstatus"
-        subtitle={`${total} fordon i flottan`}
+        subtitle={`${fleet.total} fordon i flottan`}
       />
       <div className="flex flex-col items-center gap-6 px-5 pt-5 pb-5 sm:flex-row sm:items-center">
         {/* Donut */}
@@ -59,10 +60,11 @@ export function FleetStatus() {
               strokeWidth="9"
             />
             {segments.map((seg) => {
-              const frac = seg.value / total;
+              const frac = seg.value / denom;
               const len = frac * CIRC;
-              const rotation = (acc / total) * 360;
+              const rotation = (acc / denom) * 360;
               acc += seg.value;
+              if (seg.value <= 0) return null;
               return (
                 <motion.circle
                   key={seg.label}
@@ -88,9 +90,11 @@ export function FleetStatus() {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-3xl font-bold tracking-tight text-ink tabular-nums">
-              {Math.round((stats.fleetReady / total) * 100)}%
+              {fleet.readyPct}%
             </span>
-            <span className="text-xs font-medium text-muted-foreground">tillgängliga</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              tillgängliga
+            </span>
           </div>
         </div>
 
