@@ -2,32 +2,42 @@
 
 export const statusMeta: Record<
   string,
-  { badge: string; dot: string; box: string }
+  { badge: string; dot: string; box: string; accent: string; tint: string }
 > = {
   planned: {
     badge: "bg-slate-100 text-slate-600",
     dot: "bg-slate-400",
     box: "bg-slate-50 border-slate-300 text-slate-700",
+    accent: "bg-slate-400",
+    tint: "bg-surface",
   },
   in_progress: {
     badge: "bg-info-soft text-info",
     dot: "bg-info",
     box: "bg-info-soft border-info text-info",
+    accent: "bg-info",
+    tint: "bg-info-soft/40",
   },
   waiting_parts: {
     badge: "bg-warning-soft text-warning",
     dot: "bg-warning",
     box: "bg-warning-soft border-warning text-warning",
+    accent: "bg-warning",
+    tint: "bg-warning-soft/40",
   },
   done: {
     badge: "bg-success-soft text-success",
     dot: "bg-success",
     box: "bg-success-soft border-success text-success",
+    accent: "bg-success",
+    tint: "bg-surface",
   },
   delayed: {
     badge: "bg-danger-soft text-danger",
     dot: "bg-danger",
     box: "bg-danger-soft border-danger text-danger",
+    accent: "bg-danger",
+    tint: "bg-danger-soft/40",
   },
 };
 
