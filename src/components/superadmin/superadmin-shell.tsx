@@ -121,7 +121,7 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
         <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-line bg-surface/80 px-4 backdrop-blur-md md:px-6">
           <button
             onClick={() => setMobileOpen(true)}
-            className="flex size-10 items-center justify-center rounded-xl text-ink-soft transition-colors hover:bg-slate-100 lg:hidden"
+            className="flex size-10 items-center justify-center rounded-xl text-ink-soft transition-colors hover:bg-surface-muted lg:hidden"
             aria-label="Öppna meny"
           >
             <Menu className="size-5" />

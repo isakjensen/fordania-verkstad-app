@@ -154,7 +154,7 @@ export default async function VehiclesPage() {
                     <TableCell className="px-4 py-3 text-right">
                       <Link
                         href={`/fordon/${v.id}`}
-                        className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-slate-100 hover:text-ink"
+                        className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-surface-muted hover:text-ink"
                         aria-label={`Öppna ${v.regNo}`}
                       >
                         <ChevronRight className="size-5" />

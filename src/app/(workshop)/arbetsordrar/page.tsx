@@ -193,7 +193,7 @@ export default async function ArbetsordrarPage() {
                     <TableCell className="px-4 py-3 text-right">
                       <Link
                         href={`/arbetsordrar/${o.id}`}
-                        className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-slate-100 hover:text-ink"
+                        className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-surface-muted hover:text-ink"
                         aria-label={`Öppna ${o.type}`}
                       >
                         <ChevronRight className="size-5" />

@@ -24,7 +24,7 @@ export function Avatar({ initials, className, size = "size-9" }: AvatarProps) {
     <span
       className={cn(
         "inline-flex shrink-0 items-center justify-center rounded-full font-semibold",
-        "ring-2 ring-white",
+        "ring-2 ring-surface",
         palettes[idx],
         size,
         className,

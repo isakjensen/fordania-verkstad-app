@@ -80,7 +80,7 @@ export function TenantRowActions({ tenant }: { tenant: TenantRow }) {
         <DropdownMenuTrigger
           render={
             <button
-              className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-slate-100 hover:text-ink aria-expanded:bg-slate-100 aria-expanded:text-ink"
+              className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-surface-muted hover:text-ink aria-expanded:bg-surface-muted aria-expanded:text-ink"
               aria-label={`Hantera ${tenant.name}`}
             >
               <MoreHorizontal className="size-5" />

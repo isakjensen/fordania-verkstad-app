@@ -5,9 +5,9 @@ export const statusMeta: Record<
   { badge: string; dot: string; box: string; accent: string; tint: string }
 > = {
   planned: {
-    badge: "bg-slate-100 text-slate-600",
+    badge: "bg-surface-muted text-muted-foreground",
     dot: "bg-slate-400",
-    box: "bg-slate-50 border-slate-300 text-slate-700",
+    box: "bg-surface-muted border-line text-ink-soft",
     accent: "bg-slate-400",
     tint: "bg-surface",
   },

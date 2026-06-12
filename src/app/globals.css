@@ -229,6 +229,7 @@
 }
 
 :root {
+  color-scheme: light;
   --radius: 0.7rem;
   /* shadcn-tokens mappade till Fordanias designsystem (explicita värden) */
   --background: #eef3f9;
@@ -264,36 +265,80 @@
   --sidebar-ring: #2a72c9;
 }
 
+/* ------------------------------------------------------------------ *
+ *  Mörkt läge – sval, mörk navy-slate i Fordania-anda. Alla egna
+ *  färgtokens mappas om så att hela appen (kort, text, knappar,
+ *  formulär, tabeller, kalendrar) blir läsbar utan kontrastproblem.
+ * ------------------------------------------------------------------ */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  color-scheme: dark;
+
+  /* Ytor & struktur */
+  --color-canvas: #0b121f;
+  --color-surface: #151d2d;
+  --color-surface-muted: #1d2740;
+  --color-line: #2b3650;
+  --color-line-strong: #3b4866;
+
+  /* Text */
+  --color-ink: #eef2f8;
+  --color-ink-soft: #c4cedd;
+  --color-muted: #95a2b7;
+  --color-navy: #070c14;
+
+  /* Brand – ljusare för text/ikoner, mörka subtila ytor */
+  --color-brand-50: #16243d;
+  --color-brand-100: #1e3252;
+  --color-brand-200: #2d456b;
+  --color-brand-300: #5d9be1;
+  --color-brand-400: #4f93de;
+  --color-brand-500: #3f86d8;
+  --color-brand-600: #3f86d8; /* primär (knapp + brand-text) */
+  --color-brand-700: #74acea; /* ljus brand-text (aktiv meny m.m.) */
+  --color-brand-800: #9cc4f1;
+  --color-brand-900: #c6def9;
+  --color-brand-950: #e8f2fd;
+
+  /* Semantiska status */
+  --color-success: #45c07e;
+  --color-success-soft: #15311f;
+  --color-warning: #e3a948;
+  --color-warning-soft: #322510;
+  --color-danger: #f06a6a;
+  --color-danger-soft: #3a1a1a;
+  --color-info: #4f93de;
+  --color-info-soft: #15294a;
+
+  /* shadcn-tokens i synk med ovan */
+  --background: #0b121f;
+  --foreground: #eef2f8;
+  --card: #151d2d;
+  --card-foreground: #eef2f8;
+  --popover: #151d2d;
+  --popover-foreground: #eef2f8;
+  --primary: #3f86d8;
+  --primary-foreground: #ffffff;
+  --secondary: #1e3252;
+  --secondary-foreground: #c6def9;
+  --muted: #1d2740;
+  --muted-foreground: #95a2b7;
+  --accent: #1d2740;
+  --accent-foreground: #eef2f8;
+  --destructive: #f06a6a;
+  --border: #2b3650;
+  --input: #2b3650;
+  --ring: #4f93de;
+  --chart-1: #4f93de;
+  --chart-2: #45c07e;
+  --chart-3: #e3a948;
+  --chart-4: #5d9be1;
+  --chart-5: #c4cedd;
+  --sidebar: #151d2d;
+  --sidebar-foreground: #eef2f8;
+  --sidebar-primary: #3f86d8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1d2740;
+  --sidebar-accent-foreground: #eef2f8;
+  --sidebar-border: #2b3650;
+  --sidebar-ring: #4f93de;
 }

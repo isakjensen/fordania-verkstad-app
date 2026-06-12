@@ -42,7 +42,7 @@ export function UserMenu({ subtitle }: { subtitle: string }) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center gap-2 rounded-xl p-1 pr-2 transition-colors hover:bg-slate-100 data-popup-open:bg-slate-100">
+      <DropdownMenuTrigger className="flex items-center gap-2 rounded-xl p-1 pr-2 transition-colors hover:bg-surface-muted data-popup-open:bg-surface-muted">
         <Avatar initials={initials} size="size-9" />
         <span className="hidden flex-col items-start leading-tight lg:flex">
           <span className="text-sm font-semibold text-ink">{name}</span>

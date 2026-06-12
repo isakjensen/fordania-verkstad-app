@@ -77,7 +77,7 @@ export function UserRowActions({ user }: { user: PlatformUserRow }) {
         <DropdownMenuTrigger
           render={
             <button
-              className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-slate-100 hover:text-ink aria-expanded:bg-slate-100 aria-expanded:text-ink"
+              className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-surface-muted hover:text-ink aria-expanded:bg-surface-muted aria-expanded:text-ink"
               aria-label={`Hantera ${user.name}`}
             >
               <MoreHorizontal className="size-5" />

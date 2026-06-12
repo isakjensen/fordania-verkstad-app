@@ -30,7 +30,7 @@ const df = new Intl.DateTimeFormat("sv-SE", {
 
 const defaultStatus = {
   label: "Okänd",
-  className: "bg-slate-100 text-slate-500",
+  className: "bg-surface-muted text-muted-foreground",
   dot: "bg-slate-400",
 };
 
@@ -137,7 +137,7 @@ export function TenantTable({
                       className={cn(
                         "justify-center",
                         planMeta[t.plan as TenantPlan] ??
-                          "bg-slate-100 text-slate-600",
+                          "bg-surface-muted text-muted-foreground",
                       )}
                     >
                       {t.plan}

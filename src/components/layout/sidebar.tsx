@@ -72,7 +72,7 @@ function NavLink({
                 "ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1.5 text-[0.7rem] font-semibold tabular-nums",
                 active
                   ? "bg-brand-600 text-white"
-                  : "bg-slate-100 text-ink-soft",
+                  : "bg-surface-muted text-ink-soft",
               )}
             >
               {item.badge}

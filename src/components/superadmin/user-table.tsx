@@ -29,7 +29,7 @@ const roleLabels: Record<string, string> = {
 const roleClass: Record<string, string> = {
   owner: "bg-brand-50 text-brand-700",
   admin: "bg-brand-50 text-brand-700",
-  member: "bg-slate-100 text-slate-600",
+  member: "bg-surface-muted text-muted-foreground",
 };
 
 const userStatusMeta: Record<
@@ -43,7 +43,7 @@ const userStatusMeta: Record<
   },
   inactive: {
     label: "Inaktiv",
-    className: "bg-slate-100 text-slate-500",
+    className: "bg-surface-muted text-muted-foreground",
     dot: "bg-slate-400",
   },
 };
@@ -145,7 +145,7 @@ export function UserTable({ users, tenants }: UserTableProps) {
                     <Badge
                       className={cn(
                         "justify-center",
-                        roleClass[u.role] ?? "bg-slate-100 text-slate-600",
+                        roleClass[u.role] ?? "bg-surface-muted text-muted-foreground",
                       )}
                     >
                       {roleLabels[u.role] ?? u.role}

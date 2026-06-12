@@ -216,7 +216,7 @@ export interface StatusMeta {
 export const statusMeta: Record<JobStatus, StatusMeta> = {
   planned: {
     label: "Inplanerad",
-    className: "bg-slate-100 text-slate-600",
+    className: "bg-surface-muted text-muted-foreground",
     dot: "bg-slate-400",
   },
   in_progress: {
