@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { Car, CalendarRange } from "lucide-react";
+import { Car, CalendarRange, User as UserIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { LicensePlate } from "@/components/ui/license-plate";
 import { cn } from "@/lib/utils";
@@ -303,7 +303,7 @@ function TimelineItem({
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
             {primary ? (
               <>
                 <LicensePlate value={primary.regNo} />
@@ -321,17 +321,30 @@ function TimelineItem({
                 <Car className="size-4" /> Inget fordon
               </span>
             )}
+          </div>
+
+          {/* Mekaniker – namn tydligt, inte bara initialer */}
+          <div className="flex items-center gap-2">
             {mechs.length > 0 ? (
-              <span className="ml-auto flex items-center -space-x-1.5">
-                {mechs.slice(0, 3).map((m) => (
-                  <Avatar
-                    key={m.id}
-                    initials={initialsOf(m.name)}
-                    size="size-7 text-[0.6rem]"
-                  />
-                ))}
+              <>
+                <span className="flex shrink-0 items-center -space-x-1.5">
+                  {mechs.slice(0, 3).map((m) => (
+                    <Avatar
+                      key={m.id}
+                      initials={initialsOf(m.name)}
+                      size="size-6 text-[0.55rem]"
+                    />
+                  ))}
+                </span>
+                <span className="min-w-0 truncate text-sm font-semibold text-ink-soft">
+                  {mechs.map((m) => m.name).join(", ")}
+                </span>
+              </>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                <UserIcon className="size-4" /> Ej tilldelad
               </span>
-            ) : null}
+            )}
           </div>
         </button>
       </li>
