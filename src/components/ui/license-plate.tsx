@@ -66,7 +66,9 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
   return (
     <span
       className={cn(
-        "inline-flex select-none items-stretch overflow-hidden",
+        // shrink-0 → skylten trycks aldrig ihop av sin flex-container, så hela
+        // registreringsnumret syns alltid (siblings får trunkeras i stället).
+        "inline-flex shrink-0 select-none items-stretch overflow-hidden",
         "border border-slate-900/80 bg-white",
         "shadow-[0_1px_1.5px_rgba(15,23,41,0.25)] ring-1 ring-inset ring-white/60",
         s.plate,
@@ -98,7 +100,7 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
       {/* Registreringsnummer */}
       <span
         className={cn(
-          "flex items-center bg-linear-to-b from-white to-slate-50 font-mono font-bold text-slate-900",
+          "flex items-center whitespace-nowrap bg-linear-to-b from-white to-slate-50 font-mono font-bold text-slate-900",
           s.text,
         )}
       >

@@ -81,7 +81,7 @@ export function VehicleLinks({
             {vehicles.map((v) => (
               <li key={v.id} className="flex items-center gap-3 py-2.5">
                 <Link href={`/fordon/${v.id}`} className="inline-flex shrink-0">
-                  <LicensePlate value={v.regNo} className="h-7" />
+                  <LicensePlate value={v.regNo} />
                 </Link>
                 <Link
                   href={`/fordon/${v.id}`}

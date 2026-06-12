@@ -426,8 +426,13 @@ const JobBlock = memo(function JobBlock({
           </span>
         ) : null}
         {!compact ? (
-          <span className="mt-auto flex items-center gap-1.5 pt-0.5">
-            {primary ? <LicensePlate value={primary.regNo} size="sm" /> : null}
+          <span className="mt-auto flex items-center gap-1.5 overflow-hidden pt-0.5">
+            {/* Skylten visas bara i ett enkelt spår – i smala överlapps-spår
+                finns inte plats för hela skylten, så den utelämnas hellre än
+                klipps av. */}
+            {primary && lanes === 1 ? (
+              <LicensePlate value={primary.regNo} size="sm" />
+            ) : null}
             {view === "week" && job.mechanics[0] ? (
               <Avatar
                 initials={initialsOf(job.mechanics[0].user.name)}
