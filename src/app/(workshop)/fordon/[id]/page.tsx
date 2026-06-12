@@ -51,7 +51,7 @@ export default async function VehicleDetailPage({
 
       <div className="mt-4 flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <LicensePlate value={vehicle.regNo} className="h-9" />
+          <LicensePlate value={vehicle.regNo} size="lg" />
           <div>
             <h1 className="text-xl font-extrabold tracking-tight text-ink">
               {vehicle.regNo}
