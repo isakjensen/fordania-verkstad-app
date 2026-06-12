@@ -5,12 +5,12 @@ import { motion } from "motion/react";
 import {
   Wrench,
   CalendarClock,
-  CheckCircle2,
   AlertTriangle,
+  Car,
 } from "lucide-react";
 import { StatCard } from "./stat-card";
-import { QuickActions } from "./quick-actions";
 import { TodaysJobs } from "./todays-jobs";
+import { AttentionList } from "./attention-list";
 import { MechanicLoad } from "./mechanic-load";
 import { FleetStatus } from "./fleet-status";
 import { staggerContainer } from "./motion";
@@ -32,7 +32,6 @@ export function Dashboard({
   data: DashboardData | null;
   hasOrg: boolean;
 }) {
-  // Formatera datumet efter mount för att undvika hydration-skillnader
   const [date, setDate] = useState("");
   useEffect(() => setDate(todayLabel()), []);
 
@@ -42,31 +41,40 @@ export function Dashboard({
     doneToday: 0,
     needsAttention: 0,
   };
+  const fleet = data?.fleet ?? {
+    total: 0,
+    available: 0,
+    inWorkshop: 0,
+    waitingParts: 0,
+    readyPct: 0,
+  };
 
   return (
-    // Fyller hela ytan utan sidscroll på desktop (mus) – listorna scrollar internt.
-    // På touch (iPad/mobil) får sidan i stället växa och scrolla naturligt, så
-    // de större tryckytorna alltid får plats.
-    <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 lg:py-5 pointer-fine:lg:h-full pointer-fine:lg:overflow-hidden">
-      {/* Sidhuvud */}
-      <header className="flex shrink-0 items-end justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            {date || " "}
+    <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 lg:py-5">
+      {/* Sidhuvud med kontext-sammanfattning */}
+      <header className="flex flex-col gap-1">
+        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          {date || " "}
+        </p>
+        <h1 className="text-[1.7rem] font-extrabold leading-none tracking-tight text-ink sm:text-[2rem]">
+          Översikt
+        </h1>
+        {hasOrg ? (
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {stats.plannedToday > 0
+              ? `${stats.plannedToday} jobb inplanerade idag`
+              : "Inga jobb inplanerade idag"}
+            {stats.doneToday > 0 ? ` · ${stats.doneToday} klara` : ""}
+            {stats.needsAttention > 0 ? (
+              <>
+                {" · "}
+                <span className="font-semibold text-danger">
+                  {stats.needsAttention} kräver åtgärd
+                </span>
+              </>
+            ) : null}
           </p>
-          <h1 className="mt-1 text-[1.6rem] font-extrabold leading-none tracking-tight text-ink">
-            Översikt
-          </h1>
-        </div>
-        <div className="hidden items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 shadow-soft sm:flex">
-          <span className="relative flex size-2">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-success/60" />
-            <span className="relative inline-flex size-2 rounded-full bg-success" />
-          </span>
-          <span className="text-xs font-medium text-ink-soft">
-            Uppdaterad just nu
-          </span>
-        </div>
+        ) : null}
       </header>
 
       {!hasOrg ? (
@@ -76,68 +84,62 @@ export function Dashboard({
           </p>
         </div>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col gap-4">
-          {/* KPI-kort */}
+        <>
+          {/* KPI – tappbara genvägar */}
           <motion.div
             variants={staggerContainer}
             initial="hidden"
             animate="show"
-            className="grid shrink-0 grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4"
+            className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4"
           >
             <StatCard
               icon={Wrench}
-              label="Aktiva jobb just nu"
+              label="Pågår nu"
               value={stats.activeJobs}
-              hint="Arbete pågår i verkstaden"
+              hint="Arbete i verkstaden just nu"
               tone="brand"
+              href="/planering?view=day"
             />
             <StatCard
               icon={CalendarClock}
-              label="Inplanerade idag"
+              label="Inplanerat idag"
               value={stats.plannedToday}
-              hint="Hela dagens schema"
+              hint={`${stats.doneToday} klara hittills`}
               tone="violet"
-            />
-            <StatCard
-              icon={CheckCircle2}
-              label="Klara idag"
-              value={stats.doneToday}
-              hint="Återlämnade till uthyrning"
-              tone="success"
+              href="/planering?view=day"
             />
             <StatCard
               icon={AlertTriangle}
               label="Kräver åtgärd"
               value={stats.needsAttention}
-              hint="Försenade eller väntar på delar"
+              hint="Försenade / väntar på delar"
               tone="danger"
+              href="/arbetsordrar"
+            />
+            <StatCard
+              icon={Car}
+              label="Tillgängliga fordon"
+              value={fleet.available}
+              hint={`av ${fleet.total} i flottan`}
+              tone="success"
+              href="/fordon"
             />
           </motion.div>
 
-          {/* Snabbåtgärder */}
-          <QuickActions />
-
-          {/* Innehåll – fyller resten av höjden */}
-          <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="min-h-0 lg:col-span-2">
+          {/* Dagens jobb + det som kräver åtgärd */}
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
               <TodaysJobs jobs={data?.todaysJobs ?? []} />
             </div>
-            <div className="flex min-h-0 flex-col gap-4">
-              <FleetStatus
-                fleet={
-                  data?.fleet ?? {
-                    total: 0,
-                    available: 0,
-                    inWorkshop: 0,
-                    waitingParts: 0,
-                    readyPct: 0,
-                  }
-                }
-              />
-              <MechanicLoad mechanics={data?.mechanicLoad ?? []} />
-            </div>
+            <AttentionList items={data?.attention ?? []} />
           </div>
-        </div>
+
+          {/* Verkstadens tillstånd */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            <FleetStatus fleet={fleet} />
+            <MechanicLoad mechanics={data?.mechanicLoad ?? []} />
+          </div>
+        </>
       )}
     </div>
   );

@@ -10,6 +10,7 @@ import {
   ArrowRight,
   type LucideIcon,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
@@ -36,6 +37,14 @@ function duration(min: number | null) {
 }
 
 export function TodaysJobs({ jobs }: { jobs: DashboardData["todaysJobs"] }) {
+  // "Härnäst" = nästa order som ännu inte påbörjats (klientberäknat).
+  const nowHm = `${String(new Date().getHours()).padStart(2, "0")}:${String(
+    new Date().getMinutes(),
+  ).padStart(2, "0")}`;
+  const nextId = jobs.find(
+    (j) => j.status === "planned" && (j.start ?? "99:99") >= nowHm,
+  )?.id;
+
   return (
     <Card className="flex h-full flex-col">
       <CardHeader
@@ -65,77 +74,96 @@ export function TodaysJobs({ jobs }: { jobs: DashboardData["todaysJobs"] }) {
             const status =
               statusMeta[job.status as JobStatus] ?? statusMeta.planned;
             const dur = duration(job.durationMin);
+            const ongoing = job.status === "in_progress";
+            const isNext = job.id === nextId;
             return (
-              <li
-                key={job.id}
-                className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-surface-muted sm:gap-4"
-              >
-                {/* Fordon + typ-ikon */}
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface-muted text-ink-soft ring-1 ring-line">
-                  <Icon className="size-5" strokeWidth={1.75} />
-                </span>
+              <li key={job.id}>
+                <Link
+                  href={`/arbetsordrar/${job.id}`}
+                  className={cn(
+                    "flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-surface-muted active:bg-surface-muted sm:gap-4",
+                    ongoing && "bg-info-soft/40",
+                  )}
+                >
+                  {/* Fordon + typ-ikon */}
+                  <span
+                    className={cn(
+                      "flex size-10 shrink-0 items-center justify-center rounded-xl ring-1",
+                      ongoing
+                        ? "bg-info-soft text-info ring-info/20"
+                        : "bg-surface-muted text-ink-soft ring-line",
+                    )}
+                  >
+                    <Icon className="size-5" strokeWidth={1.75} />
+                  </span>
 
-                {/* Reg.nr + modell */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <LicensePlate value={job.regNo ?? "—"} />
-                    {job.priority === "high" ? (
-                      <span
-                        className="size-1.5 rounded-full bg-danger"
-                        title="Hög prioritet"
-                        aria-label="Hög prioritet"
-                      />
+                  {/* Reg.nr + modell */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <LicensePlate value={job.regNo ?? "—"} />
+                      {isNext ? (
+                        <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-wide text-brand-700">
+                          Härnäst
+                        </span>
+                      ) : null}
+                      {job.priority === "high" ? (
+                        <span
+                          className="size-1.5 rounded-full bg-danger"
+                          title="Hög prioritet"
+                          aria-label="Hög prioritet"
+                        />
+                      ) : null}
+                    </div>
+                    <p className="mt-1 truncate text-sm font-medium text-ink-soft">
+                      {job.vehicle ?? "Okänt fordon"}
+                      <span className="text-muted-foreground md:hidden">
+                        {" "}
+                        · {job.type}
+                      </span>
+                    </p>
+                  </div>
+
+                  {/* Typ – från sm */}
+                  <span className="hidden w-28 shrink-0 text-sm font-medium text-ink-soft md:block">
+                    {job.type}
+                  </span>
+
+                  {/* Mekaniker – från lg */}
+                  <div className="hidden w-36 shrink-0 items-center gap-2 lg:flex">
+                    {job.mechanicName ? (
+                      <>
+                        <Avatar
+                          initials={job.mechanicInitials ?? "?"}
+                          size="size-7 text-xs"
+                        />
+                        <span className="truncate text-sm text-ink-soft">
+                          {job.mechanicName}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        Ej tilldelad
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Tid – från sm */}
+                  <div className="hidden w-20 shrink-0 text-right sm:block">
+                    <p className="text-sm font-semibold text-ink tabular-nums">
+                      {job.start ?? "—"}
+                    </p>
+                    {dur ? (
+                      <p className="text-xs text-muted-foreground">{dur}</p>
                     ) : null}
                   </div>
-                  <p className="mt-1 truncate text-sm font-medium text-ink-soft">
-                    {job.vehicle ?? "Okänt fordon"}
-                    <span className="text-muted-foreground md:hidden">
-                      {" "}
-                      · {job.type}
-                    </span>
-                  </p>
-                </div>
 
-                {/* Typ – från sm */}
-                <span className="hidden w-28 shrink-0 text-sm font-medium text-ink-soft md:block">
-                  {job.type}
-                </span>
-
-                {/* Mekaniker – från lg */}
-                <div className="hidden w-44 shrink-0 items-center gap-2 lg:flex">
-                  {job.mechanicName ? (
-                    <>
-                      <Avatar
-                        initials={job.mechanicInitials ?? "?"}
-                        size="size-7 text-xs"
-                      />
-                      <span className="truncate text-sm text-ink-soft">
-                        {job.mechanicName}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">
-                      Ej tilldelad
-                    </span>
-                  )}
-                </div>
-
-                {/* Tid – från sm */}
-                <div className="hidden w-24 shrink-0 text-right sm:block">
-                  <p className="text-sm font-medium text-ink tabular-nums">
-                    {job.start ?? "—"}
-                  </p>
-                  {dur ? (
-                    <p className="text-xs text-muted-foreground">{dur}</p>
-                  ) : null}
-                </div>
-
-                {/* Status – fast kolumnbredd så raderna linjerar */}
-                <div className="flex w-36 shrink-0 justify-end">
-                  <Badge className={status.className} dot={status.dot}>
-                    {status.label}
-                  </Badge>
-                </div>
+                  {/* Status – naturlig bredd, höger­ställd (klipps aldrig) */}
+                  <div className="flex shrink-0 justify-end pl-1">
+                    <Badge className={status.className} dot={status.dot}>
+                      {status.label}
+                    </Badge>
+                  </div>
+                </Link>
               </li>
             );
           })}

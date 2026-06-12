@@ -17,6 +17,24 @@ function hm(d: Date) {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
+const dtfShort = new Intl.DateTimeFormat("sv-SE", {
+  day: "numeric",
+  month: "short",
+});
+
+/** "Idag 09:00", "Igår 14:30" eller "12 juni 09:00". */
+function whenLabel(start: Date | null, todayStart: Date) {
+  if (!start) return "Ej schemalagd";
+  const d0 = new Date(start);
+  d0.setHours(0, 0, 0, 0);
+  const diff = Math.round((d0.getTime() - todayStart.getTime()) / 86400000);
+  const time = hm(new Date(start));
+  if (diff === 0) return `Idag ${time}`;
+  if (diff === -1) return `Igår ${time}`;
+  if (diff === 1) return `Imorgon ${time}`;
+  return `${dtfShort.format(new Date(start))} ${time}`;
+}
+
 /** Samlad, tenant-scopad data till Översikt-sidan (allt från riktiga DB-rader). */
 export async function getDashboardData(organizationId: string) {
   const now = new Date();
@@ -35,6 +53,7 @@ export async function getDashboardData(organizationId: string) {
     vehiclesInWorkshop,
     vehiclesWaitingParts,
     members,
+    attentionRaw,
   ] = await Promise.all([
     db.job.findMany({
       where: {
@@ -89,6 +108,20 @@ export async function getDashboardData(organizationId: string) {
       orderBy: { createdAt: "asc" },
       include: { user: { select: { id: true, name: true } } },
     }),
+    // Order som kräver åtgärd: försenade och de som väntar på delar.
+    db.job.findMany({
+      where: { organizationId, status: { in: ["delayed", "waiting_parts"] } },
+      orderBy: [{ status: "asc" }, { scheduledStart: "asc" }],
+      take: 6,
+      include: {
+        mechanics: { include: { user: { select: { id: true, name: true } } } },
+        vehicles: {
+          include: {
+            vehicle: { select: { id: true, regNo: true, brand: true, model: true } },
+          },
+        },
+      },
+    }),
   ]);
 
   // Dagens arbetsordrar i visningsform
@@ -137,6 +170,22 @@ export async function getDashboardData(organizationId: string) {
     })
     .sort((a, b) => b.jobs - a.jobs);
 
+  // Order som kräver åtgärd – i visningsform.
+  const attention = attentionRaw.map((j) => {
+    const v = j.vehicles[0]?.vehicle ?? null;
+    const m = j.mechanics[0]?.user ?? null;
+    return {
+      id: j.id,
+      type: j.type,
+      status: j.status,
+      priority: j.priority,
+      regNo: v?.regNo ?? null,
+      vehicle: v ? [v.brand, v.model].filter(Boolean).join(" ") : null,
+      mechanicName: m?.name ?? null,
+      when: whenLabel(j.scheduledStart, todayStart),
+    };
+  });
+
   const inWorkshopOnly = Math.max(0, vehiclesInWorkshop - vehiclesWaitingParts);
   const available = Math.max(0, vehiclesTotal - vehiclesInWorkshop);
   const fleet = {
@@ -150,6 +199,7 @@ export async function getDashboardData(organizationId: string) {
   return {
     stats: { activeJobs, plannedToday, doneToday, needsAttention },
     todaysJobs,
+    attention,
     mechanicLoad,
     fleet,
   };

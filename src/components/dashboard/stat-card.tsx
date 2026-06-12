@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "motion/react";
 import { ArrowUpRight, ArrowDownRight, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,7 +14,7 @@ const chip: Record<Tone, string> = {
   success: "bg-success-soft text-success",
   warning: "bg-warning-soft text-warning",
   danger: "bg-danger-soft text-danger",
-  violet: "bg-violet-100 text-violet-600",
+  violet: "bg-violet-100 text-violet-600 dark:bg-violet-400/15 dark:text-violet-300",
 };
 
 interface StatCardProps {
@@ -23,6 +24,8 @@ interface StatCardProps {
   hint?: string;
   tone?: Tone;
   trend?: { value: string; up: boolean };
+  /** Gör hela kortet till en genväg. */
+  href?: string;
 }
 
 export function StatCard({
@@ -32,6 +35,7 @@ export function StatCard({
   hint,
   tone = "brand",
   trend,
+  href,
 }: StatCardProps) {
   return (
     <motion.div
@@ -39,9 +43,16 @@ export function StatCard({
       className={cn(
         "group relative overflow-hidden rounded-xl border border-line bg-surface",
         "p-4 transition-all duration-200",
-        "hover:-translate-y-0.5 hover:border-line-strong hover:shadow-lift",
+        href && "hover:-translate-y-0.5 hover:border-line-strong hover:shadow-lift",
       )}
     >
+      {href ? (
+        <Link
+          href={href}
+          aria-label={label}
+          className="absolute inset-0 z-10 rounded-xl focus-visible:outline-none"
+        />
+      ) : null}
       <div className="flex items-start justify-between gap-3">
         <p className="mt-1 text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
           {label}
