@@ -123,3 +123,51 @@ export function layoutColumn(jobs: ScheduleJob[], mechId: string): Placed[] {
     return { job, mechId, top, height, lane, lanes };
   });
 }
+
+export interface PlacedH {
+  job: ScheduleJob;
+  /** timmar från DAY_START till orderstart (klampad) */
+  startOffset: number;
+  /** orderns längd i timmar */
+  durH: number;
+  sublane: number;
+  sublanes: number;
+}
+
+/**
+ * Placerar en mekanikers ordrar i en vågrät tidslinje (rad): tidsoffset i
+ * timmar (upplösningsoberoende, % räknas i komponenten) och staplade
+ * underbanor (sublanes) för överlappande ordrar.
+ */
+export function layoutRow(jobs: ScheduleJob[]): {
+  placed: PlacedH[];
+  sublanes: number;
+} {
+  const sorted = [...jobs].sort(
+    (a, b) =>
+      new Date(a.scheduledStart as Date).getTime() -
+      new Date(b.scheduledStart as Date).getTime(),
+  );
+  const laneEnds: number[] = [];
+  const assigned = sorted.map((job) => {
+    const start = startHourOf(job);
+    const end = start + durationHoursOf(job);
+    let lane = laneEnds.findIndex((e) => e <= start + 0.001);
+    if (lane === -1) {
+      lane = laneEnds.length;
+      laneEnds.push(end);
+    } else {
+      laneEnds[lane] = end;
+    }
+    return { job, start, lane };
+  });
+  const sublanes = Math.max(1, laneEnds.length);
+  const placed = assigned.map(({ job, start, lane }) => ({
+    job,
+    startOffset: clamp(start, DAY_START, DAY_END) - DAY_START,
+    durH: durationHoursOf(job),
+    sublane: lane,
+    sublanes,
+  }));
+  return { placed, sublanes };
+}

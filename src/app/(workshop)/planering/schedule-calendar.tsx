@@ -8,6 +8,7 @@ import { useMediaQuery } from "@/lib/use-media-query";
 import type { Mechanic, ScheduleJob } from "@/lib/data/schedule";
 import { JobDetail } from "./job-detail";
 import { TimeGrid, type MoveArgs } from "./time-grid";
+import { DayBoard } from "./day-board";
 import { Agenda } from "./agenda";
 import { moveJob } from "./actions";
 import {
@@ -200,11 +201,22 @@ export function ScheduleCalendar({
         ) : isWide === null ? (
           <CalendarSkeleton />
         ) : isWide ? (
-          mechanics.length === 0 && view === "day" ? (
-            <EmptyState text="Inga mekaniker i verkstaden ännu." />
+          view === "day" ? (
+            mechanics.length === 0 ? (
+              <EmptyState text="Inga mekaniker i verkstaden ännu." />
+            ) : (
+              <DayBoard
+                anchorISO={anchorISO}
+                mechanics={mechanics}
+                jobs={localJobs}
+                canManage={canManage}
+                onOpen={openJob}
+                onMove={handleMove}
+              />
+            )
           ) : (
             <TimeGrid
-              view={view}
+              view="week"
               anchorISO={anchorISO}
               fromISO={fromISO}
               mechanics={mechanics}
