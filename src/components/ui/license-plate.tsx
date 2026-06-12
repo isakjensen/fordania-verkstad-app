@@ -68,7 +68,9 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
       className={cn(
         // shrink-0 → skylten trycks aldrig ihop av sin flex-container, så hela
         // registreringsnumret syns alltid (siblings får trunkeras i stället).
-        "inline-flex shrink-0 select-none items-stretch overflow-hidden",
+        // w-fit → skylten storleksanpassas efter innehållet och tänjs aldrig ut
+        // till full bredd (t.ex. i en flex-kolumn med align-items: stretch).
+        "inline-flex w-fit shrink-0 select-none items-stretch overflow-hidden",
         "border border-slate-900/80 bg-white",
         "shadow-[0_1px_1.5px_rgba(15,23,41,0.25)] ring-1 ring-inset ring-white/60",
         s.plate,
