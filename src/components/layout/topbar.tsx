@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Bell, BellOff, Plus } from "lucide-react";
+import { Bell, BellOff, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TenantLogo } from "@/components/ui/tenant-logo";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -12,27 +13,31 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { GlobalSearch } from "./global-search";
 import { UserMenu } from "./user-menu";
+import type { SwitcherData } from "@/lib/data/tenant-context";
 
-interface TopbarProps {
-  onOpenMobile: () => void;
-}
+export function Topbar({ switcher }: { switcher: SwitcherData }) {
+  const active =
+    switcher.tenants.find((t) => t.id === switcher.activeId) ??
+    switcher.tenants[0] ??
+    null;
 
-export function Topbar({ onOpenMobile }: TopbarProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-line bg-surface/80 px-4 backdrop-blur-md md:px-6">
-      {/* Hamburger – endast mobil/tablet */}
-      <button
-        onClick={onOpenMobile}
-        className="flex size-10 items-center justify-center rounded-xl text-ink-soft transition-colors hover:bg-surface-muted pointer-coarse:size-12 lg:hidden"
-        aria-label="Öppna meny"
-      >
-        <Menu className="size-5 pointer-coarse:size-6" />
-      </button>
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-line bg-surface/80 px-3 pt-safe backdrop-blur-md sm:gap-3 sm:px-4 md:px-6">
+      {/* Aktiv verkstad som kontext – endast mobil/stående (sidomenyn visar
+          detta på lg+). */}
+      {active ? (
+        <div className="flex min-w-0 items-center gap-2 lg:hidden">
+          <TenantLogo tenant={active} size="sm" />
+          <span className="min-w-0 max-w-[8.5rem] truncate text-sm font-bold text-ink sm:max-w-[14rem]">
+            {active.name}
+          </span>
+        </div>
+      ) : null}
 
       {/* Global sök */}
       <GlobalSearch />
 
-      {/* Spacer för mobil */}
+      {/* Spacer på mobil när söket är komprimerat */}
       <div className="flex-1 sm:hidden" />
 
       {/* Höger: åtgärder */}
@@ -79,9 +84,11 @@ export function Topbar({ onOpenMobile }: TopbarProps) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="mx-1 hidden h-7 w-px bg-line sm:block" />
-
-        <UserMenu subtitle="Verkstad" />
+        {/* Användarmeny – på lg+ (mobil har den i "Mer") */}
+        <div className="mx-1 hidden h-7 w-px bg-line lg:block" />
+        <div className="hidden lg:block">
+          <UserMenu subtitle="Verkstad" />
+        </div>
       </div>
     </header>
   );

@@ -29,7 +29,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#1a64bd",
+  // Fyll hela skärmen bakom safe-areas (native-känsla på iPad/iPhone).
+  viewportFit: "cover",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
