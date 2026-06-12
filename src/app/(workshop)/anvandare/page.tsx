@@ -75,7 +75,42 @@ export default async function UsersPage() {
             <p className="mt-4 font-semibold text-ink">Inga användare ännu</p>
           </div>
         ) : (
-          <Table>
+          <>
+          {/* Mobil / iPad-stående: touch-kort */}
+          <ul className="divide-y divide-line lg:hidden">
+            {members.map((m) => (
+              <li key={m.memberId} className="flex items-center gap-3 px-4 py-3.5">
+                <Avatar initials={initialsOf(m.name)} size="size-10 text-sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-1.5 truncate text-[0.95rem] font-semibold text-ink">
+                    {m.name}
+                    {m.isSuperadmin ? (
+                      <ShieldCheck className="size-3.5 text-brand-600" aria-label="Superadmin" />
+                    ) : null}
+                  </p>
+                  <p className="truncate text-sm text-muted-foreground">{m.email}</p>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <RoleBadge role={m.role} />
+                    <StatusBadge active={m.active} />
+                  </div>
+                </div>
+                {canManage && !m.isSuperadmin ? (
+                  <UserActions
+                    member={{
+                      memberId: m.memberId,
+                      name: m.name,
+                      email: m.email,
+                      role: m.role,
+                      active: m.active,
+                    }}
+                  />
+                ) : null}
+              </li>
+            ))}
+          </ul>
+
+          {/* Desktop / liggande: tabell */}
+          <Table className="hidden lg:table">
             <TableHeader>
               <TableRow className="bg-surface-muted/40 hover:bg-surface-muted/40">
                 <TableHead className={`${headClass} min-w-[220px]`}>
@@ -148,6 +183,7 @@ export default async function UsersPage() {
               ))}
             </TableBody>
           </Table>
+          </>
         )}
       </Card>
 

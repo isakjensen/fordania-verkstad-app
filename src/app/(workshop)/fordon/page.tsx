@@ -74,7 +74,40 @@ export default async function VehiclesPage() {
             </p>
           </div>
         ) : (
-          <Table>
+          <>
+          {/* Mobil / iPad-stående: touch-kort */}
+          <ul className="divide-y divide-line lg:hidden">
+            {vehicles.map((v) => {
+              const latest = v.odometer[0];
+              return (
+                <li key={v.id}>
+                  <Link
+                    href={`/fordon/${v.id}`}
+                    className="flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-surface-muted"
+                  >
+                    <LicensePlate value={v.regNo} className="shrink-0" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[0.95rem] font-semibold text-ink">
+                        {v.brand || v.model
+                          ? [v.brand, v.model].filter(Boolean).join(" ")
+                          : "Okänt fordon"}
+                      </span>
+                      {latest ? (
+                        <span className="mt-0.5 inline-flex items-center gap-1.5 text-sm text-muted-foreground tabular-nums">
+                          <Gauge className="size-3.5" />
+                          {nf.format(latest.value)} km
+                        </span>
+                      ) : null}
+                    </span>
+                    <ChevronRight className="size-5 shrink-0 text-muted-foreground/50" />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Desktop / liggande: tabell */}
+          <Table className="hidden lg:table">
             <TableHeader>
               <TableRow className="bg-surface-muted/40 hover:bg-surface-muted/40">
                 <TableHead className={`${headClass} min-w-[160px]`}>
@@ -138,6 +171,7 @@ export default async function VehiclesPage() {
               })}
             </TableBody>
           </Table>
+          </>
         )}
       </Card>
     </div>
