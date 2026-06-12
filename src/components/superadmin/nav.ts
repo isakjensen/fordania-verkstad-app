@@ -1,8 +1,7 @@
 import {
+  LayoutDashboard,
   Building2,
   Users,
-  CreditCard,
-  Settings2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -12,28 +11,9 @@ export interface SuperNavItem {
   icon: LucideIcon;
 }
 
-export interface SuperNavGroup {
-  label: string;
-  items: SuperNavItem[];
-}
-
-export const superadminGroups: SuperNavGroup[] = [
-  {
-    label: "Plattform",
-    items: [
-      { label: "Företag", href: "/superadmin", icon: Building2 },
-      { label: "Användare", href: "/superadmin/anvandare", icon: Users },
-    ],
-  },
-  {
-    label: "System",
-    items: [
-      { label: "Fakturering", href: "/superadmin/fakturering", icon: CreditCard },
-      {
-        label: "Inställningar",
-        href: "/superadmin/installningar",
-        icon: Settings2,
-      },
-    ],
-  },
+/** Superadmins vyer – tre tydliga, faktiska sektioner. */
+export const superadminNav: SuperNavItem[] = [
+  { label: "Översikt", href: "/superadmin", icon: LayoutDashboard },
+  { label: "Företag", href: "/superadmin/foretag", icon: Building2 },
+  { label: "Användare", href: "/superadmin/anvandare", icon: Users },
 ];

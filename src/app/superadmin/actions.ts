@@ -55,6 +55,7 @@ export async function createTenant(formData: FormData): Promise<ActionResult> {
   });
 
   revalidatePath("/superadmin");
+  revalidatePath("/superadmin/foretag");
   return { success: true };
 }
 
@@ -85,6 +86,7 @@ export async function updateTenant(formData: FormData): Promise<ActionResult> {
   });
 
   revalidatePath("/superadmin");
+  revalidatePath("/superadmin/foretag");
   revalidatePath("/superadmin/anvandare");
   return { success: true };
 }
@@ -105,6 +107,7 @@ export async function deleteTenant(id: string): Promise<ActionResult> {
   await db.organization.delete({ where: { id } });
 
   revalidatePath("/superadmin");
+  revalidatePath("/superadmin/foretag");
   revalidatePath("/superadmin/anvandare");
   return { success: true };
 }
@@ -150,6 +153,7 @@ export async function createUserInTenant(
   });
 
   revalidatePath("/superadmin");
+  revalidatePath("/superadmin/foretag");
   revalidatePath("/superadmin/anvandare");
   return { success: true };
 }
@@ -221,6 +225,7 @@ export async function removeUserFromTenant(
   }
 
   revalidatePath("/superadmin");
+  revalidatePath("/superadmin/foretag");
   revalidatePath("/superadmin/anvandare");
   return { success: true };
 }

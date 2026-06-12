@@ -247,15 +247,16 @@ export const tenantStatusMeta: Record<TenantStatus, TenantStatusMeta> = {
   },
   invited: {
     label: "Inbjuden",
-    className: "bg-slate-100 text-slate-500",
+    className: "bg-surface-muted text-muted-foreground",
     dot: "bg-slate-400",
   },
 };
 
 export const planMeta: Record<TenantPlan, string> = {
-  Bas: "bg-slate-100 text-slate-600",
+  Bas: "bg-surface-muted text-muted-foreground",
   Plus: "bg-brand-50 text-brand-700",
-  Enterprise: "bg-violet-100 text-violet-700",
+  Enterprise:
+    "bg-violet-100 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300",
 };
 
 /** Den tenant som den inloggade användaren just nu arbetar i. */

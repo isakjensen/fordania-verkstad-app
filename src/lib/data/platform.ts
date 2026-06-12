@@ -58,6 +58,41 @@ export interface PlatformUserRow {
   status: string;
 }
 
+export interface PlatformStats {
+  tenants: number;
+  activeTenants: number;
+  users: number;
+  vehicles: number;
+  jobs: number;
+  byPlan: Record<string, number>;
+  byStatus: Record<string, number>;
+}
+
+/** Aggregerad plattformsöversikt – allt från riktiga DB-rader. */
+export async function getPlatformStats(): Promise<PlatformStats> {
+  const [orgs, users, vehicles, jobs] = await Promise.all([
+    db.organization.findMany({ select: { status: true, plan: true } }),
+    db.member.count(),
+    db.vehicle.count(),
+    db.job.count(),
+  ]);
+  const byPlan: Record<string, number> = {};
+  const byStatus: Record<string, number> = {};
+  for (const o of orgs) {
+    byPlan[o.plan] = (byPlan[o.plan] ?? 0) + 1;
+    byStatus[o.status] = (byStatus[o.status] ?? 0) + 1;
+  }
+  return {
+    tenants: orgs.length,
+    activeTenants: byStatus["active"] ?? 0,
+    users,
+    vehicles,
+    jobs,
+    byPlan,
+    byStatus,
+  };
+}
+
 /** Alla användare över alla tenants (via medlemskap). */
 export async function getPlatformUsers(): Promise<PlatformUserRow[]> {
   const members = await db.member.findMany({

@@ -1,33 +1,31 @@
 "use client";
 
-import { motion } from "motion/react";
-import { Building2, Users, Car } from "lucide-react";
+import { Building2, Users, Car, ClipboardList } from "lucide-react";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { staggerContainer } from "@/components/dashboard/motion";
 
-/** KPI-band överst på superadmins översikt – snabb plattformsöversikt. */
-export function PlatformStats({
+/** KPI-band på superadmins översikt – tappbara genvägar. */
+export function OverviewKpis({
   tenants,
+  activeTenants,
   users,
   vehicles,
+  jobs,
 }: {
   tenants: number;
+  activeTenants: number;
   users: number;
   vehicles: number;
+  jobs: number;
 }) {
   return (
-    <motion.div
-      variants={staggerContainer}
-      initial="hidden"
-      animate="show"
-      className="grid grid-cols-1 gap-4 sm:grid-cols-3"
-    >
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
       <StatCard
         icon={Building2}
         label="Anslutna företag"
         value={tenants}
-        hint="Tenants på plattformen"
+        hint={`${activeTenants} aktiva`}
         tone="brand"
+        href="/superadmin/foretag"
       />
       <StatCard
         icon={Users}
@@ -35,6 +33,7 @@ export function PlatformStats({
         value={users}
         hint="Över alla företag"
         tone="violet"
+        href="/superadmin/anvandare"
       />
       <StatCard
         icon={Car}
@@ -43,6 +42,13 @@ export function PlatformStats({
         hint="I alla fordonsregister"
         tone="success"
       />
-    </motion.div>
+      <StatCard
+        icon={ClipboardList}
+        label="Arbetsordrar"
+        value={jobs}
+        hint="Totalt på plattformen"
+        tone="warning"
+      />
+    </div>
   );
 }
