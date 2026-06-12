@@ -26,7 +26,7 @@ export function Topbar({ switcher }: { switcher: SwitcherData }) {
       {/* Aktiv verkstad som kontext – endast mobil/stående (sidomenyn visar
           detta på lg+). */}
       {active ? (
-        <div className="flex min-w-0 items-center gap-2 lg:hidden">
+        <div className="flex min-w-0 items-center gap-2 pointer-fine:lg:hidden">
           <TenantLogo tenant={active} size="sm" />
           <span className="min-w-0 max-w-[8.5rem] truncate text-sm font-bold text-ink sm:max-w-[14rem]">
             {active.name}
@@ -84,9 +84,9 @@ export function Topbar({ switcher }: { switcher: SwitcherData }) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Användarmeny – på lg+ (mobil har den i "Mer") */}
-        <div className="mx-1 hidden h-7 w-px bg-line lg:block" />
-        <div className="hidden lg:block">
+        {/* Användarmeny – endast desktop (iPad/mobil har den i "Mer") */}
+        <div className="mx-1 hidden h-7 w-px bg-line pointer-fine:lg:block" />
+        <div className="hidden pointer-fine:lg:block">
           <UserMenu subtitle="Verkstad" />
         </div>
       </div>
