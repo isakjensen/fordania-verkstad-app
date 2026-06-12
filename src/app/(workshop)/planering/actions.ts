@@ -71,3 +71,67 @@ export async function moveJob(
   revalidatePath("/planering");
   return { success: true };
 }
+
+const VALID_STATUS = [
+  "planned",
+  "in_progress",
+  "waiting_parts",
+  "done",
+  "delayed",
+];
+
+/**
+ * Säkerställer inloggad medlem i den aktiva verkstaden + att jobbet hör dit.
+ * Returnerar ett fel, eller `null` om allt är ok.
+ */
+async function guardJob(jobId: string): Promise<{ error: string } | null> {
+  const session = await requireUser();
+  const organizationId = await getActiveOrganizationId();
+  if (!organizationId) return { error: "Du tillhör ingen verkstad." };
+  const member = await db.member.findFirst({
+    where: { organizationId, userId: session.user.id },
+  });
+  const role = await getTenantRole(organizationId);
+  // Medlemmar och verkstadsadmin/superadmin får snabbändra.
+  if (!member && !role) return { error: "Saknar behörighet." };
+  const job = await db.job.findFirst({ where: { id: jobId, organizationId } });
+  if (!job) return { error: "Arbetsordern hittades inte." };
+  return null;
+}
+
+function revalidateJob(jobId: string) {
+  revalidatePath("/planering");
+  revalidatePath("/arbetsordrar");
+  revalidatePath(`/arbetsordrar/${jobId}`);
+  revalidatePath("/dagens-uppdrag");
+  revalidatePath("/");
+}
+
+/** Snabbändra status på en arbetsorder (tillgängligt för mekaniker). */
+export async function setJobStatus(
+  jobId: string,
+  status: string,
+): Promise<ActionResult> {
+  if (!VALID_STATUS.includes(status)) return { error: "Ogiltig status." };
+  const err = await guardJob(jobId);
+  if (err) return err;
+  await db.job.update({ where: { id: jobId }, data: { status } });
+  revalidateJob(jobId);
+  return { success: true };
+}
+
+/** Sparar arbetsorderns anteckning (beskrivning). */
+export async function setJobNote(
+  jobId: string,
+  note: string,
+): Promise<ActionResult> {
+  const err = await guardJob(jobId);
+  if (err) return err;
+  const trimmed = note.trim();
+  await db.job.update({
+    where: { id: jobId },
+    data: { description: trimmed.length ? trimmed : null },
+  });
+  revalidateJob(jobId);
+  return { success: true };
+}

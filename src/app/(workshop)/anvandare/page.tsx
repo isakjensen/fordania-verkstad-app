@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { PageHeader } from "@/components/layout/page-header";
 import { getActiveOrganizationId, getTenantRole, canManageUsers } from "@/lib/session";
 import { getTenantMembers } from "@/lib/data/users";
 import { CreateUserButton } from "./create-user-button";
@@ -41,20 +42,12 @@ export default async function UsersPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            Verkstad
-          </p>
-          <h1 className="mt-2 text-[1.75rem] font-extrabold tracking-tight text-ink sm:text-[2.1rem]">
-            Användare
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Hantera verkstadens anställda, roller och inloggningar.
-          </p>
-        </div>
-        {organizationId && canManage ? <CreateUserButton /> : null}
-      </div>
+      <PageHeader
+        eyebrow="Verkstad"
+        title="Användare"
+        description="Hantera verkstadens anställda, roller och inloggningar."
+        action={organizationId && canManage ? <CreateUserButton /> : null}
+      />
 
       <Card className="mt-6">
         <CardHeader
