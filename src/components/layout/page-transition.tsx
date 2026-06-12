@@ -19,9 +19,9 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
       initial={reduce ? false : { opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.16, ease: "easeOut" }}
-      // Bottenutrymme så innehållet aldrig hamnar bakom flikfältet (lg+ saknar
-      // flikfält och behöver ingen extra padding).
-      className="h-full overflow-y-auto pb-[calc(4.25rem+env(safe-area-inset-bottom))] lg:pb-0"
+      // Bottenutrymme så innehållet aldrig hamnar bakom flikfältet. Endast
+      // desktop (fine pointer + bredd) saknar flikfält och behöver ingen padding.
+      className="h-full overflow-y-auto pb-[calc(4.25rem+env(safe-area-inset-bottom))] pointer-fine:lg:pb-0"
     >
       {children}
     </motion.div>

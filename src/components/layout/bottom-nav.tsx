@@ -76,7 +76,7 @@ export function BottomNav({ switcher }: { switcher: SwitcherData }) {
   return (
     <>
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 px-1 pb-safe backdrop-blur-xl lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 px-1 pb-safe backdrop-blur-xl pointer-fine:lg:hidden"
         aria-label="Huvudnavigation"
       >
         <div className="mx-auto flex max-w-2xl items-stretch justify-around">
