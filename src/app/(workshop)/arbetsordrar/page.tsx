@@ -15,6 +15,7 @@ import { getWorkOrders } from "@/lib/data/work-orders";
 import { getMechanics } from "@/lib/data/schedule";
 import { getVehicleOptions } from "@/lib/data/vehicles";
 import { orderTotals, formatOre } from "@/lib/pricing";
+import { PageHeader } from "@/components/layout/page-header";
 import { CreateWorkOrderButton } from "./create-work-order-button";
 import { statusMeta, statusLabels } from "./meta";
 
@@ -42,22 +43,17 @@ export default async function ArbetsordrarPage() {
 
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-[1440px] flex-col px-4 py-5 sm:px-6 lg:px-8">
-      <div className="flex shrink-0 flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            Verkstad
-          </p>
-          <h1 className="mt-2 text-[1.75rem] font-extrabold tracking-tight text-ink sm:text-[2.1rem]">
-            Arbetsordrar
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Skapa och följ arbetsordrar – mekaniker, fordon och delar.
-          </p>
-        </div>
-        {organizationId ? (
-          <CreateWorkOrderButton mechanics={mechanics} vehicles={vehicles} />
-        ) : null}
-      </div>
+      <PageHeader
+        className="shrink-0"
+        eyebrow="Verkstad"
+        title="Arbetsordrar"
+        description="Skapa och följ arbetsordrar – mekaniker, fordon och delar."
+        action={
+          organizationId ? (
+            <CreateWorkOrderButton mechanics={mechanics} vehicles={vehicles} />
+          ) : null
+        }
+      />
 
       <Card className="mt-5 flex min-h-0 flex-1 flex-col">
         <CardHeader

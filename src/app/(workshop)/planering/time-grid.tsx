@@ -427,9 +427,7 @@ const JobBlock = memo(function JobBlock({
         ) : null}
         {!compact ? (
           <span className="mt-auto flex items-center gap-1.5 pt-0.5">
-            {primary ? (
-              <LicensePlate value={primary.regNo} className="scale-[0.82] origin-left" />
-            ) : null}
+            {primary ? <LicensePlate value={primary.regNo} size="sm" /> : null}
             {view === "week" && job.mechanics[0] ? (
               <Avatar
                 initials={initialsOf(job.mechanics[0].user.name)}

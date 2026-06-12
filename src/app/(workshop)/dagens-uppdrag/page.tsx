@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ClipboardCheck, Clock, Car, Gauge, AlignLeft } from "lucide-react";
-import { Card, CardHeader, CardBody } from "@/components/ui/card";
+import { Card, CardHeader } from "@/components/ui/card";
+import { PageHeader } from "@/components/layout/page-header";
 import { LicensePlate } from "@/components/ui/license-plate";
 import { getSession, getActiveOrganizationId } from "@/lib/session";
 import { getJobsForUserOnDay } from "@/lib/data/schedule";
@@ -36,18 +37,16 @@ export default async function DagensUppdragPage() {
 
   return (
     <div className="mx-auto w-full max-w-[900px] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="border-b border-line pb-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          Mekaniker
-        </p>
-        <h1 className="mt-2 text-[1.75rem] font-extrabold tracking-tight text-ink sm:text-[2.1rem]">
-          Dagens uppdrag
-        </h1>
-        <p className="mt-1 text-sm capitalize text-muted-foreground">
-          {df.format(now)}
-          {session ? ` · ${session.user.name}` : ""}
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Mekaniker"
+        title="Dagens uppdrag"
+        description={
+          <span className="capitalize">
+            {df.format(now)}
+            {session ? ` · ${session.user.name}` : ""}
+          </span>
+        }
+      />
 
       {/* Sammanfattning */}
       <div className="mt-6 grid grid-cols-3 gap-3">
