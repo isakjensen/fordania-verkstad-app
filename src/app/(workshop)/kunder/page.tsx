@@ -89,7 +89,38 @@ export default async function CustomersPage() {
             </p>
           </div>
         ) : (
-          <Table>
+          <>
+          {/* Mobil / iPad-stående: touch-kort */}
+          <ul className="divide-y divide-line lg:hidden">
+            {customers.map((c) => (
+              <li key={c.id}>
+                <Link
+                  href={`/kunder/${c.id}`}
+                  className="flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-surface-muted"
+                >
+                  <Avatar initials={initialsOf(c.name)} size="size-10 text-sm" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[0.95rem] font-semibold text-ink">
+                      {c.name}
+                    </span>
+                    <span className="block truncate text-sm text-muted-foreground">
+                      {c.phone ?? c.email ?? "—"}
+                    </span>
+                  </span>
+                  {c._count.comments > 0 ? (
+                    <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                      <MessageSquare className="size-3.5" />
+                      {c._count.comments}
+                    </span>
+                  ) : null}
+                  <ChevronRight className="size-5 shrink-0 text-muted-foreground/50" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          {/* Desktop / liggande: tabell */}
+          <Table className="hidden lg:table">
             <TableHeader>
               <TableRow className="bg-surface-muted/40 hover:bg-surface-muted/40">
                 <TableHead className={`${headClass} min-w-[220px]`}>
@@ -161,6 +192,7 @@ export default async function CustomersPage() {
               ))}
             </TableBody>
           </Table>
+          </>
         )}
       </Card>
     </div>

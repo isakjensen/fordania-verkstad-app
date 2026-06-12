@@ -82,7 +82,57 @@ export default async function ArbetsordrarPage() {
             </p>
           </div>
         ) : (
-          <Table>
+          <>
+          {/* Mobil / iPad-stående: touch-kort */}
+          <ul className="divide-y divide-line lg:hidden">
+            {orders.map((o) => {
+              const meta = statusMeta[o.status];
+              const totals = orderTotals(o.parts);
+              const regNos = o.vehicles.map((v) => v.vehicle.regNo);
+              const mechs = o.mechanics.map((m) => m.user.name);
+              return (
+                <li key={o.id}>
+                  <Link
+                    href={`/arbetsordrar/${o.id}`}
+                    className="flex flex-col gap-2 px-4 py-4 transition-colors active:bg-surface-muted"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="flex items-center gap-2 text-[0.95rem] font-bold text-ink">
+                        <Wrench className="size-4 text-muted-foreground" />
+                        {o.type}
+                      </span>
+                      <span
+                        className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${meta?.badge ?? ""}`}
+                      >
+                        <span className={`size-1.5 rounded-full ${meta?.dot ?? "bg-slate-400"}`} />
+                        {statusLabels[o.status] ?? o.status}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-soft">
+                      <span>{regNos.length ? regNos.join(", ") : "Inget fordon"}</span>
+                      {o.scheduledStart ? (
+                        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                          <Clock className="size-3.5" />
+                          {df.format(new Date(o.scheduledStart))}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="truncate text-muted-foreground">
+                        {mechs.length ? mechs.join(", ") : "Ej tilldelad"}
+                      </span>
+                      <span className="shrink-0 font-semibold tabular-nums text-ink">
+                        {o.parts.length ? formatOre(totals.inclOre) : ""}
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Desktop / liggande: tabell */}
+          <Table className="hidden lg:table">
             <TableHeader>
               <TableRow className="sticky top-0 z-10 bg-surface-muted [&_th]:bg-surface-muted hover:bg-surface-muted">
                 <TableHead className={`${headClass} min-w-[140px]`}>Typ</TableHead>
@@ -158,6 +208,7 @@ export default async function ArbetsordrarPage() {
               })}
             </TableBody>
           </Table>
+          </>
         )}
         </div>
       </Card>
