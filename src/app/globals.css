@@ -91,7 +91,23 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    /* Native app-känsla: ingen grå tap-highlight, ingen gummi-scroll i
+     * appskalet, och inget oavsiktligt textmarkerande på UI-ytor. */
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
     @apply bg-background text-foreground;
+  }
+
+  /* Tryckytor: ta bort 300 ms-fördröjningen och undvik dubbeltapp-zoom på
+   * knappar/länkar (touch). Text och fält behåller markering/zoom. */
+  button,
+  a,
+  [role="button"],
+  [role="tab"],
+  summary,
+  label {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   /* Subtil, modern scrollbar */
@@ -132,6 +148,40 @@
       transition-duration: 0.001ms !important;
       scroll-behavior: auto !important;
     }
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Safe-area-insets – så appen respekterar iPad/iPhone-ramen
+   *  (hemknappsindikator, hörn, notch) precis som en native-app.
+   * ------------------------------------------------------------------ */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left);
+  }
+  .pr-safe {
+    padding-right: env(safe-area-inset-right);
+  }
+  .px-safe {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  /* Lägg bottenpadding ovanpå ev. befintlig (för innehåll ovanför flikfältet) */
+  .pb-safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom) + var(--pb-extra, 0px));
+  }
+
+  /* Döljer scrollbar men behåller scroll (datumremsor, flikar) */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }
 

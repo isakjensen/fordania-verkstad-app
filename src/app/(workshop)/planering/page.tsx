@@ -5,7 +5,7 @@ import { ScheduleCalendar } from "./schedule-calendar";
 
 export const metadata: Metadata = { title: "Arbetskalender" };
 
-type View = "day" | "week" | "month";
+type View = "day" | "week";
 
 /** Räknar ut synligt intervall [from, to) utifrån vy och ankardatum. */
 function rangeFor(view: View, anchor: Date) {
@@ -14,15 +14,11 @@ function rangeFor(view: View, anchor: Date) {
   const to = new Date(from);
   if (view === "day") {
     to.setDate(to.getDate() + 1);
-  } else if (view === "week") {
+  } else {
     const dow = (from.getDay() + 6) % 7; // 0 = måndag
     from.setDate(from.getDate() - dow);
     to.setTime(from.getTime());
     to.setDate(to.getDate() + 7);
-  } else {
-    from.setDate(1);
-    to.setTime(from.getTime());
-    to.setMonth(to.getMonth() + 1);
   }
   return { from, to };
 }
@@ -41,8 +37,7 @@ export default async function PlaneringPage({
   searchParams: Promise<{ view?: string; date?: string }>;
 }) {
   const sp = await searchParams;
-  const view: View =
-    sp.view === "day" || sp.view === "month" ? sp.view : "week";
+  const view: View = sp.view === "day" ? "day" : "week";
   const anchor = parseAnchor(sp.date);
   const { from, to } = rangeFor(view, anchor);
 
