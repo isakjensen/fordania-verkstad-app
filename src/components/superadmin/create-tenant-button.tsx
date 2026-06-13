@@ -6,7 +6,6 @@ import { Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FieldSelect } from "@/components/ui/field-select";
 import {
   Dialog,
   DialogContent,
@@ -18,12 +17,6 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { createTenant } from "@/app/superadmin/actions";
-
-const PLAN_OPTIONS = [
-  { value: "Bas", label: "Bas" },
-  { value: "Plus", label: "Plus" },
-  { value: "Enterprise", label: "Enterprise" },
-];
 
 export function CreateTenantButton() {
   const [open, setOpen] = useState(false);
@@ -72,15 +65,6 @@ export function CreateTenantButton() {
           <div className="space-y-1.5">
             <Label htmlFor="city">Stad</Label>
             <Input id="city" name="city" placeholder="Göteborg" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="plan">Plan</Label>
-            <FieldSelect
-              id="plan"
-              name="plan"
-              defaultValue="Bas"
-              options={PLAN_OPTIONS}
-            />
           </div>
 
           {error ? (

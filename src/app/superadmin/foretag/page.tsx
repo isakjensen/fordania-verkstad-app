@@ -13,7 +13,7 @@ export default async function SuperadminCompaniesPage() {
       <SuperBanner
         eyebrow="Plattform"
         title="Företag"
-        description="Alla företag som är anslutna till plattformen. Sök, filtrera, lägg till, redigera plan/status eller ta bort konton."
+        description="Alla företag som är anslutna till plattformen. Sök, filtrera, lägg till, ändra status eller ta bort konton."
       />
       <TenantManager tenants={tenants} />
     </div>

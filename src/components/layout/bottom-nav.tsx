@@ -230,7 +230,7 @@ function MoreSheet({
                             {t.name}
                           </span>
                           <span className="block truncate text-xs text-muted-foreground">
-                            {t.city ?? t.plan}
+                            {t.city ?? "—"}
                           </span>
                         </span>
                         {isCurrent ? (

@@ -16,12 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  tenantStatusMeta,
-  planMeta,
-  type TenantStatus,
-  type TenantPlan,
-} from "@/lib/tenants";
+import { tenantStatusMeta, type TenantStatus } from "@/lib/tenants";
 import type { TenantRow } from "@/lib/data/platform";
 import { CreateTenantButton } from "./create-tenant-button";
 import { TenantRowActions } from "./tenant-row-actions";
@@ -48,25 +43,7 @@ const statusOptions = [
   { value: "paused", label: "Pausad" },
   { value: "invited", label: "Inbjuden" },
 ];
-const planOptions = [
-  { value: "all", label: "Alla planer" },
-  { value: "Bas", label: "Bas" },
-  { value: "Plus", label: "Plus" },
-  { value: "Enterprise", label: "Enterprise" },
-];
 
-function PlanBadge({ plan }: { plan: string }) {
-  return (
-    <Badge
-      className={cn(
-        "justify-center",
-        planMeta[plan as TenantPlan] ?? "bg-surface-muted text-muted-foreground",
-      )}
-    >
-      {plan}
-    </Badge>
-  );
-}
 function StatusBadge({ status }: { status: string }) {
   const meta = tenantStatusMeta[status as TenantStatus] ?? defaultStatus;
   return (
@@ -79,18 +56,16 @@ function StatusBadge({ status }: { status: string }) {
 export function TenantManager({ tenants }: { tenants: TenantRow[] }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
-  const [plan, setPlan] = useState("all");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return tenants.filter((t) => {
       if (status !== "all" && t.status !== status) return false;
-      if (plan !== "all" && t.plan !== plan) return false;
       if (q && !`${t.name} ${t.city ?? ""}`.toLowerCase().includes(q))
         return false;
       return true;
     });
-  }, [tenants, query, status, plan]);
+  }, [tenants, query, status]);
 
   return (
     <Card className="flex flex-col">
@@ -113,20 +88,12 @@ export function TenantManager({ tenants }: { tenants: TenantRow[] }) {
             className="h-10 rounded-lg bg-surface-muted pl-9"
           />
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
-          <FieldSelect
-            options={statusOptions}
-            value={status}
-            onValueChange={setStatus}
-            className="sm:w-40"
-          />
-          <FieldSelect
-            options={planOptions}
-            value={plan}
-            onValueChange={setPlan}
-            className="sm:w-40"
-          />
-        </div>
+        <FieldSelect
+          options={statusOptions}
+          value={status}
+          onValueChange={setStatus}
+          className="sm:w-44"
+        />
       </div>
 
       {filtered.length === 0 ? (
@@ -136,7 +103,8 @@ export function TenantManager({ tenants }: { tenants: TenantRow[] }) {
           </span>
           <p className="mt-4 font-semibold text-ink">Inga företag matchar</p>
           <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-            Justera sökningen eller filtren – eller lägg till ett nytt företag.
+            Justera sökningen eller statusfiltret – eller lägg till ett nytt
+            företag.
           </p>
         </div>
       ) : (
@@ -151,8 +119,7 @@ export function TenantManager({ tenants }: { tenants: TenantRow[] }) {
                   <p className="truncate text-sm text-muted-foreground">
                     {t.city ?? "—"}
                   </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                    <PlanBadge plan={t.plan} />
+                  <div className="mt-2">
                     <StatusBadge status={t.status} />
                   </div>
                   <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
@@ -179,10 +146,9 @@ export function TenantManager({ tenants }: { tenants: TenantRow[] }) {
           <Table className="hidden lg:table">
             <TableHeader>
               <TableRow className="bg-surface-muted/40 hover:bg-surface-muted/40">
-                <TableHead className={cn(headClass, "min-w-[220px]")}>
+                <TableHead className={cn(headClass, "min-w-[240px]")}>
                   Företag
                 </TableHead>
-                <TableHead className={headClass}>Plan</TableHead>
                 <TableHead className={headClass}>Status</TableHead>
                 <TableHead className={cn(headClass, "text-right")}>
                   Användare
@@ -211,9 +177,6 @@ export function TenantManager({ tenants }: { tenants: TenantRow[] }) {
                         </p>
                       </div>
                     </div>
-                  </TableCell>
-                  <TableCell className="px-4 py-3">
-                    <PlanBadge plan={t.plan} />
                   </TableCell>
                   <TableCell className="px-4 py-3">
                     <StatusBadge status={t.status} />

@@ -26,12 +26,6 @@ import {
 import { updateTenant, deleteTenant } from "@/app/superadmin/actions";
 import type { TenantRow } from "@/lib/data/platform";
 
-const planOptions = [
-  { value: "Bas", label: "Bas" },
-  { value: "Plus", label: "Plus" },
-  { value: "Enterprise", label: "Enterprise" },
-];
-
 const statusOptions = [
   { value: "active", label: "Aktiv" },
   { value: "trial", label: "Testperiod" },
@@ -133,25 +127,14 @@ export function TenantRowActions({ tenant }: { tenant: TenantRow }) {
                 placeholder="Göteborg"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor={`plan-${tenant.id}`}>Plan</Label>
-                <FieldSelect
-                  id={`plan-${tenant.id}`}
-                  name="plan"
-                  defaultValue={tenant.plan}
-                  options={planOptions}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor={`status-${tenant.id}`}>Status</Label>
-                <FieldSelect
-                  id={`status-${tenant.id}`}
-                  name="status"
-                  defaultValue={tenant.status}
-                  options={statusOptions}
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`status-${tenant.id}`}>Status</Label>
+              <FieldSelect
+                id={`status-${tenant.id}`}
+                name="status"
+                defaultValue={tenant.status}
+                options={statusOptions}
+              />
             </div>
 
             {error ? (

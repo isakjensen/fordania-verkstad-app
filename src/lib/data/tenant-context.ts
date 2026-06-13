@@ -5,7 +5,6 @@ import { getSession, getActiveOrganizationId } from "@/lib/session";
 export interface SwitcherTenant {
   id: string;
   name: string;
-  plan: string;
   city: string | null;
   initials: string;
 }
@@ -57,7 +56,6 @@ export async function getSwitcherData(): Promise<SwitcherData> {
     tenants: orgs.map((o) => ({
       id: o.id,
       name: o.name,
-      plan: o.plan,
       city: o.city,
       initials: initialsOf(o.name),
     })),

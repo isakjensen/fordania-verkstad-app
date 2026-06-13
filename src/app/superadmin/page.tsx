@@ -13,16 +13,10 @@ import {
   getTenants,
   getPlatformUsers,
 } from "@/lib/data/platform";
-import {
-  tenantStatusMeta,
-  planMeta,
-  type TenantStatus,
-  type TenantPlan,
-} from "@/lib/tenants";
+import { tenantStatusMeta, type TenantStatus } from "@/lib/tenants";
 
 export const metadata: Metadata = { title: "Översikt · Superadmin" };
 
-const PLAN_ORDER: TenantPlan[] = ["Bas", "Plus", "Enterprise"];
 const STATUS_ORDER: TenantStatus[] = ["active", "trial", "paused", "invited"];
 
 function Bar({
@@ -30,32 +24,19 @@ function Bar({
   value,
   total,
   dot,
-  badgeClass,
 }: {
   label: string;
   value: number;
   total: number;
-  dot?: string;
-  badgeClass?: string;
+  dot: string;
 }) {
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
     <li className="space-y-1.5">
       <div className="flex items-center justify-between gap-2 text-sm">
         <span className="flex items-center gap-2 text-ink-soft">
-          {dot ? <span className={cn("size-2 rounded-full", dot)} /> : null}
-          {badgeClass ? (
-            <span
-              className={cn(
-                "rounded-md px-1.5 py-0.5 text-xs font-semibold",
-                badgeClass,
-              )}
-            >
-              {label}
-            </span>
-          ) : (
-            label
-          )}
+          <span className={cn("size-2 rounded-full", dot)} />
+          {label}
         </span>
         <span className="font-semibold text-ink tabular-nums">{value}</span>
       </div>
@@ -123,15 +104,6 @@ export default async function SuperadminOverviewPage() {
                       {t.city ?? "—"} · {t.users} användare · {t.vehicles} fordon
                     </p>
                   </div>
-                  <Badge
-                    className={cn(
-                      "hidden justify-center sm:inline-flex",
-                      planMeta[t.plan as TenantPlan] ??
-                        "bg-surface-muted text-muted-foreground",
-                    )}
-                  >
-                    {t.plan}
-                  </Badge>
                   {status ? (
                     <Badge className={status.className} dot={status.dot}>
                       {status.label}
@@ -143,45 +115,28 @@ export default async function SuperadminOverviewPage() {
           </ul>
         </Card>
 
-        {/* Fördelning */}
+        {/* Företag per status */}
         <Card>
-          <CardHeader tone="brand" title="Fördelning" subtitle="Planer och status" />
-          <div className="space-y-5 p-5">
-            <div>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Planer
-              </p>
-              <ul className="space-y-3">
-                {PLAN_ORDER.map((p) => (
+          <CardHeader
+            tone="brand"
+            title="Företag per status"
+            subtitle="Fördelning över plattformen"
+          />
+          <div className="p-5">
+            <ul className="space-y-4">
+              {STATUS_ORDER.map((s) => {
+                const meta = tenantStatusMeta[s];
+                return (
                   <Bar
-                    key={p}
-                    label={p}
-                    value={stats.byPlan[p] ?? 0}
+                    key={s}
+                    label={meta.label}
+                    value={stats.byStatus[s] ?? 0}
                     total={stats.tenants}
-                    badgeClass={planMeta[p]}
+                    dot={meta.dot}
                   />
-                ))}
-              </ul>
-            </div>
-            <div className="border-t border-line pt-5">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Status
-              </p>
-              <ul className="space-y-3">
-                {STATUS_ORDER.map((s) => {
-                  const meta = tenantStatusMeta[s];
-                  return (
-                    <Bar
-                      key={s}
-                      label={meta.label}
-                      value={stats.byStatus[s] ?? 0}
-                      total={stats.tenants}
-                      dot={meta.dot}
-                    />
-                  );
-                })}
-              </ul>
-            </div>
+                );
+              })}
+            </ul>
           </div>
         </Card>
       </div>

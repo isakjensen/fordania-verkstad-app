@@ -9,7 +9,6 @@ import { requireSuperadmin } from "@/lib/session";
 
 export type ActionResult = { success: true } | { error: string };
 
-const VALID_PLANS = ["Bas", "Plus", "Enterprise"];
 const VALID_STATUSES = ["active", "trial", "paused", "invited"];
 
 /** Gör om ett namn till en URL-vänlig slug (hanterar å/ä/ö). */
@@ -30,7 +29,6 @@ export async function createTenant(formData: FormData): Promise<ActionResult> {
 
   const name = String(formData.get("name") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
-  const plan = String(formData.get("plan") ?? "Bas").trim();
 
   if (!name) return { error: "Företagsnamn krävs." };
 
@@ -48,7 +46,6 @@ export async function createTenant(formData: FormData): Promise<ActionResult> {
       name,
       slug,
       city: city || null,
-      plan: VALID_PLANS.includes(plan) ? plan : "Bas",
       status: "active",
       createdAt: new Date(),
     },
@@ -59,14 +56,13 @@ export async function createTenant(formData: FormData): Promise<ActionResult> {
   return { success: true };
 }
 
-/** Superadmin redigerar ett företags namn, stad, plan och status. */
+/** Superadmin redigerar ett företags namn, stad och status. */
 export async function updateTenant(formData: FormData): Promise<ActionResult> {
   await requireSuperadmin();
 
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
-  const plan = String(formData.get("plan") ?? "").trim();
   const status = String(formData.get("status") ?? "").trim();
 
   if (!id) return { error: "Företags-id saknas." };
@@ -80,7 +76,6 @@ export async function updateTenant(formData: FormData): Promise<ActionResult> {
     data: {
       name,
       city: city || null,
-      plan: VALID_PLANS.includes(plan) ? plan : org.plan,
       status: VALID_STATUSES.includes(status) ? status : org.status,
     },
   });

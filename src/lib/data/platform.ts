@@ -18,7 +18,6 @@ export interface TenantRow {
   initials: string;
   slug: string;
   city: string | null;
-  plan: string;
   status: string;
   users: number;
   vehicles: number;
@@ -38,7 +37,6 @@ export async function getTenants(limit?: number): Promise<TenantRow[]> {
     initials: initialsFromName(o.name),
     slug: o.slug,
     city: o.city,
-    plan: o.plan,
     status: o.status,
     users: o._count.members,
     vehicles: o._count.vehicles,
@@ -64,22 +62,19 @@ export interface PlatformStats {
   users: number;
   vehicles: number;
   jobs: number;
-  byPlan: Record<string, number>;
   byStatus: Record<string, number>;
 }
 
 /** Aggregerad plattformsöversikt – allt från riktiga DB-rader. */
 export async function getPlatformStats(): Promise<PlatformStats> {
   const [orgs, users, vehicles, jobs] = await Promise.all([
-    db.organization.findMany({ select: { status: true, plan: true } }),
+    db.organization.findMany({ select: { status: true } }),
     db.member.count(),
     db.vehicle.count(),
     db.job.count(),
   ]);
-  const byPlan: Record<string, number> = {};
   const byStatus: Record<string, number> = {};
   for (const o of orgs) {
-    byPlan[o.plan] = (byPlan[o.plan] ?? 0) + 1;
     byStatus[o.status] = (byStatus[o.status] ?? 0) + 1;
   }
   return {
@@ -88,7 +83,6 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     users,
     vehicles,
     jobs,
-    byPlan,
     byStatus,
   };
 }

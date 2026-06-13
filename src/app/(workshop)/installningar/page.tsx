@@ -150,8 +150,7 @@ export default async function SettingsPage() {
                   {active.name}
                 </p>
                 <p className="truncate text-sm text-muted-foreground">
-                  {active.plan}
-                  {active.city ? ` · ${active.city}` : ""}
+                  {active.city ?? "Verkstad"}
                 </p>
               </div>
             </div>
@@ -164,7 +163,6 @@ export default async function SettingsPage() {
                   {roleLabels[role ?? ""] ?? "Medarbetare"}
                 </span>
               </InfoRow>
-              <InfoRow label="Abonnemang">{active.plan}</InfoRow>
               {active.city ? (
                 <InfoRow label="Ort">{active.city}</InfoRow>
               ) : null}

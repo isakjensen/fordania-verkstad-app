@@ -68,8 +68,7 @@ export function TenantSwitcher({
             </span>
             <span className="block truncate text-xs text-muted-foreground">
               {data.isSuperadmin ? "Superadmin · " : ""}
-              {active.plan}
-              {active.city ? ` · ${active.city}` : ""}
+              {active.city ?? "Verkstad"}
             </span>
           </span>
           {pending ? (
@@ -96,7 +95,7 @@ export function TenantSwitcher({
                     {t.name}
                   </span>
                   <span className="block truncate text-xs text-muted-foreground">
-                    {t.city ?? t.plan}
+                    {t.city ?? "—"}
                   </span>
                 </span>
                 {t.id === active.id ? (
