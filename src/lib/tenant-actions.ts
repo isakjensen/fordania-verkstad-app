@@ -8,8 +8,11 @@ export type ActionResult = { success: true } | { error: string };
 
 /**
  * Byter aktiv verkstad för den inloggade användaren.
- * - Superadmin får byta till vilken verkstad som helst.
- * - Vanlig användare bara till en verkstad hen är medlem i.
+ *
+ * ENDAST global superadmin (Fordania) får byta verkstad – det är ett
+ * plattforms-privilegium. Vanliga verkstadsanvändare hör hemma i sin egen
+ * verkstad; deras aktiva verkstad härleds automatiskt från medlemskapet
+ * (se getActiveOrganizationId) och de kan varken se eller anropa detta.
  */
 export async function setActiveTenant(
   organizationId: string,
@@ -18,16 +21,13 @@ export async function setActiveTenant(
   if (!session) return { error: "Inte inloggad." };
 
   if (session.user.role !== "admin") {
-    const member = await db.member.findFirst({
-      where: { userId: session.user.id, organizationId },
-    });
-    if (!member) return { error: "Du har inte tillgång till den verkstaden." };
-  } else {
-    const org = await db.organization.findUnique({
-      where: { id: organizationId },
-    });
-    if (!org) return { error: "Verkstaden hittades inte." };
+    return { error: "Endast superadmin kan byta verkstad." };
   }
+
+  const org = await db.organization.findUnique({
+    where: { id: organizationId },
+  });
+  if (!org) return { error: "Verkstaden hittades inte." };
 
   await db.session.update({
     where: { id: session.session.id },

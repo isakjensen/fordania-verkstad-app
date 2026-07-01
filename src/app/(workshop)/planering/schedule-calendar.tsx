@@ -44,8 +44,11 @@ export function ScheduleCalendar({
   const [localJobs, setLocalJobs] = useState(jobs);
   useEffect(() => setLocalJobs(jobs), [jobs]);
 
-  // lg+ (liggande iPad / desktop) → tidsrutnät. Annars → agenda.
-  const isWide = useMediaQuery("(min-width: 1024px)");
+  // Desktop med mus (fin pekare + brett) → fullt planerings-tidsrutnät.
+  // Alla pekskärmar (iPad liggande & stående, mobil) → den enkla, läsbara
+  // agendan. Mekaniker slipper det täta rutnätet; planeraren vid datorn
+  // behåller kraftvyn.
+  const isDesktop = useMediaQuery("(min-width: 1024px) and (pointer: fine)");
 
   const anchor = new Date(anchorISO);
   const from = new Date(fromISO);
@@ -142,24 +145,27 @@ export function ScheduleCalendar({
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          {/* Vy-växel – endast tidsrutnät (lg+) */}
-          <div className="hidden rounded-xl border border-line bg-surface-muted p-0.5 lg:inline-flex">
-            {(["day", "week"] as View[]).map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setView(v)}
-                className={cn(
-                  "rounded-lg px-4 py-1.5 text-sm font-semibold transition-all",
-                  view === v
-                    ? "bg-surface text-ink shadow-xs ring-1 ring-line"
-                    : "text-muted-foreground hover:text-ink",
-                )}
-              >
-                {v === "day" ? "Dag" : "Vecka"}
-              </button>
-            ))}
-          </div>
+          {/* Vy-växel – endast desktopens tidsrutnät (mus). På touch används
+              alltid agendan, så växlaren döljs där. */}
+          {isDesktop ? (
+            <div className="inline-flex rounded-xl border border-line bg-surface-muted p-0.5">
+              {(["day", "week"] as View[]).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setView(v)}
+                  className={cn(
+                    "rounded-lg px-4 py-1.5 text-sm font-semibold transition-all",
+                    view === v
+                      ? "bg-surface text-ink shadow-xs ring-1 ring-line"
+                      : "text-muted-foreground hover:text-ink",
+                  )}
+                >
+                  {v === "day" ? "Dag" : "Vecka"}
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           <div className="flex flex-1 items-center justify-between gap-2 lg:flex-none lg:justify-end">
             <button
@@ -198,9 +204,9 @@ export function ScheduleCalendar({
       <div className="mt-4 flex min-h-0 flex-1 flex-col">
         {!hasOrg ? (
           <EmptyState text="Välj en verkstad för att se dess arbetskalender." />
-        ) : isWide === null ? (
+        ) : isDesktop === null ? (
           <CalendarSkeleton />
-        ) : isWide ? (
+        ) : isDesktop ? (
           view === "day" ? (
             mechanics.length === 0 ? (
               <EmptyState text="Inga mekaniker i verkstaden ännu." />

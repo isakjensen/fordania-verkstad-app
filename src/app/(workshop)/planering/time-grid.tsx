@@ -414,8 +414,8 @@ const JobBlock = memo(function JobBlock({
     >
       <span className={cn("w-1.5 shrink-0", meta?.accent ?? "bg-slate-400")} aria-hidden />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5 px-2 py-1">
-        <span className="flex items-center gap-1.5">
-          <span className="truncate text-xs font-bold leading-tight text-ink">
+        <span className="flex items-start gap-1.5">
+          <span className="line-clamp-2 text-xs font-bold leading-tight text-ink">
             {job.type}
           </span>
         </span>

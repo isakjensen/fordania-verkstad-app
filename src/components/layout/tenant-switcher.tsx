@@ -57,6 +57,27 @@ export function TenantSwitcher({
     );
   }
 
+  // Vanliga användare: bara sin egen verkstad, som statisk etikett – ingen
+  // växlare, ingen "byt verkstad". Att byta/välja verkstad är ett
+  // superadmin-privilegium.
+  if (!data.isSuperadmin) {
+    return (
+      <div className="px-3 py-3">
+        <div className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left">
+          <TenantLogo tenant={active} size="sm" />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold text-ink">
+              {active.name}
+            </span>
+            <span className="block truncate text-xs text-muted-foreground">
+              {active.city ?? "Verkstad"}
+            </span>
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="px-3 py-3">
       <DropdownMenu>

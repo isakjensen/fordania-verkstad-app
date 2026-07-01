@@ -202,44 +202,59 @@ function MoreSheet({
               </button>
             </div>
 
-            {/* Verkstad / byt verkstad */}
+            {/* Verkstad. Superadmin (Fordania) kan byta verkstad; vanliga
+                användare ser bara sin egen verkstad som statisk kontext. */}
             {active ? (
               <div className="mt-1">
                 <SectionLabel>
                   {switcher.isSuperadmin ? "Verkstad (superadmin)" : "Verkstad"}
                 </SectionLabel>
-                <div className="flex flex-col gap-1.5">
-                  {switcher.tenants.map((t) => {
-                    const isCurrent = t.id === active.id;
-                    return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => switchTenant(t.id)}
-                        disabled={pending}
-                        className={cn(
-                          "flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition-colors",
-                          isCurrent
-                            ? "border-brand-200 bg-brand-50"
-                            : "border-line bg-surface active:bg-surface-muted",
-                        )}
-                      >
-                        <TenantLogo tenant={t} size="sm" />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-semibold text-ink">
-                            {t.name}
+                {switcher.isSuperadmin ? (
+                  <div className="flex flex-col gap-1.5">
+                    {switcher.tenants.map((t) => {
+                      const isCurrent = t.id === active.id;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => switchTenant(t.id)}
+                          disabled={pending}
+                          className={cn(
+                            "flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition-colors",
+                            isCurrent
+                              ? "border-brand-200 bg-brand-50"
+                              : "border-line bg-surface active:bg-surface-muted",
+                          )}
+                        >
+                          <TenantLogo tenant={t} size="sm" />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-semibold text-ink">
+                              {t.name}
+                            </span>
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {t.city ?? "—"}
+                            </span>
                           </span>
-                          <span className="block truncate text-xs text-muted-foreground">
-                            {t.city ?? "—"}
-                          </span>
-                        </span>
-                        {isCurrent ? (
-                          <Check className="size-5 shrink-0 text-brand-600" />
-                        ) : null}
-                      </button>
-                    );
-                  })}
-                </div>
+                          {isCurrent ? (
+                            <Check className="size-5 shrink-0 text-brand-600" />
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-3 py-3">
+                    <TenantLogo tenant={active} size="sm" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-ink">
+                        {active.name}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {active.city ?? "Verkstad"}
+                      </span>
+                    </span>
+                  </div>
+                )}
               </div>
             ) : null}
 
@@ -285,22 +300,24 @@ function MoreSheet({
               </div>
             </div>
 
-            {/* Plattformsadministration */}
-            <div className="mt-4 border-t border-line pt-3">
-              <Link
-                href="/superadmin"
-                onClick={() => onOpenChange(false)}
-                className="flex items-center gap-3.5 rounded-2xl px-3 py-3.5 transition-colors active:bg-surface-muted"
-              >
-                <span className="flex size-9 items-center justify-center rounded-xl bg-surface-muted text-ink-soft">
-                  <ShieldCheck className="size-5" />
-                </span>
-                <span className="flex-1 text-[0.95rem] font-semibold text-ink">
-                  Superadmin
-                </span>
-                <ChevronRight className="size-5 text-muted-foreground/50" />
-              </Link>
-            </div>
+            {/* Plattformsadministration – endast global superadmin (Fordania). */}
+            {switcher.isSuperadmin ? (
+              <div className="mt-4 border-t border-line pt-3">
+                <Link
+                  href="/superadmin"
+                  onClick={() => onOpenChange(false)}
+                  className="flex items-center gap-3.5 rounded-2xl px-3 py-3.5 transition-colors active:bg-surface-muted"
+                >
+                  <span className="flex size-9 items-center justify-center rounded-xl bg-surface-muted text-ink-soft">
+                    <ShieldCheck className="size-5" />
+                  </span>
+                  <span className="flex-1 text-[0.95rem] font-semibold text-ink">
+                    Superadmin
+                  </span>
+                  <ChevronRight className="size-5 text-muted-foreground/50" />
+                </Link>
+              </div>
+            ) : null}
           </div>
         </DialogPrimitive.Popup>
       </DialogPrimitive.Portal>

@@ -70,9 +70,13 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
         // registreringsnumret syns alltid (siblings får trunkeras i stället).
         // w-fit → skylten storleksanpassas efter innehållet och tänjs aldrig ut
         // till full bredd (t.ex. i en flex-kolumn med align-items: stretch).
-        "inline-flex w-fit shrink-0 select-none items-stretch overflow-hidden",
-        "border border-slate-900/80 bg-white",
-        "shadow-[0_1px_1.5px_rgba(15,23,41,0.25)] ring-1 ring-inset ring-white/60",
+        "inline-flex w-fit shrink-0 select-none items-stretch overflow-hidden bg-white",
+        // Autentisk mörk plåtkant. I mörkt läge syns den svarta kanten inte mot
+        // den mörka ytan, så vi lägger en hårfin ljus yttre ring bara där – den
+        // ramar in den vita skylten rent utan den gamla "glorian".
+        "border border-slate-900/80",
+        "shadow-[0_1px_2px_rgba(2,6,20,0.35)]",
+        "ring-1 ring-black/5 dark:ring-white/15",
         s.plate,
         className,
       )}

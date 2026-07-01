@@ -170,20 +170,23 @@ export function Sidebar({
               onNavigate={onNavigate}
             />
           ))}
-          {/* Plattformsadministration (Fordania superadmin) */}
-          <Link
-            href="/superadmin"
-            onClick={onNavigate}
-            title={collapsed ? "Superadmin" : undefined}
-            className={cn(
-              "group flex items-center rounded-lg text-[0.875rem] font-medium",
-              "text-ink-soft transition-colors hover:bg-surface-muted/70 hover:text-ink",
-              collapsed ? "h-9 w-9 justify-center" : "h-9 gap-3 px-2.5",
-            )}
-          >
-            <ShieldCheck className="size-[18px] shrink-0 text-muted-foreground group-hover:text-ink-soft" />
-            {!collapsed ? <span>Superadmin</span> : null}
-          </Link>
+          {/* Plattformsadministration – endast global superadmin (Fordania).
+              Vanliga verkstadsanvändare ser inte ens länken. */}
+          {switcher.isSuperadmin ? (
+            <Link
+              href="/superadmin"
+              onClick={onNavigate}
+              title={collapsed ? "Superadmin" : undefined}
+              className={cn(
+                "group flex items-center rounded-lg text-[0.875rem] font-medium",
+                "text-ink-soft transition-colors hover:bg-surface-muted/70 hover:text-ink",
+                collapsed ? "h-9 w-9 justify-center" : "h-9 gap-3 px-2.5",
+              )}
+            >
+              <ShieldCheck className="size-[18px] shrink-0 text-muted-foreground group-hover:text-ink-soft" />
+              {!collapsed ? <span>Superadmin</span> : null}
+            </Link>
+          ) : null}
         </div>
       </nav>
 

@@ -96,9 +96,9 @@ export function Agenda({
     : -1;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col">
       {/* Veckorad med datumchips */}
-      <div className="grid grid-cols-7 gap-1 border-b border-line pb-3">
+      <div className="grid grid-cols-7 gap-1 border-b border-line pb-3 sm:gap-2">
         {weekDays.map((d) => {
           const isSel = sameDay(d, selected);
           const dayIsToday = sameDay(d, now);
