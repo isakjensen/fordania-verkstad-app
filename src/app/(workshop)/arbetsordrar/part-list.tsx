@@ -69,11 +69,7 @@ export function PartList({ jobId, parts }: { jobId: string; parts: Part[] }) {
 
   return (
     <Card>
-      <CardHeader
-        tone="brand"
-        title="Delar / inköp"
-        subtitle={`${parts.length} ${parts.length === 1 ? "rad" : "rader"}`}
-      />
+      <CardHeader tone="brand" title="Delar / inköp" />
       <CardBody className="space-y-4">
         {parts.length > 0 ? (
           <div className="overflow-x-auto">

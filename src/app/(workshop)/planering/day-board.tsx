@@ -16,12 +16,15 @@ import {
 } from "@dnd-kit/core";
 import { Avatar } from "@/components/ui/avatar";
 import { LicensePlate } from "@/components/ui/license-plate";
+import { Car, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Mechanic, ScheduleJob } from "@/lib/data/schedule";
 import { statusMeta, statusLabels } from "./calendar-meta";
 import type { MoveArgs } from "./time-grid";
 import {
   type PlacedH,
+  type CalGroup,
+  type CalVehicleRow,
   DAY_START,
   DAY_END,
   WORK_HOURS,
@@ -31,31 +34,39 @@ import {
   sameDay,
   durationHoursOf,
   layoutRow,
+  groupByMechVehicle,
+  UNASSIGNED_KEY,
 } from "./calendar-utils";
 
-const LABEL_W = 184;
-const TRACK_MIN = 760; // px – under detta scrollar tidslinjen i sidled
+const LABEL_W = 208;
+const TRACK_MIN = 720; // px – under detta scrollar tidslinjen i sidled
 const BLOCK_H = 50;
 const GAP = 6;
 const ROW_PAD = 8;
 
 function rowHeight(sublanes: number) {
-  return Math.max(72, sublanes * (BLOCK_H + GAP) - GAP + ROW_PAD * 2);
+  return Math.max(64, sublanes * (BLOCK_H + GAP) - GAP + ROW_PAD * 2);
 }
 const pct = (hours: number) => `${(hours / WORK_HOURS) * 100}%`;
 
-interface Row {
-  mech: Mechanic;
+interface LaidRow {
+  row: CalVehicleRow;
   placed: PlacedH[];
-  sublanes: number;
   height: number;
+}
+interface LaidGroup {
+  group: CalGroup;
+  /** mekaniker-id för drag-mål ("" = Ej tilldelade). */
+  mechId: string;
+  rows: LaidRow[];
 }
 
 /**
- * Dagvy som resurs-tidslinje: en rad per mekaniker (namn till vänster) och
- * tiden som vågrät axel högst upp. Tidsaxeln fyller bredden och blir därmed bra
- * på alla skärmstorlekar. Dra en order i sidled för att flytta tid, eller
- * upp/ner till en annan mekaniker.
+ * Dagvy som resurs-tidslinje. Ordrarna grupperas mekaniker → fordon: varje
+ * tilldelat fordon får en egen rad (namnet på mekanikern som grupprubrik) och
+ * tiden ligger som vågrät axel högst upp. Ett fordon kan ha flera ordrar under
+ * dagen. Dra en order i sidled för att flytta tid, eller ner till en annan
+ * mekanikers grupp för att byta mekaniker.
  */
 export function DayBoard({
   anchorISO,
@@ -101,15 +112,16 @@ export function DayBoard({
     [anchorISO],
   );
 
-  const rows = useMemo<Row[]>(
+  const groups = useMemo<LaidGroup[]>(
     () =>
-      mechanics.map((mech) => {
-        const mechJobs = jobs.filter((j) =>
-          j.mechanics.some((m) => m.userId === mech.id),
-        );
-        const { placed, sublanes } = layoutRow(mechJobs);
-        return { mech, placed, sublanes, height: rowHeight(sublanes) };
-      }),
+      groupByMechVehicle(mechanics, jobs).map((group) => ({
+        group,
+        mechId: group.mech?.id ?? "",
+        rows: group.rows.map((row) => {
+          const { placed, sublanes } = layoutRow(row.jobs);
+          return { row, placed, height: rowHeight(sublanes) };
+        }),
+      })),
     [mechanics, jobs],
   );
 
@@ -143,13 +155,17 @@ export function DayBoard({
     const minutesShift = Math.round((e.delta.x / hourW) * 60 / 15) * 15;
     const newStart = new Date(oldStart.getTime() + minutesShift * 60000);
 
-    // Upp/ner → byt mekaniker
+    // Upp/ner → byt mekaniker (fordonets rad följer med). Mål-mekanikern läses
+    // ur droppzonens id `row:<mechId>::<vehicleKey>`. Ej tilldelade (tomt id)
+    // är inte ett mål för mekanikerbyte.
     const overId = e.over ? String(e.over.id) : null;
-    const target = overId?.startsWith("row:") ? overId.slice(4) : null;
+    const targetMech = overId?.startsWith("row:")
+      ? overId.slice(4).split("::")[0]
+      : null;
     let toUserId: string | undefined;
-    if (target && target !== fromMech) {
-      const already = job.mechanics.some((m) => m.userId === target);
-      if (!already) toUserId = target;
+    if (targetMech && targetMech !== fromMech) {
+      const already = job.mechanics.some((m) => m.userId === targetMech);
+      if (!already) toUserId = targetMech;
     }
 
     let h = newStart.getHours() + newStart.getMinutes() / 60;
@@ -186,7 +202,7 @@ export function DayBoard({
               className="sticky left-0 z-10 flex shrink-0 items-center border-r border-line bg-surface/95 px-4 text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
               style={{ width: LABEL_W }}
             >
-              Mekaniker
+              Fordon
             </div>
             <div
               ref={trackRef}
@@ -204,16 +220,26 @@ export function DayBoard({
             </div>
           </div>
 
-          {/* Mekanikerrader */}
-          {rows.map((row) => (
-            <MechRow
-              key={row.mech.id}
-              row={row}
-              canManage={canManage}
-              nowOffset={nowOffset}
-              trackPx={trackPx}
-              onOpen={onOpen}
-            />
+          {/* Grupper: mekaniker → fordonsrader */}
+          {groups.map((g) => (
+            <div key={g.group.key}>
+              <GroupBand group={g.group} />
+              {g.rows.length === 0 ? (
+                <EmptyRow mechId={g.mechId} canManage={canManage} />
+              ) : (
+                g.rows.map((r) => (
+                  <VehicleRow
+                    key={r.row.key}
+                    laid={r}
+                    mechId={g.mechId}
+                    canManage={canManage}
+                    nowOffset={nowOffset}
+                    trackPx={trackPx}
+                    onOpen={onOpen}
+                  />
+                ))
+              )}
+            </div>
           ))}
         </div>
       </div>
@@ -242,22 +268,94 @@ export function DayBoard({
   );
 }
 
-const MechRow = memo(function MechRow({
-  row,
+/** Grupprubrik – mekanikern (eller "Ej tilldelade") som ett band över raderna. */
+const GroupBand = memo(function GroupBand({ group }: { group: CalGroup }) {
+  const unassigned = group.key === UNASSIGNED_KEY;
+  const vehicleCount = group.rows.filter((r) => r.vehicle).length;
+  return (
+    <div className="flex border-b border-line bg-surface-muted/60">
+      <div className="sticky left-0 z-20 flex items-center gap-2.5 bg-surface-muted/60 px-4 py-2">
+        {unassigned ? (
+          <span className="flex size-8 items-center justify-center rounded-full bg-warning-soft text-warning">
+            <Layers className="size-4" />
+          </span>
+        ) : (
+          <Avatar initials={group.mech!.initials} size="size-8 text-[0.7rem]" />
+        )}
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold text-ink">
+            {unassigned ? "Ej tilldelade" : group.mech!.name}
+          </p>
+          <p className="text-[0.7rem] text-muted-foreground">
+            {vehicleCount > 0
+              ? `${vehicleCount} ${vehicleCount === 1 ? "fordon" : "fordon"} · ${group.orderCount} ${group.orderCount === 1 ? "order" : "ordrar"}`
+              : "Inga fordon"}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+/** Tom mekaniker utan fordon – ändå en droppzon så man kan dra hit ordrar. */
+const EmptyRow = memo(function EmptyRow({
+  mechId,
+  canManage,
+}: {
+  mechId: string;
+  canManage: boolean;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: `row:${mechId}::empty` });
+  return (
+    <div
+      className={cn(
+        "flex border-b border-line last:border-b-0",
+        isOver && canManage && "bg-brand-50/50",
+      )}
+      style={{ height: 56 }}
+    >
+      <div
+        className="sticky left-0 z-10 flex shrink-0 items-center gap-2 border-r border-line bg-surface px-4 text-xs italic text-muted-foreground/60"
+        style={{ width: LABEL_W }}
+      >
+        <Car className="size-4" />
+        Inga fordon
+      </div>
+      <div
+        ref={setNodeRef}
+        className="flex items-center px-3 text-xs italic text-muted-foreground/50"
+        style={{ width: `calc(100% - ${LABEL_W}px)`, minWidth: TRACK_MIN }}
+      >
+        Dra hit en order för att tilldela
+      </div>
+    </div>
+  );
+});
+
+const VehicleRow = memo(function VehicleRow({
+  laid,
+  mechId,
   canManage,
   nowOffset,
   trackPx,
   onOpen,
 }: {
-  row: Row;
+  laid: LaidRow;
+  mechId: string;
   canManage: boolean;
   nowOffset: number | null;
   trackPx: number;
   onOpen: (job: ScheduleJob) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: `row:${row.mech.id}` });
+  const { row, placed, height } = laid;
+  const { setNodeRef, isOver } = useDroppable({
+    id: `row:${mechId}::${row.key}`,
+  });
   const hours = Array.from({ length: WORK_HOURS }, (_, i) => i);
-  const orderCount = new Set(row.placed.map((p) => p.job.id)).size;
+  const vehicle = row.vehicle;
+  const subtitle = vehicle
+    ? [vehicle.brand, vehicle.model].filter(Boolean).join(" ")
+    : "Utan fordon";
 
   return (
     <div
@@ -265,9 +363,9 @@ const MechRow = memo(function MechRow({
         "flex border-b border-line last:border-b-0",
         isOver && canManage && "bg-brand-50/50",
       )}
-      style={{ height: row.height }}
+      style={{ height }}
     >
-      {/* Namn-etikett (sticky vänster) */}
+      {/* Fordons-etikett (sticky vänster) */}
       <div
         className={cn(
           "sticky left-0 z-20 flex shrink-0 items-center gap-2.5 border-r border-line px-4",
@@ -275,17 +373,16 @@ const MechRow = memo(function MechRow({
         )}
         style={{ width: LABEL_W }}
       >
-        <Avatar initials={row.mech.initials} size="size-9 text-xs" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-ink">
-            {row.mech.name}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {orderCount > 0
-              ? `${orderCount} ${orderCount === 1 ? "order" : "ordrar"}`
-              : "Inga ordrar"}
-          </p>
-        </div>
+        {vehicle ? (
+          <LicensePlate value={vehicle.regNo} size="sm" className="shrink-0" />
+        ) : (
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-muted-foreground">
+            <Car className="size-4" />
+          </span>
+        )}
+        <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+          {subtitle}
+        </p>
       </div>
 
       {/* Tidslinje */}
@@ -310,18 +407,12 @@ const MechRow = memo(function MechRow({
             <span className="absolute -top-0.5 -left-[3px] size-1.5 rounded-full bg-danger" />
           </div>
         ) : null}
-        {/* Tom-läge */}
-        {row.placed.length === 0 ? (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs italic text-muted-foreground/60">
-            Inga inplanerade ordrar
-          </span>
-        ) : null}
         {/* Order-block */}
-        {row.placed.map((p) => (
+        {placed.map((p) => (
           <JobBlock
             key={p.job.id}
             placed={p}
-            mechId={row.mech.id}
+            mechId={mechId}
             canManage={canManage}
             trackPx={trackPx}
             onOpen={onOpen}
@@ -353,7 +444,6 @@ const JobBlock = memo(function JobBlock({
   const meta = statusMeta[job.status];
   const start = job.scheduledStart ? new Date(job.scheduledStart) : null;
   const end = job.scheduledEnd ? new Date(job.scheduledEnd) : null;
-  const primary = job.vehicles[0]?.vehicle;
   const top = ROW_PAD + sublane * (BLOCK_H + GAP);
   // Faktisk bredd i px styr hur mycket innehåll som ryms i blocket.
   const blockPx = (durH / WORK_HOURS) * trackPx;
@@ -395,8 +485,10 @@ const JobBlock = memo(function JobBlock({
             </span>
           ) : null}
         </span>
-        {primary && blockPx >= 140 ? (
-          <LicensePlate value={primary.regNo} size="sm" />
+        {start && blockPx < 104 && blockPx >= 62 ? (
+          <span className="text-[0.62rem] font-medium leading-tight text-muted-foreground tabular-nums">
+            {hm(start)}
+          </span>
         ) : null}
       </span>
     </button>

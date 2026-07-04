@@ -1,4 +1,4 @@
-import type { ScheduleJob } from "@/lib/data/schedule";
+import type { ScheduleJob, Mechanic } from "@/lib/data/schedule";
 
 export type View = "day" | "week";
 
@@ -170,4 +170,109 @@ export function layoutRow(jobs: ScheduleJob[]): {
     sublanes,
   }));
   return { placed, sublanes };
+}
+
+/* ------------------------------------------------------------------ *
+ *  Gruppering: mekaniker → fordon → arbetsordrar
+ * ------------------------------------------------------------------ */
+
+/** Grupp-nyckel för ordrar som saknar fordon eller mekaniker. */
+export const UNASSIGNED_KEY = "__unassigned__";
+const NO_VEHICLE_KEY = "__novehicle__";
+
+type SchedVehicle = ScheduleJob["vehicles"][number]["vehicle"];
+
+/** En fordonsrad: ett fordon (eller inget) med dess arbetsordrar. */
+export interface CalVehicleRow {
+  key: string;
+  vehicle: SchedVehicle | null;
+  jobs: ScheduleJob[];
+}
+
+/** En grupp i kalendern: en mekaniker (eller "Ej tilldelade") med fordonsrader. */
+export interface CalGroup {
+  key: string;
+  /** null = samlingsgruppen "Ej tilldelade" högst upp. */
+  mech: Mechanic | null;
+  rows: CalVehicleRow[];
+  orderCount: number;
+}
+
+/**
+ * Grupperar arbetsordrar mekaniker → fordon → ordrar. Varje tilldelat fordon
+ * blir en egen rad under sin mekaniker; ett fordon kan ha flera ordrar. Ordrar
+ * som saknar fordon eller mekaniker hamnar i gruppen "Ej tilldelade" högst upp.
+ * En order med flera mekaniker syns under var och en av dem (som idag).
+ */
+export function groupByMechVehicle(
+  mechanics: Mechanic[],
+  jobs: ScheduleJob[],
+): CalGroup[] {
+  const mechIds = new Set(mechanics.map((m) => m.id));
+  // groupKey → (vehicleKey → rad)
+  const buckets = new Map<string, Map<string, CalVehicleRow>>();
+
+  const rowFor = (
+    groupKey: string,
+    vehKey: string,
+    vehicle: SchedVehicle | null,
+  ) => {
+    let group = buckets.get(groupKey);
+    if (!group) {
+      group = new Map();
+      buckets.set(groupKey, group);
+    }
+    let row = group.get(vehKey);
+    if (!row) {
+      row = { key: vehKey, vehicle, jobs: [] };
+      group.set(vehKey, row);
+    }
+    return row;
+  };
+
+  for (const job of jobs) {
+    const vehicle = job.vehicles[0]?.vehicle ?? null;
+    const assignedMechs = job.mechanics.filter((jm) => mechIds.has(jm.userId));
+    const placeable = assignedMechs.length > 0 && !!vehicle;
+
+    if (placeable) {
+      for (const jm of assignedMechs) {
+        rowFor(jm.userId, vehicle!.id, vehicle).jobs.push(job);
+      }
+    } else {
+      const vehKey = vehicle ? vehicle.id : NO_VEHICLE_KEY;
+      rowFor(UNASSIGNED_KEY, vehKey, vehicle).jobs.push(job);
+    }
+  }
+
+  // Fordon i bokstavsordning; rader utan fordon ("Utan fordon") sist.
+  const sortRows = (rows: CalVehicleRow[]) =>
+    rows.sort((a, b) => {
+      if (!a.vehicle) return 1;
+      if (!b.vehicle) return -1;
+      return a.vehicle.regNo.localeCompare(b.vehicle.regNo, "sv");
+    });
+  const countOrders = (rows: CalVehicleRow[]) =>
+    new Set(rows.flatMap((r) => r.jobs.map((j) => j.id))).size;
+
+  const groups: CalGroup[] = [];
+
+  const unassigned = buckets.get(UNASSIGNED_KEY);
+  if (unassigned && unassigned.size) {
+    const rows = sortRows([...unassigned.values()]);
+    groups.push({
+      key: UNASSIGNED_KEY,
+      mech: null,
+      rows,
+      orderCount: countOrders(rows),
+    });
+  }
+
+  for (const mech of mechanics) {
+    const group = buckets.get(mech.id);
+    const rows = group ? sortRows([...group.values()]) : [];
+    groups.push({ key: mech.id, mech, rows, orderCount: countOrders(rows) });
+  }
+
+  return groups;
 }

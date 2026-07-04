@@ -118,14 +118,6 @@ export default async function WorkOrderDetailPage({
             <Row icon={Hash} label="Order-ID">
               <span className="font-mono text-sm">{ref}</span>
             </Row>
-            {job.description ? (
-              <div className="py-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Beskrivning
-                </p>
-                <p className="mt-1 text-sm text-ink-soft">{job.description}</p>
-              </div>
-            ) : null}
           </CardBody>
         </Card>
 
@@ -140,6 +132,19 @@ export default async function WorkOrderDetailPage({
           options={vehicleOptions}
         />
       </div>
+
+      {job.description ? (
+        <div className="mt-5">
+          <Card>
+            <CardHeader tone="brand" title="Beskrivning" />
+            <CardBody>
+              <p className="text-sm whitespace-pre-wrap text-ink-soft">
+                {job.description}
+              </p>
+            </CardBody>
+          </Card>
+        </div>
+      ) : null}
 
       <div className="mt-5">
         <PartList jobId={job.id} parts={job.parts} />

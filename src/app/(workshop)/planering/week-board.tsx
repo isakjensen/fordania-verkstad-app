@@ -16,37 +16,38 @@ import {
 } from "@dnd-kit/core";
 import { Avatar } from "@/components/ui/avatar";
 import { LicensePlate } from "@/components/ui/license-plate";
+import { Car, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Mechanic, ScheduleJob } from "@/lib/data/schedule";
 import { statusMeta, statusLabels } from "./calendar-meta";
 import type { MoveArgs } from "./time-grid";
 import {
+  type CalGroup,
+  type CalVehicleRow,
   WEEKDAYS_SHORT,
   hm,
   toParam,
   addDays,
   sameDay,
+  groupByMechVehicle,
+  UNASSIGNED_KEY,
 } from "./calendar-utils";
 
-const LABEL_W = 156;
+const LABEL_W = 180;
 const DAY_MIN = 104; // px – under detta scrollar veckan i sidled
 
-interface DayCell {
+interface DayHeader {
   key: string;
   date: Date;
   isToday: boolean;
-  jobs: ScheduleJob[];
-}
-interface Row {
-  mech: Mechanic;
-  days: DayCell[];
-  weekCount: number;
 }
 
 /**
- * Veckovy som resurs-matris: en rad per mekaniker (namn till vänster) och
- * veckans sju dagar som kolumner – samma upplägg som dagvyn, fast över en
- * vecka. Dra en order till en annan dag eller mekaniker för att omplanera.
+ * Veckovy som resurs-matris. Ordrarna grupperas mekaniker → fordon: varje
+ * tilldelat fordon får en egen rad (mekanikern som grupprubrik) och veckans sju
+ * dagar som kolumner. Ett fordon kan ha flera ordrar under veckan. Dra en order
+ * till en annan dag för att omplanera, eller till en annan mekanikers grupp för
+ * att byta mekaniker.
  */
 export function WeekBoard({
   fromISO,
@@ -74,7 +75,7 @@ export function WeekBoard({
   const today = useMemo(() => new Date(), []);
   const from = useMemo(() => new Date(fromISO), [fromISO]);
 
-  const dayHeaders = useMemo(
+  const dayHeaders = useMemo<DayHeader[]>(
     () =>
       Array.from({ length: 7 }, (_, i) => {
         const date = addDays(from, i);
@@ -83,30 +84,9 @@ export function WeekBoard({
     [from, today],
   );
 
-  const rows = useMemo<Row[]>(
-    () =>
-      mechanics.map((mech) => {
-        const mechJobs = jobs.filter((j) =>
-          j.mechanics.some((m) => m.userId === mech.id),
-        );
-        const days = dayHeaders.map(({ key, date, isToday }) => {
-          const dayJobs = mechJobs
-            .filter(
-              (j) =>
-                j.scheduledStart &&
-                toParam(new Date(j.scheduledStart)) === key,
-            )
-            .sort(
-              (a, b) =>
-                new Date(a.scheduledStart as Date).getTime() -
-                new Date(b.scheduledStart as Date).getTime(),
-            );
-          return { key, date, isToday, jobs: dayJobs };
-        });
-        const weekCount = days.reduce((n, d) => n + d.jobs.length, 0);
-        return { mech, days, weekCount };
-      }),
-    [mechanics, jobs, dayHeaders],
+  const groups = useMemo<CalGroup[]>(
+    () => groupByMechVehicle(mechanics, jobs),
+    [mechanics, jobs],
   );
 
   function onDragStart(e: DragStartEvent) {
@@ -122,7 +102,10 @@ export function WeekBoard({
 
     const overId = e.over ? String(e.over.id) : null;
     if (!overId || !overId.startsWith("cell:")) return;
-    const [, toMech, toKey] = overId.split(":");
+    // cell:<mechId>:<dayKey>:<vehicleKey>
+    const parts = overId.slice(5).split(":");
+    const toMech = parts[0];
+    const toKey = parts[1];
     if (toMech === fromMech && toKey === fromKey) return;
 
     const oldStart = new Date(job.scheduledStart);
@@ -136,9 +119,13 @@ export function WeekBoard({
     }
     const newEnd = new Date(newStart.getTime() + durMs);
 
-    // Byt mekaniker
+    // Byt mekaniker (Ej tilldelade = tomt id är inte ett mål)
     let toUserId: string | undefined;
-    if (toMech !== fromMech && !job.mechanics.some((m) => m.userId === toMech)) {
+    if (
+      toMech &&
+      toMech !== fromMech &&
+      !job.mechanics.some((m) => m.userId === toMech)
+    ) {
       toUserId = toMech;
     }
 
@@ -169,7 +156,7 @@ export function WeekBoard({
               className="sticky left-0 z-10 flex shrink-0 items-center border-r border-line bg-surface/95 px-4 text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
               style={{ width: LABEL_W }}
             >
-              Mekaniker
+              Fordon
             </div>
             <div className="grid flex-1 grid-cols-7">
               {dayHeaders.map((d) => {
@@ -199,46 +186,30 @@ export function WeekBoard({
             </div>
           </div>
 
-          {/* Mekanikerrader – prydliga, jämna radhöjder som växer med innehållet */}
-          <div className="flex flex-col">
-          {rows.map((row) => (
-            <div
-              key={row.mech.id}
-              className="flex min-h-[108px] border-b border-line last:border-b-0"
-            >
-              {/* Namn-etikett (sticky vänster) */}
-              <div
-                className="sticky left-0 z-20 flex shrink-0 items-center gap-2 border-r border-line bg-surface px-3 py-3"
-                style={{ width: LABEL_W }}
-              >
-                <Avatar initials={row.mech.initials} size="size-8 text-[0.7rem]" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-ink">
-                    {row.mech.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {row.weekCount > 0
-                      ? `${row.weekCount} ${row.weekCount === 1 ? "order" : "ordrar"}`
-                      : "Inga ordrar"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Dagceller */}
-              <div className="grid flex-1 grid-cols-7">
-                {row.days.map((cell) => (
-                  <DayColumn
-                    key={cell.key}
-                    mechId={row.mech.id}
-                    cell={cell}
+          {/* Grupper: mekaniker → fordonsrader */}
+          {groups.map((group) => (
+            <div key={group.key}>
+              <GroupBand group={group} />
+              {group.rows.length === 0 ? (
+                <EmptyRow
+                  mechId={group.mech?.id ?? ""}
+                  dayHeaders={dayHeaders}
+                  canManage={canManage}
+                />
+              ) : (
+                group.rows.map((row) => (
+                  <VehicleRow
+                    key={row.key}
+                    row={row}
+                    mechId={group.mech?.id ?? ""}
+                    dayHeaders={dayHeaders}
                     canManage={canManage}
                     onOpen={onOpen}
                   />
-                ))}
-              </div>
+                ))
+              )}
             </div>
           ))}
-          </div>
         </div>
       </div>
 
@@ -266,39 +237,188 @@ export function WeekBoard({
   );
 }
 
-const DayColumn = memo(function DayColumn({
+/** Grupprubrik – mekanikern (eller "Ej tilldelade") som ett band över raderna. */
+const GroupBand = memo(function GroupBand({ group }: { group: CalGroup }) {
+  const unassigned = group.key === UNASSIGNED_KEY;
+  const vehicleCount = group.rows.filter((r) => r.vehicle).length;
+  return (
+    <div className="flex border-b border-line bg-surface-muted/60">
+      <div className="sticky left-0 z-20 flex items-center gap-2.5 bg-surface-muted/60 px-4 py-2">
+        {unassigned ? (
+          <span className="flex size-8 items-center justify-center rounded-full bg-warning-soft text-warning">
+            <Layers className="size-4" />
+          </span>
+        ) : (
+          <Avatar initials={group.mech!.initials} size="size-8 text-[0.7rem]" />
+        )}
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold text-ink">
+            {unassigned ? "Ej tilldelade" : group.mech!.name}
+          </p>
+          <p className="text-[0.7rem] text-muted-foreground">
+            {vehicleCount > 0
+              ? `${vehicleCount} fordon · ${group.orderCount} ${group.orderCount === 1 ? "order" : "ordrar"}`
+              : "Inga fordon"}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+/** Tom mekaniker utan fordon – ändå droppzoner så man kan dra hit ordrar. */
+const EmptyRow = memo(function EmptyRow({
   mechId,
-  cell,
+  dayHeaders,
+  canManage,
+}: {
+  mechId: string;
+  dayHeaders: DayHeader[];
+  canManage: boolean;
+}) {
+  return (
+    <div className="flex min-h-[64px] border-b border-line last:border-b-0">
+      <div
+        className="sticky left-0 z-20 flex shrink-0 items-center gap-2 border-r border-line bg-surface px-4 text-xs italic text-muted-foreground/60"
+        style={{ width: LABEL_W }}
+      >
+        <Car className="size-4" />
+        Inga fordon
+      </div>
+      <div className="grid flex-1 grid-cols-7">
+        {dayHeaders.map((d) => (
+          <DayCell
+            key={d.key}
+            mechId={mechId}
+            dayKey={d.key}
+            vehicleKey="empty"
+            isToday={d.isToday}
+            jobs={[]}
+            canManage={canManage}
+            onOpen={() => {}}
+          />
+        ))}
+      </div>
+    </div>
+  );
+});
+
+const VehicleRow = memo(function VehicleRow({
+  row,
+  mechId,
+  dayHeaders,
+  canManage,
+  onOpen,
+}: {
+  row: CalVehicleRow;
+  mechId: string;
+  dayHeaders: DayHeader[];
+  canManage: boolean;
+  onOpen: (job: ScheduleJob) => void;
+}) {
+  const vehicle = row.vehicle;
+  const subtitle = vehicle
+    ? [vehicle.brand, vehicle.model].filter(Boolean).join(" ")
+    : "Utan fordon";
+
+  const byDay = useMemo(() => {
+    const map = new Map<string, ScheduleJob[]>();
+    for (const job of row.jobs) {
+      if (!job.scheduledStart) continue;
+      const key = toParam(new Date(job.scheduledStart));
+      const list = map.get(key);
+      if (list) list.push(job);
+      else map.set(key, [job]);
+    }
+    for (const list of map.values()) {
+      list.sort(
+        (a, b) =>
+          new Date(a.scheduledStart as Date).getTime() -
+          new Date(b.scheduledStart as Date).getTime(),
+      );
+    }
+    return map;
+  }, [row.jobs]);
+
+  return (
+    <div className="flex min-h-[72px] border-b border-line last:border-b-0">
+      {/* Fordons-etikett (sticky vänster) */}
+      <div
+        className="sticky left-0 z-20 flex shrink-0 items-center gap-2.5 border-r border-line bg-surface px-3 py-3"
+        style={{ width: LABEL_W }}
+      >
+        {vehicle ? (
+          <LicensePlate value={vehicle.regNo} size="sm" className="shrink-0" />
+        ) : (
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-muted-foreground">
+            <Car className="size-4" />
+          </span>
+        )}
+        <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+          {subtitle}
+        </p>
+      </div>
+
+      {/* Dagceller */}
+      <div className="grid flex-1 grid-cols-7">
+        {dayHeaders.map((d) => (
+          <DayCell
+            key={d.key}
+            mechId={mechId}
+            dayKey={d.key}
+            vehicleKey={row.key}
+            isToday={d.isToday}
+            jobs={byDay.get(d.key) ?? []}
+            canManage={canManage}
+            onOpen={onOpen}
+          />
+        ))}
+      </div>
+    </div>
+  );
+});
+
+const DayCell = memo(function DayCell({
+  mechId,
+  dayKey,
+  vehicleKey,
+  isToday,
+  jobs,
   canManage,
   onOpen,
 }: {
   mechId: string;
-  cell: DayCell;
+  dayKey: string;
+  vehicleKey: string;
+  isToday: boolean;
+  jobs: ScheduleJob[];
   canManage: boolean;
   onOpen: (job: ScheduleJob) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: `cell:${mechId}:${cell.key}` });
+  const { setNodeRef, isOver } = useDroppable({
+    id: `cell:${mechId}:${dayKey}:${vehicleKey}`,
+  });
 
   return (
     <div
       ref={setNodeRef}
       className={cn(
         "flex flex-col gap-1.5 border-l border-line p-1.5",
-        cell.isToday && "bg-brand-50/25",
+        isToday && "bg-brand-50/25",
         isOver && canManage && "bg-brand-50/70",
       )}
     >
-      {cell.jobs.length === 0 ? (
+      {jobs.length === 0 ? (
         <span className="m-auto text-[0.7rem] italic text-muted-foreground/40">
           —
         </span>
       ) : (
-        cell.jobs.map((job) => (
+        jobs.map((job) => (
           <JobChip
             key={job.id}
             job={job}
             mechId={mechId}
-            colKey={cell.key}
+            colKey={dayKey}
             canManage={canManage}
             onOpen={onOpen}
           />
@@ -328,7 +448,6 @@ const JobChip = memo(function JobChip({
   const meta = statusMeta[job.status];
   const start = job.scheduledStart ? new Date(job.scheduledStart) : null;
   const end = job.scheduledEnd ? new Date(job.scheduledEnd) : null;
-  const primary = job.vehicles[0]?.vehicle;
 
   return (
     <button
@@ -360,9 +479,6 @@ const JobChip = memo(function JobChip({
             {hm(start)}
             {end ? `–${hm(end)}` : ""}
           </span>
-        ) : null}
-        {primary ? (
-          <LicensePlate value={primary.regNo} size="sm" className="mt-0.5" />
         ) : null}
       </span>
     </button>

@@ -8,6 +8,15 @@ import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LicensePlate } from "@/components/ui/license-plate";
 import { FieldSelect } from "@/components/ui/field-select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { linkVehicle, unlinkVehicle } from "./actions";
 
 interface LinkedVehicle {
@@ -30,6 +39,9 @@ export function VehicleLinks({
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<{ id: string; regNo: string } | null>(
+    null,
+  );
   const router = useRouter();
 
   const linkedIds = new Set(vehicles.map((v) => v.id));
@@ -55,6 +67,7 @@ export function VehicleLinks({
       const res = await unlinkVehicle(jobId, vehicleId);
       if ("error" in res) setError(res.error);
       setBusyId(null);
+      setConfirm(null);
       router.refresh();
     });
   }
@@ -83,7 +96,7 @@ export function VehicleLinks({
                   size="icon"
                   aria-label={`Ta bort ${v.regNo}`}
                   disabled={pending}
-                  onClick={() => remove(v.id)}
+                  onClick={() => setConfirm({ id: v.id, regNo: v.regNo })}
                 >
                   {busyId === v.id ? (
                     <Loader2 className="size-4 animate-spin" />
@@ -133,6 +146,44 @@ export function VehicleLinks({
           </p>
         ) : null}
       </CardBody>
+
+      <Dialog
+        open={!!confirm}
+        onOpenChange={(o) => {
+          if (!o) setConfirm(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ta bort fordon</DialogTitle>
+            <DialogDescription>
+              Vill du ta bort {confirm?.regNo} från arbetsordern?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose
+              render={
+                <Button type="button" variant="outline">
+                  Avbryt
+                </Button>
+              }
+            />
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={pending}
+              onClick={() => confirm && remove(confirm.id)}
+            >
+              {pending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <X className="size-4" />
+              )}
+              Ta bort
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
