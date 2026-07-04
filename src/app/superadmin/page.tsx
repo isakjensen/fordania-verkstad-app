@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { SuperBanner } from "@/components/superadmin/page-banner";
 import { OverviewKpis } from "@/components/superadmin/overview-kpis";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -59,13 +58,7 @@ export default async function SuperadminOverviewPage() {
   const recentUsers = allUsers.slice(0, 5);
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <SuperBanner
-        eyebrow="Plattform"
-        title="Översikt"
-        description="Status och nyckeltal för hela Fordania-plattformen – företag, användare och aktivitet."
-      />
-
+    <div className="w-full space-y-5 px-4 py-4 sm:px-6 lg:px-8">
       {/* KPI */}
       <OverviewKpis
         tenants={stats.tenants}
@@ -75,7 +68,7 @@ export default async function SuperadminOverviewPage() {
         jobs={stats.jobs}
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-5 lg:grid-cols-3">
         {/* Senaste företag */}
         <Card className="lg:col-span-2">
           <CardHeader

@@ -9,7 +9,6 @@ import {
   ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
-import { PageHeader } from "@/components/layout/page-header";
 import { Avatar } from "@/components/ui/avatar";
 import { TenantLogo } from "@/components/ui/tenant-logo";
 import {
@@ -99,14 +98,8 @@ export default async function SettingsPage() {
     null;
 
   return (
-    <div className="mx-auto w-full max-w-[760px] px-4 py-6 sm:px-6 lg:px-8">
-      <PageHeader
-        eyebrow="Verkstad"
-        title="Inställningar"
-        description="Anpassa appen, ditt konto och hur verkstadens register fungerar."
-      />
-
-      <div className="mt-6 flex flex-col gap-5">
+    <div className="mx-auto w-full max-w-[760px] px-4 py-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-5">
         {/* Utseende */}
         <Section
           icon={Palette}

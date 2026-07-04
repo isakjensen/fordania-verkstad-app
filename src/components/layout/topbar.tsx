@@ -1,8 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { Bell, BellOff, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Bell, BellOff } from "lucide-react";
 import { TenantLogo } from "@/components/ui/tenant-logo";
 import {
   DropdownMenu,
@@ -40,29 +38,8 @@ export function Topbar({ switcher }: { switcher: SwitcherData }) {
       {/* Spacer på mobil när söket är komprimerat */}
       <div className="flex-1 sm:hidden" />
 
-      {/* Höger: åtgärder */}
-      <div className="flex items-center gap-1.5 sm:gap-2">
-        <Button
-          size="md"
-          variant="success"
-          className="hidden sm:inline-flex"
-          nativeButton={false}
-          render={<Link href="/arbetsordrar" />}
-        >
-          <Plus className="size-4" />
-          Ny arbetsorder
-        </Button>
-        <Button
-          size="icon"
-          variant="success"
-          className="sm:hidden"
-          aria-label="Ny arbetsorder"
-          nativeButton={false}
-          render={<Link href="/arbetsordrar" />}
-        >
-          <Plus className="size-5" />
-        </Button>
-
+      {/* Höger: åtgärder – förankrade i högra hörnet */}
+      <div className="flex items-center gap-1.5 sm:ml-auto sm:gap-2">
         {/* Notiser */}
         <DropdownMenu>
           <DropdownMenuTrigger

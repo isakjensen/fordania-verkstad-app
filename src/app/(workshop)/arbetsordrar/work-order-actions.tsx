@@ -90,7 +90,7 @@ export function WorkOrderActions({ job }: { job: JobInfo }) {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogTrigger
           render={
-            <Button variant="outline" size="md">
+            <Button variant="secondary" size="md">
               <Pencil className="size-4" />
               Redigera
             </Button>
@@ -159,8 +159,8 @@ export function WorkOrderActions({ job }: { job: JobInfo }) {
       <Dialog>
         <DialogTrigger
           render={
-            <Button variant="outline" size="icon" aria-label="Ta bort arbetsorder">
-              <Trash2 className="size-4 text-danger" />
+            <Button variant="destructive" size="icon" aria-label="Ta bort arbetsorder">
+              <Trash2 className="size-4" />
             </Button>
           }
         />

@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PageHeader } from "@/components/layout/page-header";
 import { getActiveOrganizationId } from "@/lib/session";
 import { getCustomers } from "@/lib/data/customers";
 import { CreateCustomerButton } from "./create-customer-button";
@@ -38,21 +37,14 @@ export default async function CustomersPage() {
   const customers = organizationId ? await getCustomers(organizationId) : [];
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
-      <PageHeader
-        eyebrow="Register"
-        title="Kunder"
-        description="Kundregister för verkstaden – kontaktuppgifter och kommentarer."
-        action={organizationId ? <CreateCustomerButton /> : null}
-      />
-
-      <Card className="mt-6">
+    <div className="w-full px-4 py-4 sm:px-6 lg:px-8">
+      <Card>
         <CardHeader
-          tone="brand"
-          title="Alla kunder"
+          title="Kunder"
           subtitle={`${customers.length} ${
             customers.length === 1 ? "kund" : "kunder"
           } i registret`}
+          action={organizationId ? <CreateCustomerButton /> : null}
         />
 
         {!organizationId ? (

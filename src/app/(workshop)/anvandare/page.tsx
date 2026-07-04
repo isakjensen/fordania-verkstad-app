@@ -10,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PageHeader } from "@/components/layout/page-header";
 import { getActiveOrganizationId, getTenantRole, canManageUsers } from "@/lib/session";
 import { getTenantMembers } from "@/lib/data/users";
 import { CreateUserButton } from "./create-user-button";
@@ -41,19 +40,12 @@ export default async function UsersPage() {
   const members = organizationId ? await getTenantMembers(organizationId) : [];
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
-      <PageHeader
-        eyebrow="Verkstad"
-        title="Användare"
-        description="Hantera verkstadens anställda, roller och inloggningar."
-        action={organizationId && canManage ? <CreateUserButton /> : null}
-      />
-
-      <Card className="mt-6">
+    <div className="w-full px-4 py-4 sm:px-6 lg:px-8">
+      <Card>
         <CardHeader
-          tone="brand"
-          title="Anställda"
+          title="Användare"
           subtitle={`${members.length} användare i verkstaden`}
+          action={organizationId && canManage ? <CreateUserButton /> : null}
         />
 
         {!organizationId ? (

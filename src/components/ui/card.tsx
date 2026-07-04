@@ -21,7 +21,7 @@ interface CardHeaderProps {
   subtitle?: ReactNode;
   action?: ReactNode;
   className?: string;
-  /** "brand" ger Fordanias ljusblå gradient-header */
+  /** Bakåtkompatibel – tidigare accentmarkör, numera utan visuell effekt. */
   tone?: "default" | "brand";
 }
 
@@ -30,7 +30,6 @@ export function CardHeader({
   subtitle,
   action,
   className,
-  tone = "default",
 }: CardHeaderProps) {
   return (
     <div
@@ -40,12 +39,6 @@ export function CardHeader({
       )}
     >
       <div className="flex min-w-0 items-center gap-2.5">
-        {tone === "brand" ? (
-          <span
-            className="h-4 w-1 shrink-0 rounded-full bg-brand-500"
-            aria-hidden
-          />
-        ) : null}
         <div className="min-w-0">
           <h3 className="text-[0.95rem] font-bold tracking-tight text-ink">
             {title}

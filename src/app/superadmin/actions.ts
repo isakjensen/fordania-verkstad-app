@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { requireSuperadmin } from "@/lib/session";
+import { recordAudit } from "@/lib/audit";
 
 export type ActionResult = { success: true } | { error: string };
 
@@ -40,15 +41,25 @@ export async function createTenant(formData: FormData): Promise<ActionResult> {
     return { error: "Ett företag med liknande namn finns redan." };
   }
 
+  const orgId = randomUUID();
   await db.organization.create({
     data: {
-      id: randomUUID(),
+      id: orgId,
       name,
       slug,
       city: city || null,
       status: "active",
       createdAt: new Date(),
     },
+  });
+
+  await recordAudit({
+    action: "tenant.create",
+    category: "tenant",
+    summary: `Skapade företaget ${name}`,
+    organizationId: orgId,
+    entityType: "organization",
+    entityId: orgId,
   });
 
   revalidatePath("/superadmin");
@@ -71,13 +82,26 @@ export async function updateTenant(formData: FormData): Promise<ActionResult> {
   const org = await db.organization.findUnique({ where: { id } });
   if (!org) return { error: "Företaget hittades inte." };
 
+  const nextStatus = VALID_STATUSES.includes(status) ? status : org.status;
   await db.organization.update({
     where: { id },
     data: {
       name,
       city: city || null,
-      status: VALID_STATUSES.includes(status) ? status : org.status,
+      status: nextStatus,
     },
+  });
+
+  await recordAudit({
+    action: "tenant.update",
+    category: "tenant",
+    summary:
+      nextStatus !== org.status
+        ? `Ändrade företaget ${name} (status → ${nextStatus})`
+        : `Uppdaterade företaget ${name}`,
+    organizationId: id,
+    entityType: "organization",
+    entityId: id,
   });
 
   revalidatePath("/superadmin");
@@ -100,6 +124,15 @@ export async function deleteTenant(id: string): Promise<ActionResult> {
   if (!org) return { error: "Företaget hittades inte." };
 
   await db.organization.delete({ where: { id } });
+
+  await recordAudit({
+    action: "tenant.delete",
+    category: "tenant",
+    summary: `Tog bort företaget ${org.name}`,
+    organizationId: id,
+    entityType: "organization",
+    entityId: id,
+  });
 
   revalidatePath("/superadmin");
   revalidatePath("/superadmin/foretag");
@@ -137,14 +170,24 @@ export async function createUserInTenant(
     headers: await headers(),
   });
 
+  const memberRole = ["admin", "member"].includes(role) ? role : "member";
   await db.member.create({
     data: {
       id: randomUUID(),
       organizationId: org.id,
       userId: created.user.id,
-      role: ["admin", "member"].includes(role) ? role : "member",
+      role: memberRole,
       createdAt: new Date(),
     },
+  });
+
+  await recordAudit({
+    action: "user.create",
+    category: "user",
+    summary: `Skapade användaren ${name} (${email}) i ${org.name} som ${memberRole}`,
+    organizationId: org.id,
+    entityType: "user",
+    entityId: created.user.id,
   });
 
   revalidatePath("/superadmin");
@@ -189,6 +232,18 @@ export async function updateUser(formData: FormData): Promise<ActionResult> {
     },
   });
 
+  await recordAudit({
+    action: "user.update",
+    category: "user",
+    summary:
+      status === "inactive"
+        ? `Inaktiverade användaren ${name}`
+        : `Uppdaterade användaren ${name}`,
+    organizationId: member.organizationId,
+    entityType: "user",
+    entityId: member.userId,
+  });
+
   revalidatePath("/superadmin/anvandare");
   return { success: true };
 }
@@ -215,9 +270,21 @@ export async function removeUserFromTenant(
 
   // Städa bort föräldralösa konton (men aldrig superadmins).
   const remaining = await db.member.count({ where: { userId: member.userId } });
-  if (remaining === 0 && member.user.role !== "admin") {
+  const accountDeleted = remaining === 0 && member.user.role !== "admin";
+  if (accountDeleted) {
     await db.user.delete({ where: { id: member.userId } });
   }
+
+  await recordAudit({
+    action: accountDeleted ? "user.delete" : "user.remove",
+    category: "user",
+    summary: accountDeleted
+      ? `Tog bort användaren ${member.user.name} (${member.user.email})`
+      : `Tog bort ${member.user.name} från företaget`,
+    organizationId: member.organizationId,
+    entityType: "user",
+    entityId: member.userId,
+  });
 
   revalidatePath("/superadmin");
   revalidatePath("/superadmin/foretag");

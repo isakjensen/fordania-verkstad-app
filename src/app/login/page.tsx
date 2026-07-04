@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, LogIn } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { logFailedLogin } from "./actions";
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ export default function LoginPage() {
     const { data, error } = await authClient.signIn.email({ email, password });
 
     if (error || !data) {
+      void logFailedLogin(email);
       setError("Fel e-post eller lösenord.");
       setLoading(false);
       return;

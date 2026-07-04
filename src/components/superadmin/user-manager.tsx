@@ -133,20 +133,22 @@ export function UserManager({
           {/* Touch – kort */}
           <ul className="divide-y divide-line lg:hidden">
             {filtered.map((u) => (
-              <li key={u.memberId} className="flex items-center gap-3 px-4 py-3.5">
+              <li key={u.memberId} className="flex items-center gap-3 px-4 py-3">
                 <Avatar initials={u.initials} size="size-10 text-sm" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-ink">{u.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="truncate font-semibold text-ink">{u.name}</p>
+                    <RoleBadge role={u.role} />
+                    {u.status !== "active" ? (
+                      <StatusBadge status={u.status} />
+                    ) : null}
+                  </div>
                   <p className="truncate text-sm text-muted-foreground">
                     {u.email}
                   </p>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                    <RoleBadge role={u.role} />
-                    <StatusBadge status={u.status} />
-                    <span className="text-xs text-muted-foreground">
-                      {u.tenantName}
-                    </span>
-                  </div>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">
+                    {u.tenantName}
+                  </p>
                 </div>
                 <UserRowActions user={u} />
               </li>

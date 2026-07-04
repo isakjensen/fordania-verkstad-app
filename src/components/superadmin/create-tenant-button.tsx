@@ -43,7 +43,7 @@ export function CreateTenantButton() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button size="sm" variant="success">
+          <Button size="md" variant="success">
             <Plus className="size-4" />
             <span className="hidden sm:inline">Lägg till företag</span>
           </Button>

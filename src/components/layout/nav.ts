@@ -7,7 +7,6 @@ import {
   Users,
   Contact,
   Settings,
-  HelpCircle,
   type LucideIcon,
 } from "lucide-react";
 
@@ -47,5 +46,4 @@ export const navGroups: NavGroup[] = [
 
 export const secondaryNav: NavItem[] = [
   { label: "Inställningar", href: "/installningar", icon: Settings },
-  { label: "Hjälp", href: "/hjalp", icon: HelpCircle },
 ];

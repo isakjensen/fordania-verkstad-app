@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
+import { isOnline } from "@/lib/presence";
 
 /** Initialer från ett företags-/personnamn, t.ex. "Eriks Biluthyrning" → "EB". */
 export function initialsFromName(name: string) {
@@ -54,6 +55,10 @@ export interface PlatformUserRow {
   tenantId: string;
   tenantName: string;
   status: string;
+  /** Aktiv inom närvarofönstret just nu. */
+  online: boolean;
+  /** Senaste kända aktivitet (för "senast sedd"). */
+  lastSeenAt: Date | null;
 }
 
 export interface PlatformStats {
@@ -87,6 +92,56 @@ export async function getPlatformStats(): Promise<PlatformStats> {
   };
 }
 
+export interface PresenceUser {
+  id: string;
+  name: string;
+  email: string;
+  initials: string;
+  isSuperadmin: boolean;
+  online: boolean;
+  lastSeenAt: Date | null;
+  tenantName: string | null;
+}
+
+/**
+ * Närvaro per person (distinkt användare) – vem är inne nu och när de senast
+ * var aktiva. Online först, sedan nyast aktivitet.
+ */
+export async function getPresence(): Promise<PresenceUser[]> {
+  const users = await db.user.findMany({
+    where: { OR: [{ banned: false }, { banned: null }] },
+    include: {
+      members: {
+        include: { organization: { select: { name: true } } },
+        orderBy: { createdAt: "asc" },
+        take: 1,
+      },
+    },
+  });
+
+  const list = users.map((u) => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    initials: initialsFromName(u.name),
+    isSuperadmin: u.role === "admin",
+    online: isOnline(u.lastSeenAt),
+    lastSeenAt: u.lastSeenAt,
+    tenantName:
+      u.members[0]?.organization.name ??
+      (u.role === "admin" ? "Plattform" : null),
+  }));
+
+  list.sort((a, b) => {
+    if (a.online !== b.online) return a.online ? -1 : 1;
+    const ta = a.lastSeenAt ? new Date(a.lastSeenAt).getTime() : 0;
+    const tb = b.lastSeenAt ? new Date(b.lastSeenAt).getTime() : 0;
+    return tb - ta;
+  });
+
+  return list;
+}
+
 /** Alla användare över alla tenants (via medlemskap). */
 export async function getPlatformUsers(): Promise<PlatformUserRow[]> {
   const members = await db.member.findMany({
@@ -103,5 +158,7 @@ export async function getPlatformUsers(): Promise<PlatformUserRow[]> {
     tenantId: m.organizationId,
     tenantName: m.organization.name,
     status: m.user.banned ? "inactive" : "active",
+    online: !m.user.banned && isOnline(m.user.lastSeenAt),
+    lastSeenAt: m.user.lastSeenAt,
   }));
 }

@@ -67,7 +67,7 @@ export function CustomerActions({ customer }: { customer: CustomerData }) {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogTrigger
           render={
-            <Button variant="outline" size="md">
+            <Button variant="secondary" size="md">
               <Pencil className="size-4" />
               Redigera
             </Button>
@@ -149,8 +149,8 @@ export function CustomerActions({ customer }: { customer: CustomerData }) {
       <Dialog open={delOpen} onOpenChange={setDelOpen}>
         <DialogTrigger
           render={
-            <Button variant="outline" size="icon" aria-label="Ta bort kund">
-              <Trash2 className="size-4 text-danger" />
+            <Button variant="destructive" size="icon" aria-label="Ta bort kund">
+              <Trash2 className="size-4" />
             </Button>
           }
         />

@@ -55,12 +55,12 @@ export default async function WorkOrderDetailPage({
   }));
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-[1200px] px-4 py-5 sm:px-6 lg:px-8">
       <BackButton fallbackHref="/arbetsordrar" />
 
-      <div className="mt-4 flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-4 flex flex-col gap-4 border-b border-line pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+          <span className="flex size-11 items-center justify-center rounded-xl bg-brand-600 text-white shadow-soft">
             <Wrench className="size-5" />
           </span>
           <div>
@@ -91,7 +91,7 @@ export default async function WorkOrderDetailPage({
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* Uppgifter */}
         <Card>
           <CardHeader tone="brand" title="Uppgifter" />
@@ -141,7 +141,7 @@ export default async function WorkOrderDetailPage({
         />
       </div>
 
-      <div className="mt-6">
+      <div className="mt-5">
         <PartList jobId={job.id} parts={job.parts} />
       </div>
     </div>

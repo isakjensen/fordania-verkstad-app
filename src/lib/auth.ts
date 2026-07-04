@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { organization, admin } from "better-auth/plugins";
+import { createAuthMiddleware } from "better-auth/api";
 import { db } from "./db";
 
 /**
@@ -21,5 +22,38 @@ export const auth = betterAuth({
     enabled: true,
   },
   plugins: [organization(), admin()],
+  hooks: {
+    // Körs efter varje auth-anrop. Vi loggar ENDAST faktiska inloggningar
+    // (sign-in-endpointen) – inte vanliga sidbesök eller sessionsförnyelser.
+    after: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/sign-in/email") return;
+      const newSession = ctx.context.newSession;
+      if (!newSession) return;
+      try {
+        const { user, session } = newSession;
+        await db.auditLog.create({
+          data: {
+            action: "auth.login",
+            category: "auth",
+            summary: `${user.name} loggade in`,
+            userId: user.id,
+            userName: user.name,
+            userEmail: user.email,
+            userRole: (user as { role?: string }).role ?? null,
+            organizationId:
+              typeof session.activeOrganizationId === "string"
+                ? session.activeOrganizationId
+                : null,
+            entityType: "session",
+            entityId: session.id,
+            ipAddress: session.ipAddress || null,
+            userAgent: session.userAgent || null,
+          },
+        });
+      } catch (err) {
+        console.error("Inloggningslogg misslyckades:", err);
+      }
+    }),
+  },
 });
 

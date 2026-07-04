@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ClipboardCheck, Clock, Car, Gauge, AlignLeft } from "lucide-react";
 import { Card, CardHeader } from "@/components/ui/card";
-import { PageHeader } from "@/components/layout/page-header";
 import { LicensePlate } from "@/components/ui/license-plate";
 import { getSession, getActiveOrganizationId } from "@/lib/session";
 import { getJobsForUserOnDay } from "@/lib/data/schedule";
@@ -33,37 +32,25 @@ export default async function DagensUppdragPage() {
 
   const done = jobs.filter((j) => j.status === "done").length;
   const ongoing = jobs.filter((j) => j.status === "in_progress").length;
-  const upcoming = jobs.length - done - ongoing;
 
   return (
-    <div className="mx-auto w-full max-w-[900px] px-4 py-6 sm:px-6 lg:px-8">
-      <PageHeader
-        eyebrow="Mekaniker"
-        title="Dagens uppdrag"
-        description={
-          <span className="capitalize">
-            {df.format(now)}
-            {session ? ` · ${session.user.name}` : ""}
-          </span>
-        }
-      />
-
+    <div className="mx-auto w-full max-w-[900px] px-4 py-4 sm:px-6 lg:px-8">
       {/* Sammanfattning */}
-      <div className="mt-6 grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <SummaryStat label="Uppdrag idag" value={jobs.length} tone="brand" />
         <SummaryStat label="Pågår" value={ongoing} tone="info" />
         <SummaryStat label="Klara" value={done} tone="success" />
       </div>
 
       {/* Lista */}
-      <Card className="mt-6">
+      <Card className="mt-5">
         <CardHeader
-          tone="brand"
-          title="Att göra"
+          title="Dagens uppdrag"
           subtitle={
-            jobs.length === 0
-              ? "Inga inplanerade uppdrag"
-              : `${upcoming} kvar att påbörja`
+            <span className="capitalize">
+              {df.format(now)}
+              {session ? ` · ${session.user.name}` : ""}
+            </span>
           }
         />
         {jobs.length === 0 ? (

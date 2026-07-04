@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser, getActiveOrganizationId } from "@/lib/session";
+import { recordAudit } from "@/lib/audit";
 
 export type ActionResult = { success: true } | { error: string };
 
@@ -20,7 +21,7 @@ export async function createCustomer(
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "Namn krävs." };
 
-  await db.customer.create({
+  const created = await db.customer.create({
     data: {
       organizationId,
       name,
@@ -29,6 +30,15 @@ export async function createCustomer(
       phone: str(formData.get("phone")),
       address: str(formData.get("address")),
     },
+  });
+
+  await recordAudit({
+    action: "customer.create",
+    category: "customer",
+    summary: `Skapade kunden ${name}`,
+    organizationId,
+    entityType: "customer",
+    entityId: created.id,
   });
 
   revalidatePath("/kunder");
@@ -64,6 +74,15 @@ export async function updateCustomer(
     },
   });
 
+  await recordAudit({
+    action: "customer.update",
+    category: "customer",
+    summary: `Uppdaterade kunden ${name}`,
+    organizationId,
+    entityType: "customer",
+    entityId: id,
+  });
+
   revalidatePath("/kunder");
   revalidatePath(`/kunder/${id}`);
   return { success: true };
@@ -81,6 +100,16 @@ export async function deleteCustomer(id: string): Promise<ActionResult> {
   if (!existing) return { error: "Kunden hittades inte." };
 
   await db.customer.delete({ where: { id } });
+
+  await recordAudit({
+    action: "customer.delete",
+    category: "customer",
+    summary: `Tog bort kunden ${existing.name}`,
+    organizationId,
+    entityType: "customer",
+    entityId: id,
+  });
+
   revalidatePath("/kunder");
   return { success: true };
 }

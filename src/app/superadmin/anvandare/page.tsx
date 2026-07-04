@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { SuperBanner } from "@/components/superadmin/page-banner";
 import { UserManager } from "@/components/superadmin/user-manager";
 import { getPlatformUsers, getTenants } from "@/lib/data/platform";
 
@@ -12,12 +11,7 @@ export default async function SuperadminUsersPage() {
   ]);
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <SuperBanner
-        eyebrow="Plattform"
-        title="Användare"
-        description="Alla användare över samtliga företag. Sök, filtrera per företag, lägg till, ändra roll/status eller ta bort."
-      />
+    <div className="w-full px-4 py-4 sm:px-6 lg:px-8">
       <UserManager
         users={users}
         tenants={tenants.map((t) => ({ id: t.id, name: t.name }))}

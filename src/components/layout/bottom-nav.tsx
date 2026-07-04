@@ -14,7 +14,6 @@ import {
   Contact,
   Users,
   Settings,
-  HelpCircle,
   ShieldCheck,
   LogOut,
   Check,
@@ -48,7 +47,6 @@ const MORE_LINKS: Tab[] = [
   { label: "Kunder", href: "/kunder", icon: Contact },
   { label: "Användare", href: "/anvandare", icon: Users },
   { label: "Inställningar", href: "/installningar", icon: Settings },
-  { label: "Hjälp", href: "/hjalp", icon: HelpCircle },
 ];
 
 const MORE_ROUTES = [...MORE_LINKS.map((l) => l.href), "/superadmin"];

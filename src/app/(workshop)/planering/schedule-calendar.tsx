@@ -4,12 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, CalendarRange } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMediaQuery } from "@/lib/use-media-query";
 import type { Mechanic, ScheduleJob } from "@/lib/data/schedule";
 import { JobDetail } from "./job-detail";
-import { TimeGrid, type MoveArgs } from "./time-grid";
+import { type MoveArgs } from "./time-grid";
 import { DayBoard } from "./day-board";
-import { Agenda } from "./agenda";
+import { WeekBoard } from "./week-board";
 import { moveJob } from "./actions";
 import {
   type View,
@@ -43,12 +42,6 @@ export function ScheduleCalendar({
   const [open, setOpen] = useState(false);
   const [localJobs, setLocalJobs] = useState(jobs);
   useEffect(() => setLocalJobs(jobs), [jobs]);
-
-  // Desktop med mus (fin pekare + brett) → fullt planerings-tidsrutnät.
-  // Alla pekskärmar (iPad liggande & stående, mobil) → den enkla, läsbara
-  // agendan. Mekaniker slipper det täta rutnätet; planeraren vid datorn
-  // behåller kraftvyn.
-  const isDesktop = useMediaQuery("(min-width: 1024px) and (pointer: fine)");
 
   const anchor = new Date(anchorISO);
   const from = new Date(fromISO);
@@ -121,82 +114,66 @@ export function ScheduleCalendar({
 
   return (
     <div className="flex h-full flex-col px-4 py-4 sm:px-6 lg:px-8 lg:py-5">
-      {/* Sidhuvud */}
-      <header className="flex shrink-0 flex-col gap-3 border-b border-line pb-4">
-        <div className="flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Verkstad
-            </p>
-            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-ink sm:text-[1.9rem]">
-              Arbetskalender
-            </h1>
-          </div>
-          {hasOrg ? (
-            <div className="shrink-0 rounded-2xl border border-line bg-surface px-3.5 py-2 text-right shadow-card">
-              <p className="text-lg font-extrabold tabular-nums leading-none text-brand-600">
-                {localJobs.length}
-              </p>
-              <p className="mt-1 text-[0.7rem] font-medium text-muted-foreground">
-                {view === "day" ? "ordrar" : "ordrar/vecka"}
-              </p>
-            </div>
-          ) : null}
+      {/* Verktygsrad */}
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-line pb-3">
+        {/* Vy-växel – dag/vecka på alla skärmar */}
+        <div className="inline-flex rounded-xl border border-line bg-surface-muted p-0.5">
+          {(["day", "week"] as View[]).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              className={cn(
+                "rounded-lg px-4 py-1.5 text-sm font-semibold transition-all",
+                view === v
+                  ? "bg-surface text-ink shadow-xs ring-1 ring-line"
+                  : "text-muted-foreground hover:text-ink",
+              )}
+            >
+              {v === "day" ? "Dag" : "Vecka"}
+            </button>
+          ))}
         </div>
 
-        <div className="flex items-center justify-between gap-3">
-          {/* Vy-växel – endast desktopens tidsrutnät (mus). På touch används
-              alltid agendan, så växlaren döljs där. */}
-          {isDesktop ? (
-            <div className="inline-flex rounded-xl border border-line bg-surface-muted p-0.5">
-              {(["day", "week"] as View[]).map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setView(v)}
-                  className={cn(
-                    "rounded-lg px-4 py-1.5 text-sm font-semibold transition-all",
-                    view === v
-                      ? "bg-surface text-ink shadow-xs ring-1 ring-line"
-                      : "text-muted-foreground hover:text-ink",
-                  )}
-                >
-                  {v === "day" ? "Dag" : "Vecka"}
-                </button>
-              ))}
-            </div>
-          ) : null}
-
-          <div className="flex flex-1 items-center justify-between gap-2 lg:flex-none lg:justify-end">
+        <div className="flex flex-1 items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={goToday}
+            className="rounded-xl border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors active:bg-surface-muted lg:py-1.5"
+          >
+            Idag
+          </button>
+          <div className="flex items-center rounded-xl border border-line bg-surface">
             <button
               type="button"
-              onClick={goToday}
-              className="rounded-xl border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors active:bg-surface-muted lg:py-1.5"
+              onClick={() => navigate(-1)}
+              aria-label="Föregående"
+              className="flex size-11 items-center justify-center rounded-l-xl text-muted-foreground transition-colors active:bg-surface-muted lg:size-9"
             >
-              Idag
+              <ChevronLeft className="size-5" />
             </button>
-            <div className="flex items-center rounded-xl border border-line bg-surface">
-              <button
-                type="button"
-                onClick={() => navigate(-1)}
-                aria-label="Föregående"
-                className="flex size-11 items-center justify-center rounded-l-xl text-muted-foreground transition-colors active:bg-surface-muted lg:size-9"
-              >
-                <ChevronLeft className="size-5" />
-              </button>
-              <span className="min-w-[10rem] px-1 text-center text-sm font-semibold capitalize text-ink sm:min-w-[12rem]">
-                {rangeLabel}
-              </span>
-              <button
-                type="button"
-                onClick={() => navigate(1)}
-                aria-label="Nästa"
-                className="flex size-11 items-center justify-center rounded-r-xl text-muted-foreground transition-colors active:bg-surface-muted lg:size-9"
-              >
-                <ChevronRight className="size-5" />
-              </button>
-            </div>
+            <span className="min-w-[8.5rem] px-1 text-center text-sm font-semibold capitalize text-ink sm:min-w-[12rem]">
+              {rangeLabel}
+            </span>
+            <button
+              type="button"
+              onClick={() => navigate(1)}
+              aria-label="Nästa"
+              className="flex size-11 items-center justify-center rounded-r-xl text-muted-foreground transition-colors active:bg-surface-muted lg:size-9"
+            >
+              <ChevronRight className="size-5" />
+            </button>
           </div>
+          {hasOrg ? (
+            <div className="ml-1 hidden items-baseline gap-1.5 rounded-xl border border-line bg-surface px-3 py-1.5 lg:flex">
+              <span className="text-sm font-extrabold tabular-nums text-brand-600">
+                {localJobs.length}
+              </span>
+              <span className="text-[0.7rem] font-medium text-muted-foreground">
+                {view === "day" ? "ordrar" : "ordrar/vecka"}
+              </span>
+            </div>
+          ) : null}
         </div>
       </header>
 
@@ -204,36 +181,26 @@ export function ScheduleCalendar({
       <div className="mt-4 flex min-h-0 flex-1 flex-col">
         {!hasOrg ? (
           <EmptyState text="Välj en verkstad för att se dess arbetskalender." />
-        ) : isDesktop === null ? (
-          <CalendarSkeleton />
-        ) : isDesktop ? (
-          view === "day" ? (
-            mechanics.length === 0 ? (
-              <EmptyState text="Inga mekaniker i verkstaden ännu." />
-            ) : (
-              <DayBoard
-                anchorISO={anchorISO}
-                mechanics={mechanics}
-                jobs={localJobs}
-                canManage={canManage}
-                onOpen={openJob}
-                onMove={handleMove}
-              />
-            )
-          ) : (
-            <TimeGrid
-              view="week"
-              anchorISO={anchorISO}
-              fromISO={fromISO}
-              mechanics={mechanics}
-              jobs={localJobs}
-              canManage={canManage}
-              onOpen={openJob}
-              onMove={handleMove}
-            />
-          )
+        ) : mechanics.length === 0 ? (
+          <EmptyState text="Inga mekaniker i verkstaden ännu." />
+        ) : view === "day" ? (
+          <DayBoard
+            anchorISO={anchorISO}
+            mechanics={mechanics}
+            jobs={localJobs}
+            canManage={canManage}
+            onOpen={openJob}
+            onMove={handleMove}
+          />
         ) : (
-          <Agenda anchorISO={anchorISO} jobs={localJobs} onOpen={openJob} />
+          <WeekBoard
+            fromISO={fromISO}
+            mechanics={mechanics}
+            jobs={localJobs}
+            canManage={canManage}
+            onOpen={openJob}
+            onMove={handleMove}
+          />
         )}
       </div>
 
@@ -245,12 +212,6 @@ export function ScheduleCalendar({
         canManage={canManage}
       />
     </div>
-  );
-}
-
-function CalendarSkeleton() {
-  return (
-    <div className="min-h-0 flex-1 animate-pulse rounded-2xl border border-line bg-surface-muted/40" />
   );
 }
 

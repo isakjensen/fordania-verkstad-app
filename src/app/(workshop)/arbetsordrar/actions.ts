@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser, getActiveOrganizationId } from "@/lib/session";
+import { recordAudit } from "@/lib/audit";
 
 export type ActionResult = { success: true; id?: string } | { error: string };
 
@@ -108,6 +109,15 @@ export async function createWorkOrder(formData: FormData): Promise<ActionResult>
     if (v) await db.jobVehicle.create({ data: { jobId: job.id, vehicleId } });
   }
 
+  await recordAudit({
+    action: "job.create",
+    category: "job",
+    summary: `Skapade arbetsordern ${type}`,
+    organizationId: guard.organizationId,
+    entityType: "job",
+    entityId: job.id,
+  });
+
   revalidatePath("/arbetsordrar");
   revalidatePath("/planering");
   return { success: true, id: job.id };
@@ -152,6 +162,19 @@ export async function updateWorkOrder(formData: FormData): Promise<ActionResult>
     },
   });
 
+  const nextStatus = VALID_STATUS.includes(status) ? status : job.status;
+  await recordAudit({
+    action: nextStatus !== job.status ? "job.status" : "job.update",
+    category: "job",
+    summary:
+      nextStatus !== job.status
+        ? `Ändrade status på arbetsordern ${job.type} (${job.status} → ${nextStatus})`
+        : `Uppdaterade arbetsordern ${job.type}`,
+    organizationId: guard.organizationId,
+    entityType: "job",
+    entityId: id,
+  });
+
   revalidatePath("/arbetsordrar");
   revalidatePath(`/arbetsordrar/${id}`);
   revalidatePath("/planering");
@@ -164,6 +187,16 @@ export async function deleteWorkOrder(id: string): Promise<ActionResult> {
   const job = await jobInOrg(id, guard.organizationId);
   if (!job) return { error: "Arbetsordern hittades inte." };
   await db.job.delete({ where: { id } });
+
+  await recordAudit({
+    action: "job.delete",
+    category: "job",
+    summary: `Tog bort arbetsordern ${job.type}`,
+    organizationId: guard.organizationId,
+    entityType: "job",
+    entityId: id,
+  });
+
   revalidatePath("/arbetsordrar");
   revalidatePath("/planering");
   return { success: true };

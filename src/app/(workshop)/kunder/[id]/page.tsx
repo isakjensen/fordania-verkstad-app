@@ -81,11 +81,11 @@ export default async function CustomerDetailPage({
   }));
 
   return (
-    <div className="mx-auto w-full max-w-[1100px] px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-[1100px] px-4 py-5 sm:px-6 lg:px-8">
       <BackButton fallbackHref="/kunder" />
 
       {/* Sidhuvud */}
-      <div className="mt-4 flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-4 flex flex-col gap-4 border-b border-line pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <Avatar initials={initialsOf(customer.name)} size="size-14 text-lg" />
           <div>
@@ -100,7 +100,7 @@ export default async function CustomerDetailPage({
         <CustomerActions customer={customer} />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-5">
+      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-5">
         {/* Kontaktuppgifter */}
         <Card className="lg:col-span-2">
           <CardHeader tone="brand" title="Uppgifter" />
@@ -122,7 +122,7 @@ export default async function CustomerDetailPage({
         </Card>
 
         {/* Fordon + kommentarer */}
-        <div className="space-y-6 lg:col-span-3">
+        <div className="space-y-5 lg:col-span-3">
           <VehicleLinks
             customerId={customer.id}
             vehicles={linkedVehicles}

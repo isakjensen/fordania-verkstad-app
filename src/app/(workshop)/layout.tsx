@@ -1,5 +1,7 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { PresencePing } from "@/components/layout/presence-ping";
 import { requireUser } from "@/lib/session";
+import { touchPresence } from "@/lib/presence";
 import { getSwitcherData } from "@/lib/data/tenant-context";
 
 /**
@@ -12,7 +14,13 @@ export default async function WorkshopLayout({
   children: React.ReactNode;
 }) {
   // Kräver inloggad användare
-  await requireUser();
+  const session = await requireUser();
+  await touchPresence(session.user.id);
   const switcher = await getSwitcherData();
-  return <AppShell switcher={switcher}>{children}</AppShell>;
+  return (
+    <>
+      <PresencePing />
+      <AppShell switcher={switcher}>{children}</AppShell>
+    </>
+  );
 }

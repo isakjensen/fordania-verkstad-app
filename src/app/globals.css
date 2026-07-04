@@ -110,6 +110,16 @@
     touch-action: manipulation;
   }
 
+  /* Tailwind v4:s preflight nollställer knappars cursor – ge klickbara
+   * element handpekaren igen så de känns interaktiva (utom inaktiva). */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"]:not([aria-disabled="true"]),
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
+
   /* Subtil, modern scrollbar */
   * {
     scrollbar-width: thin;

@@ -1,5 +1,61 @@
 import "server-only";
 import { db } from "@/lib/db";
+import { fetchFordaniaVehicles, FordaniaSyncError } from "@/lib/fordania";
+
+export interface FordaniaSyncPreview {
+  /** Fordon i Fordania vars reg.nr ännu inte finns i verkstaden. */
+  newVehicles: { plate: string; model: string | null }[];
+  /** Antal fordon i Fordania som redan finns (matchar på reg.nr). */
+  existingCount: number;
+  /** Totalt antal fordon Fordania returnerade. */
+  total: number;
+  /** Satt om Fordania inte kunde nås – då visas ingen räknare. */
+  error?: string;
+}
+
+/**
+ * Jämför Fordanias fordon mot verkstadens register utan att ändra något.
+ * Används för att visa "N nya att hämta" vid synk-knappen. Kastar aldrig –
+ * vid fel returneras en tom preview med `error` satt.
+ */
+export async function getFordaniaSyncPreview(
+  organizationId: string,
+): Promise<FordaniaSyncPreview> {
+  let incoming;
+  try {
+    incoming = await fetchFordaniaVehicles();
+  } catch (err) {
+    const error =
+      err instanceof FordaniaSyncError
+        ? err.message
+        : "Kunde inte kontrollera Fordania just nu.";
+    return { newVehicles: [], existingCount: 0, total: 0, error };
+  }
+
+  const existing = await db.vehicle.findMany({
+    where: { organizationId },
+    select: { regNo: true },
+  });
+  const existingSet = new Set(existing.map((v) => v.regNo.trim().toUpperCase()));
+
+  const newVehicles: { plate: string; model: string | null }[] = [];
+  const seen = new Set<string>();
+  let existingCount = 0;
+
+  for (const v of incoming) {
+    const reg = String(v.plate ?? "").trim().toUpperCase();
+    if (!reg) continue;
+    if (existingSet.has(reg)) {
+      existingCount++;
+      continue;
+    }
+    if (seen.has(reg)) continue; // dubblett i Fordania-svaret
+    seen.add(reg);
+    newVehicles.push({ plate: v.plate.trim(), model: v.model?.trim() || null });
+  }
+
+  return { newVehicles, existingCount, total: incoming.length };
+}
 
 /** Tenantens dynamiska fältdefinitioner för fordon, i visningsordning. */
 export async function getFieldDefinitions(organizationId: string) {

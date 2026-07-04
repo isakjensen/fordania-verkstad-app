@@ -1,12 +1,20 @@
+import { cache } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "./auth";
 import { db } from "./db";
 
-/** Hämtar aktuell session (eller null) i en server-komponent/action. */
-export async function getSession() {
+/**
+ * Hämtar aktuell session (eller null) i en server-komponent/action.
+ *
+ * Wrappad i Reacts `cache()` så att alla anrop under samma request delar
+ * EN sessionsvalidering. Utan detta hämtar t.ex. inställningssidan sessionen
+ * 3–4 gånger (getSession + getActiveOrganizationId + getTenantRole + audit),
+ * vilket med en molndatabas betyder lika många onödiga nätverkstur-och-retur.
+ */
+export const getSession = cache(async () => {
   return auth.api.getSession({ headers: await headers() });
-}
+});
 
 /**
  * Returnerar den aktiva tenantens (organizationens) id för inloggad användare.

@@ -10,6 +10,7 @@ import {
   getTenantRole,
   canManageUsers,
 } from "@/lib/session";
+import { recordAudit } from "@/lib/audit";
 
 export type ActionResult = { success: true } | { error: string };
 
@@ -81,6 +82,14 @@ export async function createTenantUser(
         createdAt: new Date(),
       },
     });
+    await recordAudit({
+      action: "user.create",
+      category: "user",
+      summary: `Kopplade användaren ${existing.name} (${email}) till verkstaden`,
+      organizationId: guard.organizationId,
+      entityType: "user",
+      entityId: existing.id,
+    });
     revalidatePath("/anvandare");
     return { success: true };
   }
@@ -123,6 +132,15 @@ export async function createTenantUser(
     },
   });
 
+  await recordAudit({
+    action: "user.create",
+    category: "user",
+    summary: `Skapade användaren ${name} (${email})`,
+    organizationId: guard.organizationId,
+    entityType: "user",
+    entityId: userId,
+  });
+
   revalidatePath("/anvandare");
   return { success: true };
 }
@@ -162,6 +180,17 @@ export async function updateTenantUser(
   await db.member.update({
     where: { id: memberId },
     data: { role: VALID_ROLES.includes(role) ? role : member.role },
+  });
+
+  await recordAudit({
+    action: "user.update",
+    category: "user",
+    summary: active
+      ? `Uppdaterade användaren ${name}`
+      : `Inaktiverade användaren ${name}`,
+    organizationId: guard.organizationId,
+    entityType: "user",
+    entityId: member.userId,
   });
 
   revalidatePath("/anvandare");
@@ -211,6 +240,15 @@ export async function setTenantUserPassword(
     });
   }
 
+  await recordAudit({
+    action: "user.password",
+    category: "user",
+    summary: `Bytte lösenord för ${member.user.name}`,
+    organizationId: guard.organizationId,
+    entityType: "user",
+    entityId: member.userId,
+  });
+
   revalidatePath("/anvandare");
   return { success: true };
 }
@@ -237,6 +275,15 @@ export async function removeTenantUser(
   if (remaining === 0) {
     await db.user.delete({ where: { id: member.userId } });
   }
+
+  await recordAudit({
+    action: "user.remove",
+    category: "user",
+    summary: `Tog bort ${member.user.name} från verkstaden`,
+    organizationId: guard.organizationId,
+    entityType: "user",
+    entityId: member.userId,
+  });
 
   revalidatePath("/anvandare");
   return { success: true };

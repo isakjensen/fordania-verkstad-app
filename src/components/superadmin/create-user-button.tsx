@@ -53,7 +53,7 @@ export function CreateUserButton({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button size="sm" variant="success" disabled={tenants.length === 0}>
+          <Button size="md" variant="success" disabled={tenants.length === 0}>
             <Plus className="size-4" />
             <span className="hidden sm:inline">Skapa användare</span>
           </Button>

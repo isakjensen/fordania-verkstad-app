@@ -71,8 +71,10 @@ export function VehicleActions({
         setError(res.error);
         return;
       }
-      router.push("/fordon");
-      router.refresh();
+      // Navigera tillbaka till listan – använd replace så back-knappen inte
+      // går till det raderade fordonet, och INTE router.refresh() (den skulle
+      // ladda om detaljsidan för det borttagna fordonet → 404).
+      router.replace("/fordon");
     });
   }
 
@@ -82,7 +84,7 @@ export function VehicleActions({
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogTrigger
           render={
-            <Button variant="outline" size="md">
+            <Button variant="secondary" size="md">
               <Pencil className="size-4" />
               Redigera
             </Button>
@@ -179,8 +181,8 @@ export function VehicleActions({
       <Dialog>
         <DialogTrigger
           render={
-            <Button variant="outline" size="icon" aria-label="Ta bort fordon">
-              <Trash2 className="size-4 text-danger" />
+            <Button variant="destructive" size="icon" aria-label="Ta bort fordon">
+              <Trash2 className="size-4" />
             </Button>
           }
         />

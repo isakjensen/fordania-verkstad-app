@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
   Wrench,
@@ -16,15 +15,6 @@ import { FleetStatus } from "./fleet-status";
 import { staggerContainer } from "./motion";
 import type { DashboardData } from "@/lib/data/dashboard";
 
-function todayLabel() {
-  return new Intl.DateTimeFormat("sv-SE", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date());
-}
-
 export function Dashboard({
   data,
   hasOrg,
@@ -32,9 +22,6 @@ export function Dashboard({
   data: DashboardData | null;
   hasOrg: boolean;
 }) {
-  const [date, setDate] = useState("");
-  useEffect(() => setDate(todayLabel()), []);
-
   const stats = data?.stats ?? {
     activeJobs: 0,
     plannedToday: 0,
@@ -50,33 +37,7 @@ export function Dashboard({
   };
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 lg:py-5">
-      {/* Sidhuvud med kontext-sammanfattning */}
-      <header className="flex flex-col gap-1">
-        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          {date || " "}
-        </p>
-        <h1 className="text-[1.7rem] font-extrabold leading-none tracking-tight text-ink sm:text-[2rem]">
-          Översikt
-        </h1>
-        {hasOrg ? (
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            {stats.plannedToday > 0
-              ? `${stats.plannedToday} jobb inplanerade idag`
-              : "Inga jobb inplanerade idag"}
-            {stats.doneToday > 0 ? ` · ${stats.doneToday} klara` : ""}
-            {stats.needsAttention > 0 ? (
-              <>
-                {" · "}
-                <span className="font-semibold text-danger">
-                  {stats.needsAttention} kräver åtgärd
-                </span>
-              </>
-            ) : null}
-          </p>
-        ) : null}
-      </header>
-
+    <div className="flex flex-col gap-4 px-4 py-4 sm:px-6">
       {!hasOrg ? (
         <div className="flex flex-1 items-center justify-center py-20">
           <p className="text-sm text-muted-foreground">

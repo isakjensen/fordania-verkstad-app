@@ -72,7 +72,7 @@ export function CreateWorkOrderButton({
         render={
           <Button size="md" variant="success">
             <Plus className="size-4" />
-            <span className="hidden sm:inline">Ny arbetsorder</span>
+            Ny arbetsorder
           </Button>
         }
       />

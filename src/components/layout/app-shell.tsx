@@ -42,7 +42,7 @@ export function AppShell({
         className={cn(
           "sticky top-0 hidden h-svh shrink-0 border-r border-line",
           "transition-[width] duration-300 ease-out pointer-fine:lg:block",
-          collapsed ? "w-20" : "w-64",
+          collapsed ? "w-[76px]" : "w-60",
         )}
       >
         <Sidebar

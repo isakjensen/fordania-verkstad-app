@@ -36,11 +36,11 @@ function NavLink({
       title={collapsed ? item.label : undefined}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group relative flex items-center rounded-lg text-[0.875rem] outline-none",
+        "group relative flex items-center rounded-lg text-[0.85rem] outline-none",
         "transition-colors duration-150 pointer-coarse:text-[0.95rem]",
         collapsed
           ? "h-9 w-9 justify-center pointer-coarse:h-11 pointer-coarse:w-11"
-          : "h-9 gap-3 px-2.5 pointer-coarse:h-12 pointer-coarse:px-3",
+          : "h-9 gap-2.5 px-2.5 pointer-coarse:h-12 pointer-coarse:px-3",
         active
           ? "bg-brand-50 font-semibold text-brand-700"
           : "font-medium text-ink-soft hover:bg-surface-muted hover:text-ink",
@@ -178,9 +178,9 @@ export function Sidebar({
               onClick={onNavigate}
               title={collapsed ? "Superadmin" : undefined}
               className={cn(
-                "group flex items-center rounded-lg text-[0.875rem] font-medium",
+                "group flex items-center rounded-lg text-[0.85rem] font-medium",
                 "text-ink-soft transition-colors hover:bg-surface-muted/70 hover:text-ink",
-                collapsed ? "h-9 w-9 justify-center" : "h-9 gap-3 px-2.5",
+                collapsed ? "h-9 w-9 justify-center" : "h-9 gap-2.5 px-2.5",
               )}
             >
               <ShieldCheck className="size-[18px] shrink-0 text-muted-foreground group-hover:text-ink-soft" />
@@ -196,7 +196,7 @@ export function Sidebar({
           <button
             onClick={onToggleCollapse}
             className={cn(
-              "hidden h-9 items-center rounded-lg text-[0.875rem] font-medium text-muted-foreground lg:flex",
+              "hidden h-9 items-center rounded-lg text-[0.85rem] font-medium text-muted-foreground lg:flex",
               "transition-colors hover:bg-surface-muted hover:text-ink",
               collapsed ? "w-full justify-center" : "w-full gap-2 px-2.5",
             )}
@@ -204,7 +204,7 @@ export function Sidebar({
           >
             <ChevronsLeft
               className={cn(
-                "size-5 transition-transform duration-300",
+                "size-4 transition-transform duration-300",
                 collapsed && "rotate-180",
               )}
             />

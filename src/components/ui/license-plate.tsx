@@ -71,12 +71,11 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
         // w-fit → skylten storleksanpassas efter innehållet och tänjs aldrig ut
         // till full bredd (t.ex. i en flex-kolumn med align-items: stretch).
         "inline-flex w-fit shrink-0 select-none items-stretch overflow-hidden bg-white",
-        // Autentisk mörk plåtkant. I mörkt läge syns den svarta kanten inte mot
-        // den mörka ytan, så vi lägger en hårfin ljus yttre ring bara där – den
-        // ramar in den vita skylten rent utan den gamla "glorian".
-        "border border-slate-900/80",
-        "shadow-[0_1px_2px_rgba(2,6,20,0.35)]",
-        "ring-1 ring-black/5 dark:ring-white/15",
+        // Kant + topp-gloss + upphöjning byggt med box-shadow så den kan
+        // anpassas per läge: mörk hårlinje mot ljus yta, ljus hårlinje mot
+        // mörk yta – så den vita plattan alltid får en skarp, definierad kant.
+        "shadow-[0_0_0_1px_rgba(15,23,41,0.35),inset_0_1px_0_rgba(255,255,255,0.85),0_1px_2px_rgba(15,23,41,0.22)]",
+        "dark:shadow-[0_0_0_1px_rgba(255,255,255,0.18),inset_0_1px_0_rgba(255,255,255,0.85),0_2px_8px_rgba(0,0,0,0.55)]",
         s.plate,
         className,
       )}
@@ -106,7 +105,7 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
       {/* Registreringsnummer */}
       <span
         className={cn(
-          "flex items-center whitespace-nowrap bg-linear-to-b from-white to-slate-50 font-mono font-bold text-slate-900",
+          "flex items-center whitespace-nowrap bg-linear-to-b from-white to-slate-100 font-mono font-bold text-slate-900",
           s.text,
         )}
       >

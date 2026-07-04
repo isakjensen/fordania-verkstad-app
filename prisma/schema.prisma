@@ -24,6 +24,8 @@ model User {
   banned        Boolean?     @default(false)
   banReason     String?
   banExpires    DateTime?
+  /** Senaste aktivitet (uppdateras via presence-heartbeat) – för "inne nu". */
+  lastSeenAt    DateTime?
   sessions      Session[]
   accounts      Account[]
   members       Member[]
@@ -354,4 +356,38 @@ model CustomerComment {
 
   @@index([customerId])
   @@map("customer_comments")
+}
+
+// ------------------------------------------------------------------ //
+//  Systemlogg (audit trail) – vem gjorde vad, när och var. Läses av
+//  superadmin. Aktör/företag denormaliseras (snapshot) så att raderna
+//  består även om användare eller företag senare tas bort.
+// ------------------------------------------------------------------ //
+
+model AuditLog {
+  id               String   @id @default(cuid())
+  createdAt        DateTime @default(now())
+  // Aktör (snapshot – kontot kan tas bort senare)
+  userId           String?
+  userName         String
+  userEmail        String?
+  userRole         String?
+  // Företagskontext (snapshot)
+  organizationId   String?
+  organizationName String?
+  // Vad som hände
+  action           String // t.ex. "job.create", "auth.login"
+  category         String // "auth" | "job" | "vehicle" | "customer" | "user" | "tenant"
+  entityType       String?
+  entityId         String?
+  summary          String // människoläsbar sammanfattning på svenska
+  // Härkomst
+  ipAddress        String?
+  userAgent        String?
+
+  @@index([createdAt])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([category])
+  @@map("audit_logs")
 }
