@@ -82,13 +82,21 @@ export default async function CustomersPage() {
                   href={`/kunder/${c.id}`}
                   className="flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-surface-muted"
                 >
-                  <Avatar initials={initialsOf(c.name)} size="size-10 text-sm" />
+                  {c.type === "company" ? (
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white">
+                      <Building2 className="size-5" />
+                    </span>
+                  ) : (
+                    <Avatar initials={initialsOf(c.name)} size="size-10 text-sm" />
+                  )}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[0.95rem] font-semibold text-ink">
                       {c.name}
                     </span>
                     <span className="block truncate text-sm text-muted-foreground">
-                      {c.phone ?? c.email ?? "—"}
+                      {c.type === "company"
+                        ? c.orgNumber ?? c.phone ?? "Företag"
+                        : c.phone ?? c.email ?? "—"}
                     </span>
                   </span>
                   {c._count.comments > 0 ? (
@@ -111,7 +119,7 @@ export default async function CustomersPage() {
                   Kund
                 </TableHead>
                 <TableHead className={`${headClass} hidden md:table-cell`}>
-                  Personnummer
+                  Person-/Org.nr
                 </TableHead>
                 <TableHead className={`${headClass} hidden lg:table-cell`}>
                   Telefon
@@ -133,10 +141,21 @@ export default async function CustomersPage() {
                       href={`/kunder/${c.id}`}
                       className="flex items-center gap-3"
                     >
-                      <Avatar initials={initialsOf(c.name)} size="size-9 text-sm" />
+                      {c.type === "company" ? (
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-white">
+                          <Building2 className="size-4.5" />
+                        </span>
+                      ) : (
+                        <Avatar initials={initialsOf(c.name)} size="size-9 text-sm" />
+                      )}
                       <div className="min-w-0">
-                        <p className="truncate font-semibold text-ink group-hover:text-brand-700">
+                        <p className="flex items-center gap-1.5 truncate font-semibold text-ink group-hover:text-brand-700">
                           {c.name}
+                          {c.type === "company" ? (
+                            <span className="rounded-full bg-brand-50 px-1.5 py-0.5 text-[0.65rem] font-semibold text-brand-700">
+                              Företag
+                            </span>
+                          ) : null}
                         </p>
                         <p className="truncate text-xs text-muted-foreground md:hidden">
                           {c.phone ?? c.email ?? "—"}
@@ -145,7 +164,8 @@ export default async function CustomersPage() {
                     </Link>
                   </TableCell>
                   <TableCell className="hidden px-4 py-3 text-sm text-ink-soft tabular-nums md:table-cell">
-                    {c.personalNumber ?? "—"}
+                    {(c.type === "company" ? c.orgNumber : c.personalNumber) ??
+                      "—"}
                   </TableCell>
                   <TableCell className="hidden px-4 py-3 text-sm text-ink-soft tabular-nums lg:table-cell">
                     {c.phone ?? "—"}

@@ -105,6 +105,7 @@ model Organization {
   jobs                   Job[]
   customers              Customer[]
   vehicleFieldDefinitions VehicleFieldDefinition[]
+  workOrderImages        WorkOrderImage[]
 
   @@unique([slug])
   @@map("organizations")
@@ -163,6 +164,7 @@ model Vehicle {
   // Många-till-många: ett fordon kan kopplas till flera kunder
   customers      CustomerVehicle[]
   jobVehicles    JobVehicle[]
+  imageLinks     WorkOrderImageVehicle[]
 
   @@index([organizationId])
   @@map("vehicles")
@@ -255,6 +257,7 @@ model Job {
   mechanics      JobMechanic[]
   vehicles       JobVehicle[]
   parts          JobPart[]
+  images         WorkOrderImage[]
 
   @@index([organizationId])
   @@index([assignedUserId])
@@ -308,6 +311,46 @@ model JobPart {
   @@map("job_parts")
 }
 
+/// Bild uppladdad på en arbetsorder. Länkas till ett eller flera av orderns
+/// fordon via WorkOrderImageVehicle. Kunden härleds via fordonen (som resten
+/// av appen) så bilden dyker upp både på fordons- och kundprofilen.
+model WorkOrderImage {
+  id             String                  @id @default(cuid())
+  organizationId String
+  organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  jobId          String
+  job            Job                     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  // Nyckel i lagringsabstraktionen (src/lib/storage.ts) – filsystem nu, kan
+  // bytas till volym/objektlagring senare utan schemaändring.
+  storageKey     String
+  fileName       String
+  mimeType       String
+  sizeBytes      Int
+  caption        String?
+  uploadedByName String?
+  createdAt      DateTime                @default(now())
+  vehicles       WorkOrderImageVehicle[]
+
+  @@index([organizationId])
+  @@index([jobId])
+  @@map("work_order_images")
+}
+
+/// Kopplingstabell bild ↔ fordon: vilka av arbetsorderns fordon bilden avser.
+model WorkOrderImageVehicle {
+  id        String         @id @default(cuid())
+  imageId   String
+  image     WorkOrderImage @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  vehicleId String
+  vehicle   Vehicle        @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+
+  @@unique([imageId, vehicleId])
+  @@index([imageId])
+  @@index([vehicleId])
+  @@map("work_order_image_vehicles")
+}
+
 // ------------------------------------------------------------------ //
 //  Kundregister – biluthyrningens kunder (tenant-scopat)
 // ------------------------------------------------------------------ //
@@ -316,19 +359,46 @@ model Customer {
   id             String            @id @default(cuid())
   organizationId String
   organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // "private" (privatperson) | "company" (företag). För företag är `name`
+  // företagsnamnet och personnr ersätts av orgNumber + en primär kontaktperson.
+  type           String            @default("private")
   name           String
   personalNumber String?
+  // Organisationsnummer (endast företag), format "NNNNNNNN-NNNN".
+  orgNumber      String?
   email          String?
   phone          String?
   address        String?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
   comments       CustomerComment[]
+  // Kontaktpersoner: företagets primära kontaktperson (isPrimary) samt övriga
+  // personer som får lämna/hämta fordon. Gäller både privat och företag.
+  contacts       CustomerContact[]
   // Många-till-många: en kund kan ha flera fordon
   vehicles       CustomerVehicle[]
 
   @@index([organizationId])
   @@map("customers")
+}
+
+/// Kontaktperson kopplad till en kund. För företagskunder är den med
+/// `isPrimary = true` "kontaktpersonen" på företaget; övriga är personer som
+/// får lämna eller hämta ut fordon.
+model CustomerContact {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  name       String
+  // Fri beskrivning, t.ex. "Kontaktperson", "Hämtar bil", "Verkstadsansvarig".
+  role       String?
+  phone      String?
+  email      String?
+  isPrimary  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([customerId])
+  @@map("customer_contacts")
 }
 
 /// Kopplingstabell kund ↔ fordon (många-till-många).

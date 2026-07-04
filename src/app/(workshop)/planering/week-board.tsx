@@ -15,7 +15,6 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { Avatar } from "@/components/ui/avatar";
-import { LicensePlate } from "@/components/ui/license-plate";
 import { Car, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Mechanic, ScheduleJob } from "@/lib/data/schedule";
@@ -189,7 +188,7 @@ export function WeekBoard({
           {/* Grupper: mekaniker → fordonsrader */}
           {groups.map((group) => (
             <div key={group.key}>
-              <GroupBand group={group} />
+              <GroupBand group={group} dayHeaders={dayHeaders} />
               {group.rows.length === 0 ? (
                 <EmptyRow
                   mechId={group.mech?.id ?? ""}
@@ -237,13 +236,26 @@ export function WeekBoard({
   );
 }
 
-/** Grupprubrik – mekanikern (eller "Ej tilldelade") som ett band över raderna. */
-const GroupBand = memo(function GroupBand({ group }: { group: CalGroup }) {
+/**
+ * Grupprubrik – mekanikern (eller "Ej tilldelade") som ett band över raderna.
+ * Veckans dagar (veckodag + datumsiffra) upprepas på samma rad så de syns även
+ * när man scrollat förbi den fastnaglade toppen.
+ */
+const GroupBand = memo(function GroupBand({
+  group,
+  dayHeaders,
+}: {
+  group: CalGroup;
+  dayHeaders: DayHeader[];
+}) {
   const unassigned = group.key === UNASSIGNED_KEY;
   const vehicleCount = group.rows.filter((r) => r.vehicle).length;
   return (
     <div className="flex border-b border-line bg-surface-muted/60">
-      <div className="sticky left-0 z-20 flex items-center gap-2.5 bg-surface-muted/60 px-4 py-2">
+      <div
+        className="sticky left-0 z-20 flex shrink-0 items-center gap-2.5 bg-surface-muted/60 px-4 py-2"
+        style={{ width: LABEL_W }}
+      >
         {unassigned ? (
           <span className="flex size-8 items-center justify-center rounded-full bg-warning-soft text-warning">
             <Layers className="size-4" />
@@ -261,6 +273,32 @@ const GroupBand = memo(function GroupBand({ group }: { group: CalGroup }) {
               : "Inga fordon"}
           </p>
         </div>
+      </div>
+      <div className="grid flex-1 grid-cols-7">
+        {dayHeaders.map((d) => {
+          const dow = (d.date.getDay() + 6) % 7;
+          return (
+            <div
+              key={d.key}
+              className={cn(
+                "flex items-center justify-center gap-1.5 border-l border-line/60",
+                d.isToday && "bg-brand-50/40",
+              )}
+            >
+              <span className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground">
+                {WEEKDAYS_SHORT[dow]}
+              </span>
+              <span
+                className={cn(
+                  "text-xs font-bold tabular-nums",
+                  d.isToday ? "text-brand-600" : "text-ink",
+                )}
+              >
+                {d.date.getDate()}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -348,15 +386,22 @@ const VehicleRow = memo(function VehicleRow({
         style={{ width: LABEL_W }}
       >
         {vehicle ? (
-          <LicensePlate value={vehicle.regNo} size="sm" className="shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold uppercase tracking-wide text-ink">
+              {vehicle.regNo}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+          </div>
         ) : (
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-muted-foreground">
-            <Car className="size-4" />
-          </span>
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-muted-foreground">
+              <Car className="size-4" />
+            </span>
+            <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+              {subtitle}
+            </p>
+          </div>
         )}
-        <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-          {subtitle}
-        </p>
       </div>
 
       {/* Dagceller */}

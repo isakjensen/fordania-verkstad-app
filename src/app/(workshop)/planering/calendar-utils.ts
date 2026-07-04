@@ -2,9 +2,9 @@ import type { ScheduleJob, Mechanic } from "@/lib/data/schedule";
 
 export type View = "day" | "week";
 
-/** Arbetsdagens längd i tidsrutnätet. */
-export const DAY_START = 7;
-export const DAY_END = 18;
+/** Dygnet i tidsrutnätet – hela 24 timmar. */
+export const DAY_START = 0;
+export const DAY_END = 24;
 export const WORK_HOURS = DAY_END - DAY_START;
 /** Pixelhöjd per timme i tidsrutnätet (touch-vänligt). */
 export const HOUR_H = 60;
@@ -136,8 +136,10 @@ export interface PlacedH {
 
 /**
  * Placerar en mekanikers ordrar i en vågrät tidslinje (rad): tidsoffset i
- * timmar (upplösningsoberoende, % räknas i komponenten) och staplade
- * underbanor (sublanes) för överlappande ordrar.
+ * timmar (upplösningsoberoende, % räknas i komponenten). Varje order får en
+ * egen underbana (sublane) och de staplas under varandra i tidskronologisk
+ * ordning – aldrig sida vid sida – så att raden växer och fyller vyn när det
+ * ligger flera reparationer samma dag.
  */
 export function layoutRow(jobs: ScheduleJob[]): {
   placed: PlacedH[];
@@ -148,25 +150,12 @@ export function layoutRow(jobs: ScheduleJob[]): {
       new Date(a.scheduledStart as Date).getTime() -
       new Date(b.scheduledStart as Date).getTime(),
   );
-  const laneEnds: number[] = [];
-  const assigned = sorted.map((job) => {
-    const start = startHourOf(job);
-    const end = start + durationHoursOf(job);
-    let lane = laneEnds.findIndex((e) => e <= start + 0.001);
-    if (lane === -1) {
-      lane = laneEnds.length;
-      laneEnds.push(end);
-    } else {
-      laneEnds[lane] = end;
-    }
-    return { job, start, lane };
-  });
-  const sublanes = Math.max(1, laneEnds.length);
-  const placed = assigned.map(({ job, start, lane }) => ({
+  const sublanes = Math.max(1, sorted.length);
+  const placed = sorted.map((job, i) => ({
     job,
-    startOffset: clamp(start, DAY_START, DAY_END) - DAY_START,
+    startOffset: clamp(startHourOf(job), DAY_START, DAY_END) - DAY_START,
     durH: durationHoursOf(job),
-    sublane: lane,
+    sublane: i,
     sublanes,
   }));
   return { placed, sublanes };

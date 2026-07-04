@@ -9,6 +9,7 @@ import { getVehicleOptions } from "@/lib/data/vehicles";
 import { MechanicLinks } from "../mechanic-links";
 import { VehicleLinks } from "../vehicle-links";
 import { PartList } from "../part-list";
+import { WorkOrderImages } from "../work-order-images";
 import { WorkOrderActions } from "../work-order-actions";
 import { statusMeta, statusLabels, priorityLabels } from "../meta";
 
@@ -52,6 +53,25 @@ export default async function WorkOrderDetailPage({
     regNo: v.vehicle.regNo,
     brand: v.vehicle.brand,
     model: v.vehicle.model,
+  }));
+
+  // Bilagor: mappa bild-poster till galleriets format och slå upp reg.nr för
+  // de fordon varje bild avser.
+  const regByVehicleId = new Map(
+    job.vehicles.map((v) => [v.vehicle.id, v.vehicle.regNo]),
+  );
+  const orderImages = job.images.map((img) => ({
+    id: img.id,
+    caption: img.caption,
+    fileName: img.fileName,
+    createdAt: img.createdAt.toISOString(),
+    uploadedByName: img.uploadedByName,
+    workOrderId: job.id,
+    workOrderRef: ref,
+    workOrderType: job.type,
+    vehicleLabels: img.vehicles
+      .map((iv) => regByVehicleId.get(iv.vehicleId))
+      .filter((r): r is string => Boolean(r)),
   }));
 
   return (
@@ -148,6 +168,14 @@ export default async function WorkOrderDetailPage({
 
       <div className="mt-5">
         <PartList jobId={job.id} parts={job.parts} />
+      </div>
+
+      <div className="mt-5">
+        <WorkOrderImages
+          jobId={job.id}
+          images={orderImages}
+          vehicles={linkedVehicles}
+        />
       </div>
     </div>
   );

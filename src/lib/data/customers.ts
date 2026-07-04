@@ -25,6 +25,8 @@ export async function getCustomer(id: string, organizationId: string) {
     where: { id, organizationId },
     include: {
       comments: { orderBy: { createdAt: "desc" } },
+      // Primär kontaktperson (företagets kontaktperson) först, sedan äldst först.
+      contacts: { orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }] },
       vehicles: {
         include: {
           vehicle: {

@@ -84,6 +84,10 @@ export async function getJob(id: string, organizationId: string) {
         },
       },
       parts: { orderBy: { purchaseDate: "asc" } },
+      images: {
+        orderBy: { createdAt: "desc" },
+        include: { vehicles: { select: { vehicleId: true } } },
+      },
     },
   });
 }

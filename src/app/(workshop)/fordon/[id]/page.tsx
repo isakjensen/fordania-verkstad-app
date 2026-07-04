@@ -6,6 +6,8 @@ import { BackButton } from "@/components/ui/back-button";
 import { getActiveOrganizationId } from "@/lib/session";
 import { getVehicle, getFieldDefinitions } from "@/lib/data/vehicles";
 import { getCustomerOptions } from "@/lib/data/customers";
+import { getVehicleImages } from "@/lib/data/attachments";
+import { AttachmentGallery } from "@/components/attachments/attachment-gallery";
 import { OdometerSection } from "../odometer-section";
 import { VehicleActions } from "../vehicle-actions";
 import { CustomerLinks } from "../customer-links";
@@ -21,11 +23,13 @@ export default async function VehicleDetailPage({
   const organizationId = await getActiveOrganizationId();
   if (!organizationId) notFound();
 
-  const [vehicle, fieldDefinitions, customerOptions] = await Promise.all([
-    getVehicle(id, organizationId),
-    getFieldDefinitions(organizationId),
-    getCustomerOptions(organizationId),
-  ]);
+  const [vehicle, fieldDefinitions, customerOptions, images] =
+    await Promise.all([
+      getVehicle(id, organizationId),
+      getFieldDefinitions(organizationId),
+      getCustomerOptions(organizationId),
+      getVehicleImages(id, organizationId),
+    ]);
   if (!vehicle) notFound();
 
   const linkedCustomers = vehicle.customers.map((cv) => ({
@@ -110,6 +114,25 @@ export default async function VehicleDetailPage({
             options={customerOptions}
           />
         </div>
+      </div>
+
+      {/* Bilagor – bilder från fordonets arbetsordrar */}
+      <div className="mt-5">
+        <Card>
+          <CardHeader
+            tone="brand"
+            title="Bilagor"
+            subtitle={`${images.length} ${
+              images.length === 1 ? "bild" : "bilder"
+            } från arbetsordrar`}
+          />
+          <CardBody>
+            <AttachmentGallery
+              images={images}
+              emptyText="Inga bilder från arbetsordrar ännu."
+            />
+          </CardBody>
+        </Card>
       </div>
     </div>
   );

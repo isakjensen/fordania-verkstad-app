@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { WorkOrderListItem } from "@/lib/data/work-orders";
@@ -33,11 +33,21 @@ export function OrdersView({
     [orders, userId],
   );
 
-  // Mekaniker landar på sina egna; admin utan tilldelade jobb hamnar på alla.
-  const [scope, setScope] = useState<"mine" | "all">(
-    myOrders.length > 0 ? "mine" : "all",
-  );
+  // "Mina" är alltid standard; "Alla" väljs bara aktivt. Valet minns mellan
+  // besök via localStorage (läses efter mount för att undvika hydration-mismatch).
+  const [scope, setScope] = useState<"mine" | "all">("mine");
   const [filter, setFilter] = useState<string>("all");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("fv-orders-scope");
+    if (saved === "mine" || saved === "all") setScope(saved);
+  }, []);
+
+  const changeScope = useCallback((value: "mine" | "all") => {
+    setScope(value);
+    setFilter("all");
+    localStorage.setItem("fv-orders-scope", value);
+  }, []);
 
   const scoped = scope === "mine" ? myOrders : orders;
 
@@ -93,10 +103,7 @@ export function OrdersView({
                   <button
                     key={s.value}
                     type="button"
-                    onClick={() => {
-                      setScope(s.value);
-                      setFilter("all");
-                    }}
+                    onClick={() => changeScope(s.value)}
                     aria-pressed={active}
                     className={cn(
                       "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors",

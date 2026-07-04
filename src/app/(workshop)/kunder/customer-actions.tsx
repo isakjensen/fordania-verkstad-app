@@ -4,8 +4,6 @@ import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -17,11 +15,14 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { updateCustomer, deleteCustomer } from "./actions";
+import { CustomerFormFields } from "./customer-form-fields";
 
 interface CustomerData {
   id: string;
+  type: string;
   name: string;
   personalNumber: string | null;
+  orgNumber: string | null;
   email: string | null;
   phone: string | null;
   address: string | null;
@@ -76,49 +77,26 @@ export function CustomerActions({ customer }: { customer: CustomerData }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Redigera kund</DialogTitle>
-            <DialogDescription>Uppdatera kundens uppgifter.</DialogDescription>
+            <DialogDescription>
+              Uppdatera uppgifterna. Byt typ för att konvertera mellan
+              privatperson och företag.
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={onEdit} className="space-y-4">
             <input type="hidden" name="id" value={customer.id} />
-            <div className="space-y-1.5">
-              <Label htmlFor="e-name">Namn</Label>
-              <Input id="e-name" name="name" required defaultValue={customer.name} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="e-pnr">Personnummer</Label>
-                <Input
-                  id="e-pnr"
-                  name="personalNumber"
-                  defaultValue={customer.personalNumber ?? ""}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="e-phone">Telefonnummer</Label>
-                <Input
-                  id="e-phone"
-                  name="phone"
-                  defaultValue={customer.phone ?? ""}
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="e-email">E-post</Label>
-              <Input
-                id="e-email"
-                name="email"
-                type="email"
-                defaultValue={customer.email ?? ""}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="e-address">Adress</Label>
-              <Input
-                id="e-address"
-                name="address"
-                defaultValue={customer.address ?? ""}
-              />
-            </div>
+            <CustomerFormFields
+              mode="edit"
+              idPrefix="e"
+              defaults={{
+                type: customer.type,
+                name: customer.name,
+                personalNumber: customer.personalNumber,
+                orgNumber: customer.orgNumber,
+                email: customer.email,
+                phone: customer.phone,
+                address: customer.address,
+              }}
+            />
 
             {error ? (
               <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-danger">

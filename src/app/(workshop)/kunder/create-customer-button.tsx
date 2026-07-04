@@ -4,8 +4,6 @@ import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +15,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { createCustomer } from "./actions";
+import { CustomerFormFields } from "./customer-form-fields";
 
 export function CreateCustomerButton() {
   const [open, setOpen] = useState(false);
@@ -53,46 +52,12 @@ export function CreateCustomerButton() {
         <DialogHeader>
           <DialogTitle>Ny kund</DialogTitle>
           <DialogDescription>
-            Lägg till en kund i kundregistret.
+            Lägg till en privatperson eller ett företag i kundregistret.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="c-name">Namn</Label>
-            <Input id="c-name" name="name" required placeholder="Anna Andersson" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="c-pnr">Personnummer</Label>
-              <Input
-                id="c-pnr"
-                name="personalNumber"
-                placeholder="ÅÅÅÅMMDD-XXXX"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="c-phone">Telefonnummer</Label>
-              <Input id="c-phone" name="phone" placeholder="070-123 45 67" />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="c-email">E-post</Label>
-            <Input
-              id="c-email"
-              name="email"
-              type="email"
-              placeholder="anna@exempel.se"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="c-address">Adress</Label>
-            <Input
-              id="c-address"
-              name="address"
-              placeholder="Storgatan 1, 123 45 Göteborg"
-            />
-          </div>
+          <CustomerFormFields mode="create" idPrefix="c" />
 
           {error ? (
             <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-danger">

@@ -164,16 +164,6 @@ export function ScheduleCalendar({
               <ChevronRight className="size-5" />
             </button>
           </div>
-          {hasOrg ? (
-            <div className="ml-1 hidden items-baseline gap-1.5 rounded-xl border border-line bg-surface px-3 py-1.5 lg:flex">
-              <span className="text-sm font-extrabold tabular-nums text-brand-600">
-                {localJobs.length}
-              </span>
-              <span className="text-[0.7rem] font-medium text-muted-foreground">
-                {view === "day" ? "ordrar" : "ordrar/vecka"}
-              </span>
-            </div>
-          ) : null}
         </div>
       </header>
 

@@ -2,8 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { requireUser, getActiveOrganizationId } from "@/lib/session";
+import {
+  requireUser,
+  getActiveOrganizationId,
+  getSession,
+} from "@/lib/session";
 import { recordAudit } from "@/lib/audit";
+import { storage } from "@/lib/storage";
 
 export type ActionResult = { success: true; id?: string } | { error: string };
 
@@ -305,5 +310,139 @@ export async function removePart(partId: string): Promise<ActionResult> {
   if (!part) return { error: "Raden hittades inte." };
   await db.jobPart.delete({ where: { id: partId } });
   revalidatePath(`/arbetsordrar/${part.jobId}`);
+  return { success: true };
+}
+
+// ------------------------------------------------------------------ //
+//  Bilder (bilagor) på arbetsordrar
+// ------------------------------------------------------------------ //
+
+const IMAGE_EXT: Record<string, string> = {
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/webp": ".webp",
+  "image/gif": ".gif",
+};
+// Serversidig säkerhetsmarginal; body-gränsen i next.config gör grovsållningen.
+const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
+
+/**
+ * Revaliderar profilsidorna som påverkas av en arbetsorderbild: de kopplade
+ * fordonen och de kunder som äger dem (bilden är en bilaga på båda).
+ */
+async function revalidateImageTargets(vehicleIds: string[]) {
+  for (const vehicleId of vehicleIds) {
+    revalidatePath(`/fordon/${vehicleId}`);
+  }
+  if (vehicleIds.length) {
+    const links = await db.customerVehicle.findMany({
+      where: { vehicleId: { in: vehicleIds } },
+      select: { customerId: true },
+    });
+    for (const customerId of new Set(links.map((l) => l.customerId))) {
+      revalidatePath(`/kunder/${customerId}`);
+    }
+  }
+}
+
+/**
+ * Laddar upp en bild på en arbetsorder. Bilden länkas till valda fordon på
+ * ordern (förvalt alla) och blir därigenom synlig som bilaga på både fordons-
+ * och kundprofilen. Filen sparas via lagringsabstraktionen; endast metadata och
+ * lagringsnyckeln hamnar i databasen.
+ */
+export async function uploadWorkOrderImage(
+  formData: FormData,
+): Promise<ActionResult> {
+  const guard = await requireOrg();
+  if ("error" in guard) return guard;
+  const session = await getSession();
+
+  const jobId = String(formData.get("jobId") ?? "");
+  const job = await db.job.findFirst({
+    where: { id: jobId, organizationId: guard.organizationId },
+    include: { vehicles: { select: { vehicleId: true } } },
+  });
+  if (!job) return { error: "Arbetsordern hittades inte." };
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Ingen bild vald." };
+  }
+  if (!IMAGE_EXT[file.type]) {
+    return { error: "Filtypen stöds inte. Ladda upp en bild (JPEG, PNG eller WebP)." };
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    return { error: "Bilden är för stor. Max 15 MB." };
+  }
+
+  // Vilka fordon bilden avser: valda som tillhör ordern, annars alla på ordern.
+  const orderVehicleIds = new Set(job.vehicles.map((v) => v.vehicleId));
+  const requested = formData
+    .getAll("vehicleIds")
+    .map((v) => String(v))
+    .filter((v) => orderVehicleIds.has(v));
+  const vehicleIds = requested.length
+    ? requested
+    : [...orderVehicleIds];
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const storageKey = await storage.save(bytes, { ext: IMAGE_EXT[file.type] });
+
+  const image = await db.workOrderImage.create({
+    data: {
+      organizationId: guard.organizationId,
+      jobId,
+      storageKey,
+      fileName: str(formData.get("fileName")) ?? file.name ?? "bild.jpg",
+      mimeType: file.type,
+      sizeBytes: file.size,
+      caption: str(formData.get("caption")),
+      uploadedByName: session?.user.name ?? null,
+      vehicles: {
+        create: vehicleIds.map((vehicleId) => ({ vehicleId })),
+      },
+    },
+  });
+
+  await recordAudit({
+    action: "job.image.upload",
+    category: "job",
+    summary: `Laddade upp en bild på arbetsordern ${job.type}`,
+    organizationId: guard.organizationId,
+    entityType: "job",
+    entityId: jobId,
+  });
+
+  revalidatePath(`/arbetsordrar/${jobId}`);
+  await revalidateImageTargets(vehicleIds);
+  return { success: true, id: image.id };
+}
+
+/** Tar bort en arbetsorderbild (både databaspost och lagrad fil). */
+export async function deleteWorkOrderImage(id: string): Promise<ActionResult> {
+  const guard = await requireOrg();
+  if ("error" in guard) return guard;
+
+  const image = await db.workOrderImage.findFirst({
+    where: { id, organizationId: guard.organizationId },
+    include: { vehicles: { select: { vehicleId: true } } },
+  });
+  if (!image) return { error: "Bilden hittades inte." };
+
+  await db.workOrderImage.delete({ where: { id } });
+  await storage.delete(image.storageKey);
+
+  await recordAudit({
+    action: "job.image.delete",
+    category: "job",
+    summary: "Tog bort en bild från en arbetsorder",
+    organizationId: guard.organizationId,
+    entityType: "job",
+    entityId: image.jobId,
+  });
+
+  revalidatePath(`/arbetsordrar/${image.jobId}`);
+  await revalidateImageTargets(image.vehicles.map((v) => v.vehicleId));
   return { success: true };
 }

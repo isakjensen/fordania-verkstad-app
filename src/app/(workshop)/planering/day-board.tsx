@@ -15,7 +15,6 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { Avatar } from "@/components/ui/avatar";
-import { LicensePlate } from "@/components/ui/license-plate";
 import { Car, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Mechanic, ScheduleJob } from "@/lib/data/schedule";
@@ -28,6 +27,9 @@ import {
   DAY_START,
   DAY_END,
   WORK_HOURS,
+  WEEKDAYS_SHORT,
+  MONTHS,
+  isoDow,
   pad,
   hm,
   clamp,
@@ -39,7 +41,7 @@ import {
 } from "./calendar-utils";
 
 const LABEL_W = 208;
-const TRACK_MIN = 720; // px – under detta scrollar tidslinjen i sidled
+const TRACK_MIN = 1152; // px – 24 timmar; under detta scrollar tidslinjen i sidled
 const BLOCK_H = 50;
 const GAP = 6;
 const ROW_PAD = 8;
@@ -111,6 +113,10 @@ export function DayBoard({
     () => sameDay(new Date(anchorISO), new Date()),
     [anchorISO],
   );
+  const dateLabel = useMemo(() => {
+    const d = new Date(anchorISO);
+    return `${WEEKDAYS_SHORT[isoDow(d)]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  }, [anchorISO]);
 
   const groups = useMemo<LaidGroup[]>(
     () =>
@@ -212,9 +218,9 @@ export function DayBoard({
               {hours.map((h) => (
                 <div
                   key={h}
-                  className="flex flex-1 items-center border-l border-line/70 pl-1.5 text-[0.7rem] font-medium tabular-nums text-muted-foreground"
+                  className="flex flex-1 items-center border-l border-line/70 pl-1 text-[0.68rem] font-medium tabular-nums text-muted-foreground"
                 >
-                  {pad(h)}:00
+                  {pad(h)}
                 </div>
               ))}
             </div>
@@ -223,7 +229,7 @@ export function DayBoard({
           {/* Grupper: mekaniker → fordonsrader */}
           {groups.map((g) => (
             <div key={g.group.key}>
-              <GroupBand group={g.group} />
+              <GroupBand group={g.group} dateLabel={dateLabel} />
               {g.rows.length === 0 ? (
                 <EmptyRow mechId={g.mechId} canManage={canManage} />
               ) : (
@@ -234,7 +240,6 @@ export function DayBoard({
                     mechId={g.mechId}
                     canManage={canManage}
                     nowOffset={nowOffset}
-                    trackPx={trackPx}
                     onOpen={onOpen}
                   />
                 ))
@@ -268,12 +273,18 @@ export function DayBoard({
   );
 }
 
-/** Grupprubrik – mekanikern (eller "Ej tilldelade") som ett band över raderna. */
-const GroupBand = memo(function GroupBand({ group }: { group: CalGroup }) {
+/** Grupprubrik – mekanikern (eller "Ej tilldelade") med dagens datum på samma rad. */
+const GroupBand = memo(function GroupBand({
+  group,
+  dateLabel,
+}: {
+  group: CalGroup;
+  dateLabel: string;
+}) {
   const unassigned = group.key === UNASSIGNED_KEY;
   const vehicleCount = group.rows.filter((r) => r.vehicle).length;
   return (
-    <div className="flex border-b border-line bg-surface-muted/60">
+    <div className="flex items-center justify-between border-b border-line bg-surface-muted/60">
       <div className="sticky left-0 z-20 flex items-center gap-2.5 bg-surface-muted/60 px-4 py-2">
         {unassigned ? (
           <span className="flex size-8 items-center justify-center rounded-full bg-warning-soft text-warning">
@@ -288,11 +299,14 @@ const GroupBand = memo(function GroupBand({ group }: { group: CalGroup }) {
           </p>
           <p className="text-[0.7rem] text-muted-foreground">
             {vehicleCount > 0
-              ? `${vehicleCount} ${vehicleCount === 1 ? "fordon" : "fordon"} · ${group.orderCount} ${group.orderCount === 1 ? "order" : "ordrar"}`
+              ? `${vehicleCount} fordon · ${group.orderCount} ${group.orderCount === 1 ? "order" : "ordrar"}`
               : "Inga fordon"}
           </p>
         </div>
       </div>
+      <span className="shrink-0 px-4 text-xs font-semibold capitalize tabular-nums text-muted-foreground">
+        {dateLabel}
+      </span>
     </div>
   );
 });
@@ -337,14 +351,12 @@ const VehicleRow = memo(function VehicleRow({
   mechId,
   canManage,
   nowOffset,
-  trackPx,
   onOpen,
 }: {
   laid: LaidRow;
   mechId: string;
   canManage: boolean;
   nowOffset: number | null;
-  trackPx: number;
   onOpen: (job: ScheduleJob) => void;
 }) {
   const { row, placed, height } = laid;
@@ -374,15 +386,22 @@ const VehicleRow = memo(function VehicleRow({
         style={{ width: LABEL_W }}
       >
         {vehicle ? (
-          <LicensePlate value={vehicle.regNo} size="sm" className="shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold uppercase tracking-wide text-ink">
+              {vehicle.regNo}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+          </div>
         ) : (
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-muted-foreground">
-            <Car className="size-4" />
-          </span>
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-muted-foreground">
+              <Car className="size-4" />
+            </span>
+            <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+              {subtitle}
+            </p>
+          </div>
         )}
-        <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-          {subtitle}
-        </p>
       </div>
 
       {/* Tidslinje */}
@@ -414,7 +433,6 @@ const VehicleRow = memo(function VehicleRow({
             placed={p}
             mechId={mechId}
             canManage={canManage}
-            trackPx={trackPx}
             onOpen={onOpen}
           />
         ))}
@@ -427,13 +445,11 @@ const JobBlock = memo(function JobBlock({
   placed,
   mechId,
   canManage,
-  trackPx,
   onOpen,
 }: {
   placed: PlacedH;
   mechId: string;
   canManage: boolean;
-  trackPx: number;
   onOpen: (job: ScheduleJob) => void;
 }) {
   const { job, startOffset, durH, sublane } = placed;
@@ -445,8 +461,6 @@ const JobBlock = memo(function JobBlock({
   const start = job.scheduledStart ? new Date(job.scheduledStart) : null;
   const end = job.scheduledEnd ? new Date(job.scheduledEnd) : null;
   const top = ROW_PAD + sublane * (BLOCK_H + GAP);
-  // Faktisk bredd i px styr hur mycket innehåll som ryms i blocket.
-  const blockPx = (durH / WORK_HOURS) * trackPx;
 
   return (
     <button
@@ -465,7 +479,7 @@ const JobBlock = memo(function JobBlock({
       style={{
         left: `calc(${pct(startOffset)} + 2px)`,
         width: `calc(${pct(durH)} - 4px)`,
-        minWidth: 50,
+        minWidth: 138,
         top,
         height: BLOCK_H,
       }}
@@ -474,20 +488,13 @@ const JobBlock = memo(function JobBlock({
     >
       <span className={cn("w-1.5 shrink-0", meta?.accent ?? "bg-slate-400")} aria-hidden />
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-2.5">
-        <span className="flex items-center justify-between gap-2">
-          <span className="truncate text-[0.8rem] font-bold leading-tight text-ink">
-            {job.type}
-          </span>
-          {start && blockPx >= 104 ? (
-            <span className="shrink-0 text-[0.65rem] font-medium leading-tight text-muted-foreground tabular-nums">
-              {hm(start)}
-              {end ? `–${hm(end)}` : ""}
-            </span>
-          ) : null}
+        <span className="truncate text-[0.82rem] font-bold leading-tight text-ink">
+          {job.type}
         </span>
-        {start && blockPx < 104 && blockPx >= 62 ? (
-          <span className="text-[0.62rem] font-medium leading-tight text-muted-foreground tabular-nums">
+        {start ? (
+          <span className="truncate text-[0.68rem] font-medium leading-tight text-muted-foreground tabular-nums">
             {hm(start)}
+            {end ? `–${hm(end)}` : ""}
           </span>
         ) : null}
       </span>
