@@ -76,7 +76,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     db.organization.findMany({ select: { status: true } }),
     db.member.count(),
     db.vehicle.count({ where: { deletedAt: null } }),
-    db.job.count(),
+    db.job.count({ where: { deletedAt: null } }),
   ]);
   const byStatus: Record<string, number> = {};
   for (const o of orgs) {

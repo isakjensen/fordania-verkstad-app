@@ -1,11 +1,30 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { ClipboardList } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react";
+import { useRouter } from "next/navigation";
+import { ClipboardList, Check, Trash2, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { WorkOrderListItem } from "@/lib/data/work-orders";
 import { OrderRows } from "./order-rows";
 import { statusLabels, statusMeta } from "./meta";
+import { deleteWorkOrders } from "./actions";
 
 /** Ordning på statusflikarna – pågående jobb först, klara sist. */
 const STATUS_ORDER = [
@@ -16,14 +35,31 @@ const STATUS_ORDER = [
   "done",
 ] as const;
 
+function Checkbox({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className={cn(
+        "flex size-5 shrink-0 items-center justify-center rounded-md border transition-colors pointer-coarse:size-6",
+        checked
+          ? "border-brand-600 bg-brand-600 text-white"
+          : "border-line bg-surface",
+      )}
+    >
+      {checked ? <Check className="size-3.5" strokeWidth={3} /> : null}
+    </span>
+  );
+}
+
 export function OrdersView({
   orders,
   userId,
   createButton,
+  removedButton,
 }: {
   orders: WorkOrderListItem[];
   userId: string | null;
   createButton?: ReactNode;
+  removedButton?: ReactNode;
 }) {
   const myOrders = useMemo(
     () =>
@@ -37,6 +73,14 @@ export function OrdersView({
   // besök via localStorage (läses efter mount för att undvika hydration-mismatch).
   const [scope, setScope] = useState<"mine" | "all">("mine");
   const [filter, setFilter] = useState<string>("all");
+
+  // Markeringsläge för massradering.
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [error, setError] = useState("");
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   useEffect(() => {
     const saved = localStorage.getItem("fv-orders-scope");
@@ -79,6 +123,45 @@ export function OrdersView({
     { value: "all", label: "Alla", count: orders.length },
   ];
 
+  const selCount = selected.size;
+  const allShownSelected =
+    shown.length > 0 && shown.every((o) => selected.has(o.id));
+
+  const toggle = useCallback((id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  function toggleAll() {
+    setSelected(
+      allShownSelected ? new Set() : new Set(shown.map((o) => o.id)),
+    );
+  }
+
+  function exitSelect() {
+    setSelectMode(false);
+    setSelected(new Set());
+    setError("");
+  }
+
+  function onDelete() {
+    setError("");
+    startTransition(async () => {
+      const res = await deleteWorkOrders([...selected]);
+      if ("error" in res) {
+        setError(res.error);
+        return;
+      }
+      setConfirmOpen(false);
+      exitSelect();
+      router.refresh();
+    });
+  }
+
   return (
     <>
       {/* Kortets huvud: titel + växlare + skapa-knapp, och statusfilter */}
@@ -95,7 +178,7 @@ export function OrdersView({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex gap-0.5 rounded-xl bg-surface-muted p-1">
               {scopeTabs.map((s) => {
                 const active = scope === s.value;
@@ -125,6 +208,16 @@ export function OrdersView({
                 );
               })}
             </div>
+            {removedButton}
+            {shown.length > 0 || selectMode ? (
+              <Button
+                variant="outline"
+                size="md"
+                onClick={() => setSelectMode(true)}
+              >
+                Välj
+              </Button>
+            ) : null}
             {createButton}
           </div>
         </div>
@@ -164,6 +257,36 @@ export function OrdersView({
         ) : null}
       </div>
 
+      {/* Markeringsrad – syns bara i markeringsläge */}
+      {selectMode ? (
+        <div className="flex items-center justify-between gap-3 border-b border-line bg-surface-muted/40 px-4 py-3 sm:px-5">
+          <button
+            type="button"
+            onClick={toggleAll}
+            className="flex items-center gap-2.5 text-left"
+          >
+            <Checkbox checked={allShownSelected} />
+            <span className="text-sm font-semibold text-ink">
+              {selCount > 0 ? `${selCount} valda` : "Markera alla"}
+            </span>
+          </button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="md" onClick={exitSelect}>
+              Avbryt
+            </Button>
+            <Button
+              variant="destructive"
+              size="md"
+              disabled={selCount === 0}
+              onClick={() => setConfirmOpen(true)}
+            >
+              <Trash2 className="size-4" />
+              Ta bort{selCount > 0 ? ` (${selCount})` : ""}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
       {scoped.length === 0 ? (
         <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
           <span className="flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
@@ -187,10 +310,58 @@ export function OrdersView({
               Inga arbetsordrar med den statusen.
             </p>
           ) : (
-            <OrderRows orders={shown} showMechanic={scope === "all"} />
+            <OrderRows
+              orders={shown}
+              showMechanic={scope === "all"}
+              selectMode={selectMode}
+              selected={selected}
+              onToggle={toggle}
+            />
           )}
         </div>
       )}
+
+      {/* Bekräfta borttagning */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ta bort {selCount} arbetsordrar?</DialogTitle>
+            <DialogDescription>
+              {selCount === 1 ? "Arbetsordern" : "Arbetsordrarna"} döljs från
+              listan och kalendern men raderas inte helt. Du kan återställa{" "}
+              {selCount === 1 ? "den" : "dem"} under &quot;Borttagna&quot; på
+              arbetsordersidan.
+            </DialogDescription>
+          </DialogHeader>
+          {error ? (
+            <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
+              {error}
+            </p>
+          ) : null}
+          <DialogFooter>
+            <DialogClose
+              render={
+                <Button type="button" variant="outline">
+                  Avbryt
+                </Button>
+              }
+            />
+            <Button
+              type="button"
+              onClick={onDelete}
+              disabled={pending}
+              className="bg-danger text-white hover:bg-danger/90"
+            >
+              {pending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Trash2 className="size-4" />
+              )}
+              Ta bort
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

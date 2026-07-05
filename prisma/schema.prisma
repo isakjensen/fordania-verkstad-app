@@ -255,6 +255,8 @@ model Job {
   scheduledEnd   DateTime?
   description    String?
   priority       String       @default("normal")
+  /// Mjukradering: satt = borttagen (döljs överallt men kan återställas).
+  deletedAt      DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   // Många-till-många: en arbetsorder kan ha flera mekaniker och flera fordon,
@@ -266,6 +268,8 @@ model Job {
 
   @@index([organizationId])
   @@index([assignedUserId])
+  // Snabb filtrering av aktiva/borttagna arbetsordrar per verkstad (mjukradering).
+  @@index([organizationId, deletedAt])
   @@map("jobs")
 }
 
@@ -374,6 +378,8 @@ model Customer {
   email          String?
   phone          String?
   address        String?
+  /// Mjukradering: satt = borttagen (döljs överallt men kan återställas).
+  deletedAt      DateTime?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
   comments       CustomerComment[]
@@ -384,6 +390,8 @@ model Customer {
   vehicles       CustomerVehicle[]
 
   @@index([organizationId])
+  // Snabb filtrering av aktiva/borttagna kunder per verkstad (mjukradering).
+  @@index([organizationId, deletedAt])
   @@map("customers")
 }
 

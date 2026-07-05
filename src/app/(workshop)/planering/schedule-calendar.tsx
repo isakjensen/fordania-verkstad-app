@@ -27,6 +27,7 @@ export function ScheduleCalendar({
   mechanics,
   jobs,
   vehicles,
+  customers,
   canManage,
   hasOrg,
 }: {
@@ -37,6 +38,7 @@ export function ScheduleCalendar({
   mechanics: Mechanic[];
   jobs: ScheduleJob[];
   vehicles: { id: string; regNo: string; chassisNumber: string | null }[];
+  customers: { id: string; name: string }[];
   canManage: boolean;
   hasOrg: boolean;
 }) {
@@ -217,6 +219,7 @@ export function ScheduleCalendar({
         open={open}
         onOpenChange={setOpen}
         mechanics={mechanics}
+        customers={customers}
         canManage={canManage}
       />
     </div>

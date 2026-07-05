@@ -37,7 +37,9 @@ export async function moveJob(
 
   if (!jobId) return { error: "Arbetsorder saknas." };
 
-  const job = await db.job.findFirst({ where: { id: jobId, organizationId } });
+  const job = await db.job.findFirst({
+    where: { id: jobId, organizationId, deletedAt: null },
+  });
   if (!job) return { error: "Arbetsordern hittades inte." };
 
   // Avtilldela: ta bara bort källmekanikern från jobbet (ordern blir
@@ -88,6 +90,17 @@ const VALID_STATUS = [
   "delayed",
 ];
 
+const VALID_TYPES = [
+  "Service",
+  "Reparation",
+  "Besiktning",
+  "Däckbyte",
+  "Rekond",
+  "Felsökning",
+];
+
+const VALID_PRIORITY = ["low", "normal", "high"];
+
 /**
  * Säkerställer inloggad medlem i den aktiva verkstaden + att jobbet hör dit.
  * Returnerar ett fel, eller `null` om allt är ok.
@@ -102,7 +115,9 @@ async function guardJob(jobId: string): Promise<{ error: string } | null> {
   const role = await getTenantRole(organizationId);
   // Medlemmar och verkstadsadmin/superadmin får snabbändra.
   if (!member && !role) return { error: "Saknar behörighet." };
-  const job = await db.job.findFirst({ where: { id: jobId, organizationId } });
+  const job = await db.job.findFirst({
+    where: { id: jobId, organizationId, deletedAt: null },
+  });
   if (!job) return { error: "Arbetsordern hittades inte." };
   return null;
 }
@@ -141,5 +156,97 @@ export async function setJobNote(
     data: { description: trimmed.length ? trimmed : null },
   });
   revalidateJob(jobId);
+  return { success: true };
+}
+
+/** Snabbändra arbetsorderns typ (Service, Reparation, …). */
+export async function setJobType(
+  jobId: string,
+  type: string,
+): Promise<ActionResult> {
+  if (!VALID_TYPES.includes(type)) return { error: "Ogiltig typ." };
+  const err = await guardJob(jobId);
+  if (err) return err;
+  await db.job.update({ where: { id: jobId }, data: { type } });
+  revalidateJob(jobId);
+  return { success: true };
+}
+
+/** Snabbändra arbetsorderns prioritet (low | normal | high). */
+export async function setJobPriority(
+  jobId: string,
+  priority: string,
+): Promise<ActionResult> {
+  if (!VALID_PRIORITY.includes(priority)) return { error: "Ogiltig prioritet." };
+  const err = await guardJob(jobId);
+  if (err) return err;
+  await db.job.update({ where: { id: jobId }, data: { priority } });
+  revalidateJob(jobId);
+  return { success: true };
+}
+
+/**
+ * Kopplar en kund till arbetsordern. Kunder hör i datamodellen till fordon, så
+ * kopplingen görs mot orderns fordon (kunden blir ägare) – då dyker den upp som
+ * kund på ordern, fordonet och kundkortet, precis som i resten av appen.
+ * Kräver att ordern har minst ett fordon.
+ */
+export async function linkJobCustomer(
+  jobId: string,
+  customerId: string,
+): Promise<ActionResult> {
+  const err = await guardJob(jobId);
+  if (err) return err;
+  const organizationId = await getActiveOrganizationId();
+  if (!organizationId) return { error: "Du tillhör ingen verkstad." };
+
+  const job = await db.job.findFirst({
+    where: { id: jobId, organizationId, deletedAt: null },
+    include: { vehicles: { select: { vehicleId: true } } },
+  });
+  if (!job) return { error: "Arbetsordern hittades inte." };
+  const vehicleId = job.vehicles[0]?.vehicleId;
+  if (!vehicleId) return { error: "Koppla ett fordon på ordern först." };
+
+  const customer = await db.customer.findFirst({
+    where: { id: customerId, organizationId, deletedAt: null },
+  });
+  if (!customer) return { error: "Kunden hittades inte." };
+
+  await db.customerVehicle.upsert({
+    where: { customerId_vehicleId: { customerId, vehicleId } },
+    create: { customerId, vehicleId },
+    update: {},
+  });
+  revalidateJob(jobId);
+  revalidatePath(`/kunder/${customerId}`);
+  revalidatePath(`/fordon/${vehicleId}`);
+  return { success: true };
+}
+
+/** Tar bort en kund från arbetsordern (kopplingen mot orderns fordon). */
+export async function unlinkJobCustomer(
+  jobId: string,
+  customerId: string,
+): Promise<ActionResult> {
+  const err = await guardJob(jobId);
+  if (err) return err;
+  const organizationId = await getActiveOrganizationId();
+  if (!organizationId) return { error: "Du tillhör ingen verkstad." };
+
+  const job = await db.job.findFirst({
+    where: { id: jobId, organizationId, deletedAt: null },
+    include: { vehicles: { select: { vehicleId: true } } },
+  });
+  if (!job) return { error: "Arbetsordern hittades inte." };
+  const vehicleIds = job.vehicles.map((v) => v.vehicleId);
+  if (vehicleIds.length === 0) return { success: true };
+
+  await db.customerVehicle.deleteMany({
+    where: { customerId, vehicleId: { in: vehicleIds } },
+  });
+  revalidateJob(jobId);
+  revalidatePath(`/kunder/${customerId}`);
+  for (const vehicleId of vehicleIds) revalidatePath(`/fordon/${vehicleId}`);
   return { success: true };
 }

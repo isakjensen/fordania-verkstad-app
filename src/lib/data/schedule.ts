@@ -40,6 +40,7 @@ export async function getScheduleJobs(
   return db.job.findMany({
     where: {
       organizationId,
+      deletedAt: null,
       scheduledStart: { gte: from, lt: to },
     },
     orderBy: { scheduledStart: "asc" },
@@ -71,7 +72,7 @@ export async function getScheduleJobs(
 /** En enskild arbetsorder med full detalj för drawern. */
 export async function getJob(id: string, organizationId: string) {
   return db.job.findFirst({
-    where: { id, organizationId },
+    where: { id, organizationId, deletedAt: null },
     include: {
       mechanics: { include: { user: { select: { id: true, name: true } } } },
       vehicles: {
@@ -103,6 +104,7 @@ export async function getJobsForUserOnDay(
   return db.job.findMany({
     where: {
       organizationId,
+      deletedAt: null,
       mechanics: { some: { userId } },
       scheduledStart: { gte: from, lt: to },
     },

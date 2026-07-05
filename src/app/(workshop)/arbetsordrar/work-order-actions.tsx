@@ -79,8 +79,9 @@ export function WorkOrderActions({ job }: { job: JobInfo }) {
         setError(res.error);
         return;
       }
-      router.push("/arbetsordrar");
-      router.refresh();
+      // Navigera till listan med replace så back-knappen inte går till den
+      // borttagna arbetsordern (detaljsidan skulle då ge 404).
+      router.replace("/arbetsordrar");
     });
   }
 
@@ -168,8 +169,9 @@ export function WorkOrderActions({ job }: { job: JobInfo }) {
           <DialogHeader>
             <DialogTitle>Ta bort arbetsorder?</DialogTitle>
             <DialogDescription>
-              Arbetsordern och dess delar tas bort permanent. Detta går inte att
-              ångra.
+              Arbetsordern döljs från listan och kalendern men raderas inte
+              helt. Du kan återställa den när som helst under
+              &quot;Borttagna&quot; på arbetsordersidan.
             </DialogDescription>
           </DialogHeader>
           {error ? (

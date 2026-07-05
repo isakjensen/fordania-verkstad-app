@@ -14,7 +14,6 @@ import {
   type DragStartEvent,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { Avatar } from "@/components/ui/avatar";
 import { Car, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Mechanic, ScheduleJob } from "@/lib/data/schedule";
@@ -261,15 +260,11 @@ export function DayBoard({
         {activeJob && activeCs ? (
           <div
             className={cn(
-              "relative flex flex-col justify-center gap-0.5 overflow-hidden rounded-lg pr-2.5 pl-3.5 shadow-lift ring-1 ring-line-strong",
+              "relative flex flex-col justify-center gap-0.5 overflow-hidden rounded-lg px-2.5 shadow-lift ring-1 ring-line-strong",
               activeCs.tint,
             )}
             style={{ width: 178, height: BLOCK_H, rotate: "2.5deg" }}
           >
-            <span
-              className={cn("absolute inset-y-0 left-0 w-1", activeCs.bar)}
-              aria-hidden
-            />
             <span className="truncate text-[0.82rem] font-semibold leading-tight tracking-tight text-ink">
               {activeJob.type}
             </span>
@@ -329,9 +324,7 @@ const GroupBand = memo(function GroupBand({
           <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-warning-soft text-warning">
             <Layers className="size-3.5" />
           </span>
-        ) : (
-          <Avatar initials={group.mech!.initials} size="size-7 text-[0.65rem]" />
-        )}
+        ) : null}
         <p className="truncate text-[0.82rem] font-bold text-ink">
           {unassigned ? "Ej tilldelade" : group.mech!.name}
         </p>
@@ -471,12 +464,10 @@ const JobBlock = memo(function JobBlock({
       onClick={() => onOpen(job)}
       title={`${job.type} · ${statusLabels[job.status] ?? job.status}`}
       className={cn(
-        "absolute z-20 flex flex-col justify-center gap-0.5 overflow-hidden rounded-lg py-1 pl-3.5 pr-2.5 text-left ring-1 ring-line transition duration-150",
+        "absolute z-20 flex flex-col justify-center gap-0.5 overflow-hidden rounded-lg px-2.5 py-1 text-left ring-1 ring-line transition duration-150",
         cs.tint,
         justMoved && "animate-card-drop-in",
-        isDragging
-          ? "opacity-40"
-          : "shadow-chip hover:z-30 hover:-translate-y-0.5 hover:shadow-lift hover:ring-line-strong",
+        isDragging ? "opacity-40" : "shadow-chip hover:z-30",
         canManage ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
       )}
       style={{
@@ -489,10 +480,6 @@ const JobBlock = memo(function JobBlock({
       {...(canManage ? listeners : {})}
       {...(canManage ? attributes : {})}
     >
-      <span
-        className={cn("absolute inset-y-0 left-0 w-1", cs.bar)}
-        aria-hidden
-      />
       <span className="truncate text-[0.82rem] font-semibold leading-tight tracking-tight text-ink">
         {job.type}
       </span>

@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
  */
 export async function getCustomers(organizationId: string) {
   return db.customer.findMany({
-    where: { organizationId },
+    where: { organizationId, deletedAt: null },
     orderBy: { createdAt: "desc" },
     include: {
       _count: {
@@ -21,13 +21,33 @@ export async function getCustomers(organizationId: string) {
 }
 
 /**
+ * Borttagna (mjukraderade) kunder för en tenant, nyast borttagna först.
+ * Används i "Borttagna kunder"-dialogen för att kunna återställa dem.
+ */
+export async function getRemovedCustomers(organizationId: string) {
+  return db.customer.findMany({
+    where: { organizationId, deletedAt: { not: null } },
+    orderBy: { deletedAt: "desc" },
+    select: {
+      id: true,
+      type: true,
+      name: true,
+      orgNumber: true,
+      phone: true,
+      email: true,
+      deletedAt: true,
+    },
+  });
+}
+
+/**
  * En enskild kund med kommentarer och kopplade fordon. Filtrerar på BÅDE id och
  * organizationId – så en användare inte kan öppna en annan tenants kund via
  * gissad URL.
  */
 export async function getCustomer(id: string, organizationId: string) {
   return db.customer.findFirst({
-    where: { id, organizationId },
+    where: { id, organizationId, deletedAt: null },
     include: {
       comments: { orderBy: { createdAt: "desc" } },
       // Primär kontaktperson (företagets kontaktperson) först, sedan äldst först.
@@ -51,7 +71,7 @@ export async function getCustomer(id: string, organizationId: string) {
 /** Enkel lista över tenantens kunder (id + namn) för kopplingsväljare. */
 export async function getCustomerOptions(organizationId: string) {
   return db.customer.findMany({
-    where: { organizationId },
+    where: { organizationId, deletedAt: null },
     orderBy: { name: "asc" },
     select: { id: true, name: true },
   });
@@ -59,6 +79,10 @@ export async function getCustomerOptions(organizationId: string) {
 
 export type CustomerWithCount = Awaited<
   ReturnType<typeof getCustomers>
+>[number];
+
+export type RemovedCustomer = Awaited<
+  ReturnType<typeof getRemovedCustomers>
 >[number];
 
 export type CustomerWithComments = NonNullable<

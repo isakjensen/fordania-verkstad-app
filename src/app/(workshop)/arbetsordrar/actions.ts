@@ -35,9 +35,9 @@ async function requireOrg(): Promise<{ organizationId: string } | { error: strin
   return { organizationId };
 }
 
-/** Säkerställer att en arbetsorder tillhör tenanten. */
+/** Säkerställer att en (ej borttagen) arbetsorder tillhör tenanten. */
 async function jobInOrg(jobId: string, organizationId: string) {
-  return db.job.findFirst({ where: { id: jobId, organizationId } });
+  return db.job.findFirst({ where: { id: jobId, organizationId, deletedAt: null } });
 }
 
 function str(value: FormDataEntryValue | null): string | null {
@@ -186,12 +186,17 @@ export async function updateWorkOrder(formData: FormData): Promise<ActionResult>
   return { success: true };
 }
 
+/**
+ * Mjukraderar en arbetsorder: sätter `deletedAt` så den döljs överallt
+ * (lista, kalender, översikt) men kan återställas. Delar/bilder/kopplingar rörs
+ * inte.
+ */
 export async function deleteWorkOrder(id: string): Promise<ActionResult> {
   const guard = await requireOrg();
   if ("error" in guard) return guard;
   const job = await jobInOrg(id, guard.organizationId);
   if (!job) return { error: "Arbetsordern hittades inte." };
-  await db.job.delete({ where: { id } });
+  await db.job.update({ where: { id }, data: { deletedAt: new Date() } });
 
   await recordAudit({
     action: "job.delete",
@@ -205,6 +210,64 @@ export async function deleteWorkOrder(id: string): Promise<ActionResult> {
   revalidatePath("/arbetsordrar");
   revalidatePath("/planering");
   return { success: true };
+}
+
+/** Återställer en mjukraderad arbetsorder så den blir aktiv igen. */
+export async function restoreWorkOrder(id: string): Promise<ActionResult> {
+  const guard = await requireOrg();
+  if ("error" in guard) return guard;
+  const job = await db.job.findFirst({
+    where: { id, organizationId: guard.organizationId, deletedAt: { not: null } },
+  });
+  if (!job) return { error: "Arbetsordern hittades inte bland de borttagna." };
+  await db.job.update({ where: { id }, data: { deletedAt: null } });
+
+  await recordAudit({
+    action: "job.restore",
+    category: "job",
+    summary: `Återställde arbetsordern ${job.type}`,
+    organizationId: guard.organizationId,
+    entityType: "job",
+    entityId: id,
+  });
+
+  revalidatePath("/arbetsordrar");
+  revalidatePath("/planering");
+  return { success: true };
+}
+
+/** Mjukraderar flera arbetsordrar på en gång (tenant-scopat). Returnerar antalet. */
+export async function deleteWorkOrders(
+  ids: string[],
+): Promise<{ success: true; count: number } | { error: string }> {
+  const guard = await requireOrg();
+  if ("error" in guard) return guard;
+
+  const clean = [...new Set(ids.filter(Boolean))];
+  if (clean.length === 0) return { error: "Inga arbetsordrar valda." };
+
+  const targets = await db.job.findMany({
+    where: { id: { in: clean }, organizationId: guard.organizationId, deletedAt: null },
+    select: { id: true, type: true },
+  });
+  if (targets.length === 0) return { error: "Arbetsordrarna hittades inte." };
+
+  const { count } = await db.job.updateMany({
+    where: { id: { in: targets.map((t) => t.id) }, organizationId: guard.organizationId },
+    data: { deletedAt: new Date() },
+  });
+
+  await recordAudit({
+    action: "job.delete",
+    category: "job",
+    summary: `Tog bort ${count} arbetsordrar`,
+    organizationId: guard.organizationId,
+    entityType: "job",
+  });
+
+  revalidatePath("/arbetsordrar");
+  revalidatePath("/planering");
+  return { success: true, count };
 }
 
 export async function linkMechanic(jobId: string, userId: string): Promise<ActionResult> {

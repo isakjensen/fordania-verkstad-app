@@ -20,7 +20,7 @@ export function Topbar({ switcher }: { switcher: SwitcherData }) {
     null;
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-line bg-surface/80 px-3 pt-safe backdrop-blur-md sm:gap-3 sm:px-4 md:px-6">
+    <header className="sticky top-0 z-40 flex h-16 items-center gap-2 border-b border-line bg-surface/80 px-3 pt-safe backdrop-blur-md sm:gap-3 sm:px-4 md:px-6">
       {/* Aktiv verkstad som kontext – endast mobil/stående (sidomenyn visar
           detta på lg+). */}
       {active ? (

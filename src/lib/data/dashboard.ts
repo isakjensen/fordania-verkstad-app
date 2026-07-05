@@ -58,6 +58,7 @@ export async function getDashboardData(organizationId: string) {
     db.job.findMany({
       where: {
         organizationId,
+        deletedAt: null,
         scheduledStart: { gte: todayStart, lt: todayEnd },
       },
       orderBy: { scheduledStart: "asc" },
@@ -70,19 +71,28 @@ export async function getDashboardData(organizationId: string) {
         },
       },
     }),
-    db.job.count({ where: { organizationId, status: "in_progress" } }),
+    db.job.count({ where: { organizationId, deletedAt: null, status: "in_progress" } }),
     db.job.count({
-      where: { organizationId, status: { in: ["waiting_parts", "delayed"] } },
+      where: {
+        organizationId,
+        deletedAt: null,
+        status: { in: ["waiting_parts", "delayed"] },
+      },
     }),
     db.job.count({
       where: {
         organizationId,
+        deletedAt: null,
         status: "done",
         scheduledStart: { gte: todayStart, lt: todayEnd },
       },
     }),
     db.job.count({
-      where: { organizationId, scheduledStart: { gte: todayStart, lt: todayEnd } },
+      where: {
+        organizationId,
+        deletedAt: null,
+        scheduledStart: { gte: todayStart, lt: todayEnd },
+      },
     }),
     db.vehicle.count({ where: { organizationId, deletedAt: null } }),
     db.vehicle.count({
@@ -91,7 +101,10 @@ export async function getDashboardData(organizationId: string) {
         deletedAt: null,
         jobVehicles: {
           some: {
-            job: { status: { in: ["in_progress", "waiting_parts", "delayed"] } },
+            job: {
+              deletedAt: null,
+              status: { in: ["in_progress", "waiting_parts", "delayed"] },
+            },
           },
         },
       },
@@ -101,7 +114,9 @@ export async function getDashboardData(organizationId: string) {
         organizationId,
         deletedAt: null,
         jobVehicles: {
-          some: { job: { status: { in: ["waiting_parts", "delayed"] } } },
+          some: {
+            job: { deletedAt: null, status: { in: ["waiting_parts", "delayed"] } },
+          },
         },
       },
     }),
@@ -112,7 +127,11 @@ export async function getDashboardData(organizationId: string) {
     }),
     // Order som kräver åtgärd: försenade och de som väntar på delar.
     db.job.findMany({
-      where: { organizationId, status: { in: ["delayed", "waiting_parts"] } },
+      where: {
+        organizationId,
+        deletedAt: null,
+        status: { in: ["delayed", "waiting_parts"] },
+      },
       orderBy: [{ status: "asc" }, { scheduledStart: "asc" }],
       take: 6,
       include: {

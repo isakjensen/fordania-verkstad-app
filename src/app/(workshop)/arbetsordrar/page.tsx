@@ -1,24 +1,26 @@
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { getActiveOrganizationId, getSession } from "@/lib/session";
-import { getWorkOrders } from "@/lib/data/work-orders";
+import { getWorkOrders, getRemovedWorkOrders } from "@/lib/data/work-orders";
 import { getMechanics } from "@/lib/data/schedule";
 import { getVehicleOptions } from "@/lib/data/vehicles";
 import { CreateWorkOrderButton } from "./create-work-order-button";
+import { RemovedWorkOrdersButton } from "./removed-work-orders-button";
 import { OrdersView } from "./orders-view";
 
 export const metadata: Metadata = { title: "Arbetsordrar" };
 
 export default async function ArbetsordrarPage() {
   const organizationId = await getActiveOrganizationId();
-  const [session, orders, mechanics, vehicles] = organizationId
+  const [session, orders, removedOrders, mechanics, vehicles] = organizationId
     ? await Promise.all([
         getSession(),
         getWorkOrders(organizationId),
+        getRemovedWorkOrders(organizationId),
         getMechanics(organizationId),
         getVehicleOptions(organizationId),
       ])
-    : [null, [], [], []];
+    : [null, [], [], [], []];
 
   const userId = session?.user.id ?? null;
 
@@ -38,6 +40,7 @@ export default async function ArbetsordrarPage() {
             createButton={
               <CreateWorkOrderButton mechanics={mechanics} vehicles={vehicles} />
             }
+            removedButton={<RemovedWorkOrdersButton removed={removedOrders} />}
           />
         </Card>
       )}

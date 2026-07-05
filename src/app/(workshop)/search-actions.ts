@@ -36,6 +36,7 @@ export async function globalSearch(query: string): Promise<SearchHit[]> {
     db.customer.findMany({
       where: {
         organizationId,
+        deletedAt: null,
         OR: [
           { name: contains },
           { email: contains },
@@ -50,6 +51,7 @@ export async function globalSearch(query: string): Promise<SearchHit[]> {
     db.job.findMany({
       where: {
         organizationId,
+        deletedAt: null,
         OR: [
           { type: contains },
           { description: contains },

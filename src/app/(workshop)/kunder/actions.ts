@@ -131,18 +131,24 @@ export async function updateCustomer(
   return { success: true };
 }
 
-/** Tar bort en kund (och dess kommentarer via cascade) inom tenanten. */
+/**
+ * Mjukraderar en kund: sätter `deletedAt` så den döljs överallt men kan
+ * återställas. Kommentarer, kontaktpersoner och fordonskopplingar rörs inte.
+ */
 export async function deleteCustomer(id: string): Promise<ActionResult> {
   await requireUser();
   const organizationId = await getActiveOrganizationId();
   if (!organizationId) return { error: NO_ORG };
 
   const existing = await db.customer.findFirst({
-    where: { id, organizationId },
+    where: { id, organizationId, deletedAt: null },
   });
   if (!existing) return { error: "Kunden hittades inte." };
 
-  await db.customer.delete({ where: { id } });
+  await db.customer.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
 
   await recordAudit({
     action: "customer.delete",
@@ -155,6 +161,75 @@ export async function deleteCustomer(id: string): Promise<ActionResult> {
 
   revalidatePath("/kunder");
   return { success: true };
+}
+
+/** Återställer en mjukraderad kund så den blir aktiv igen. */
+export async function restoreCustomer(id: string): Promise<ActionResult> {
+  await requireUser();
+  const organizationId = await getActiveOrganizationId();
+  if (!organizationId) return { error: NO_ORG };
+
+  const existing = await db.customer.findFirst({
+    where: { id, organizationId, deletedAt: { not: null } },
+  });
+  if (!existing) return { error: "Kunden hittades inte bland de borttagna." };
+
+  await db.customer.update({
+    where: { id },
+    data: { deletedAt: null },
+  });
+
+  await recordAudit({
+    action: "customer.restore",
+    category: "customer",
+    summary: `Återställde kunden ${existing.name}`,
+    organizationId,
+    entityType: "customer",
+    entityId: id,
+  });
+
+  revalidatePath("/kunder");
+  return { success: true };
+}
+
+/** Mjukraderar flera kunder på en gång (tenant-scopat). Returnerar antalet. */
+export async function deleteCustomers(
+  ids: string[],
+): Promise<{ success: true; count: number } | { error: string }> {
+  await requireUser();
+  const organizationId = await getActiveOrganizationId();
+  if (!organizationId) return { error: NO_ORG };
+
+  const clean = [...new Set(ids.filter(Boolean))];
+  if (clean.length === 0) return { error: "Inga kunder valda." };
+
+  // Scopa till tenanten och hämta namn för loggen innan borttagningen.
+  const targets = await db.customer.findMany({
+    where: { id: { in: clean }, organizationId, deletedAt: null },
+    select: { id: true, name: true },
+  });
+  if (targets.length === 0) return { error: "Kunderna hittades inte." };
+
+  const { count } = await db.customer.updateMany({
+    where: { id: { in: targets.map((t) => t.id) }, organizationId },
+    data: { deletedAt: new Date() },
+  });
+
+  const names = targets.map((t) => t.name);
+  const nameList =
+    names.length > 10
+      ? `${names.slice(0, 10).join(", ")} m.fl.`
+      : names.join(", ");
+  await recordAudit({
+    action: "customer.delete",
+    category: "customer",
+    summary: `Tog bort ${count} kunder (${nameList})`,
+    organizationId,
+    entityType: "customer",
+  });
+
+  revalidatePath("/kunder");
+  return { success: true, count };
 }
 
 /** Lägger till en kommentar på en kund inom tenanten. */

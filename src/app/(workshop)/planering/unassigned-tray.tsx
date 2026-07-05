@@ -48,10 +48,8 @@ export function UnassignedTray({
       <div
         ref={setNodeRef}
         className={cn(
-          "w-fit max-w-full min-w-[340px] rounded-2xl p-2 ring-1 transition-colors",
-          active
-            ? "bg-brand-50 ring-2 ring-brand-300"
-            : "bg-surface-muted/80 ring-line",
+          "w-fit max-w-full min-w-[340px] rounded-2xl p-2 transition-colors",
+          active ? "bg-brand-50 ring-2 ring-brand-300" : "",
         )}
       >
         {withStart.length === 0 ? (
@@ -103,21 +101,15 @@ function TrayCard({
       onClick={() => onOpen(job)}
       title={`${job.type} · ${statusLabels[job.status] ?? job.status}`}
       className={cn(
-        "relative flex h-[62px] w-[196px] shrink-0 min-w-0 flex-col justify-center gap-1 overflow-hidden rounded-lg py-2 pr-3 pl-4 text-left ring-1 ring-line transition duration-150",
+        "relative flex h-[62px] w-[196px] shrink-0 min-w-0 flex-col justify-center gap-1 overflow-hidden rounded-lg px-3 py-2 text-left ring-1 ring-line transition duration-150",
         cs.tint,
         justMoved && "animate-card-drop-in",
-        isDragging
-          ? "opacity-40"
-          : "shadow-chip hover:-translate-y-0.5 hover:shadow-lift hover:ring-line-strong",
+        isDragging ? "opacity-40" : "shadow-chip",
         canManage ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
       )}
       {...(canManage ? listeners : {})}
       {...(canManage ? attributes : {})}
     >
-      <span
-        className={cn("absolute inset-y-0 left-0 w-1", cs.bar)}
-        aria-hidden
-      />
       <span className="truncate text-[0.82rem] font-semibold leading-tight tracking-tight text-ink">
         {job.type}
       </span>

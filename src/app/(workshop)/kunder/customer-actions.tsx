@@ -57,8 +57,9 @@ export function CustomerActions({ customer }: { customer: CustomerData }) {
         setError(res.error);
         return;
       }
-      router.push("/kunder");
-      router.refresh();
+      // Navigera till listan med replace så back-knappen inte går till den
+      // borttagna kunden (detaljsidan skulle då ge 404).
+      router.replace("/kunder");
     });
   }
 
@@ -136,8 +137,9 @@ export function CustomerActions({ customer }: { customer: CustomerData }) {
           <DialogHeader>
             <DialogTitle>Ta bort kund?</DialogTitle>
             <DialogDescription>
-              {customer.name} och alla kommentarer tas bort permanent. Detta går
-              inte att ångra.
+              {customer.name} döljs från registret men raderas inte helt. Du kan
+              återställa kunden när som helst under &quot;Borttagna&quot; på
+              kundsidan.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

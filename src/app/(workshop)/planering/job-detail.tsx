@@ -16,6 +16,7 @@ import {
   CalendarClock,
   StickyNote,
   ArrowUpRight,
+  Pencil,
   X,
 } from "lucide-react";
 import { LicensePlate } from "@/components/ui/license-plate";
@@ -34,7 +35,28 @@ import { cn } from "@/lib/utils";
 import type { Mechanic, ScheduleJob } from "@/lib/data/schedule";
 import { orderTotals, formatOre } from "@/lib/pricing";
 import { statusMeta, statusLabels, priorityLabels } from "./calendar-meta";
-import { moveJob, setJobStatus, setJobNote } from "./actions";
+import {
+  moveJob,
+  setJobStatus,
+  setJobNote,
+  setJobType,
+  setJobPriority,
+  linkJobCustomer,
+  unlinkJobCustomer,
+} from "./actions";
+
+const TYPE_OPTIONS = [
+  "Service",
+  "Reparation",
+  "Besiktning",
+  "Däckbyte",
+  "Rekond",
+  "Felsökning",
+].map((t) => ({ value: t, label: t }));
+
+const PRIORITY_OPTIONS = Object.entries(priorityLabels).map(
+  ([value, label]) => ({ value, label }),
+);
 
 const dtf = new Intl.DateTimeFormat("sv-SE", {
   weekday: "short",
@@ -308,6 +330,183 @@ function NotePanel({
   );
 }
 
+/** Inline-väljare för typ – sparar direkt vid val (optimistiskt). */
+function TypePicker({
+  jobId,
+  type,
+  onType,
+}: {
+  jobId: string;
+  type: string;
+  onType: (t: string) => void;
+}) {
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+
+  function pick(next: string) {
+    if (next === type) return;
+    const prev = type;
+    onType(next); // optimistiskt
+    setPending(true);
+    setJobType(jobId, next)
+      .then((res) => {
+        if ("error" in res) onType(prev);
+        else router.refresh();
+      })
+      .finally(() => setPending(false));
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <FieldSelect
+        value={type}
+        onValueChange={pick}
+        options={TYPE_OPTIONS}
+        className="min-w-[9rem]"
+      />
+      {pending ? (
+        <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+      ) : null}
+    </div>
+  );
+}
+
+/** Inline-väljare för prioritet – sparar direkt vid val (optimistiskt). */
+function PriorityPicker({
+  jobId,
+  priority,
+  onPriority,
+}: {
+  jobId: string;
+  priority: string;
+  onPriority: (p: string) => void;
+}) {
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+
+  function pick(next: string) {
+    if (next === priority) return;
+    const prev = priority;
+    onPriority(next); // optimistiskt
+    setPending(true);
+    setJobPriority(jobId, next)
+      .then((res) => {
+        if ("error" in res) onPriority(prev);
+        else router.refresh();
+      })
+      .finally(() => setPending(false));
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <FieldSelect
+        value={priority}
+        onValueChange={pick}
+        options={PRIORITY_OPTIONS}
+        className="min-w-[7rem]"
+      />
+      {pending ? (
+        <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Inline-hantering av kunder på ordern. Kunder hör till fordonet i datamodellen,
+ * så koppling görs mot orderns fordon. Saknar ordern fordon visas en ledtext.
+ */
+function CustomerEditor({
+  jobId,
+  current,
+  options,
+  hasVehicle,
+}: {
+  jobId: string;
+  current: { id: string; name: string }[];
+  options: { id: string; name: string }[];
+  hasVehicle: boolean;
+}) {
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const [pending, startTransition] = useTransition();
+
+  const currentIds = new Set(current.map((c) => c.id));
+  const available = options.filter((o) => !currentIds.has(o.id));
+
+  function add(customerId: string) {
+    setError("");
+    startTransition(async () => {
+      const res = await linkJobCustomer(jobId, customerId);
+      if ("error" in res) {
+        setError(res.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
+  function remove(customerId: string) {
+    setError("");
+    startTransition(async () => {
+      const res = await unlinkJobCustomer(jobId, customerId);
+      if ("error" in res) {
+        setError(res.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
+  return (
+    <div className="space-y-2">
+      {current.length > 0 ? (
+        <ul className="flex flex-wrap gap-1.5">
+          {current.map((c) => (
+            <li
+              key={c.id}
+              className="inline-flex items-center gap-1 rounded-full bg-surface-muted py-0.5 pl-2.5 pr-1 text-sm font-medium text-ink"
+            >
+              {c.name}
+              <button
+                type="button"
+                onClick={() => remove(c.id)}
+                disabled={pending}
+                aria-label={`Ta bort ${c.name}`}
+                className="flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-line-strong hover:text-ink"
+              >
+                <X className="size-3.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-muted-foreground">Inga kunder kopplade</p>
+      )}
+
+      {!hasVehicle ? (
+        <p className="text-xs text-muted-foreground">
+          Koppla ett fordon på ordern för att kunna lägga till kunder.
+        </p>
+      ) : available.length > 0 ? (
+        <FieldSelect
+          value=""
+          onValueChange={add}
+          placeholder="Lägg till kund…"
+          disabled={pending}
+          options={available.map((o) => ({ value: o.id, label: o.name }))}
+        />
+      ) : null}
+
+      {error ? (
+        <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function QuickAction({
   icon: Icon,
   label,
@@ -361,13 +560,39 @@ function Row({
       <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-muted-foreground">
         <Icon className="size-4" />
       </span>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {label}
         </p>
         <div className="mt-0.5 text-sm font-medium text-ink">{children}</div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Ett radvärde som kan klickas för att öppna en redigeringspanel. Visar en
+ * diskret penn-ikon som antyder att det går att ändra. Ej redigerbart → ren text.
+ */
+function EditableValue({
+  editable,
+  onClick,
+  children,
+}: {
+  editable: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  if (!editable) return <>{children}</>;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group/edit flex w-full items-center justify-between gap-2 text-left transition-colors hover:text-brand-700"
+    >
+      <span className="min-w-0">{children}</span>
+      <Pencil className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover/edit:text-brand-600" />
+    </button>
   );
 }
 
@@ -382,28 +607,34 @@ export function JobDetail({
   open,
   onOpenChange,
   mechanics = [],
+  customers = [],
   canManage = false,
 }: {
   job: ScheduleJob | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mechanics?: Mechanic[];
+  customers?: { id: string; name: string }[];
   canManage?: boolean;
 }) {
-  // Lokal status/anteckning för omedelbar återkoppling i öppen panel.
+  // Lokal status/typ/prioritet/anteckning för omedelbar återkoppling.
   const [status, setStatus] = useState(job?.status ?? "planned");
+  const [type, setType] = useState(job?.type ?? "");
+  const [priority, setPriority] = useState(job?.priority ?? "normal");
   const [note, setNote] = useState(job?.description ?? "");
   const [panel, setPanel] = useState<Panel>("none");
 
   useEffect(() => {
     setStatus(job?.status ?? "planned");
+    setType(job?.type ?? "");
+    setPriority(job?.priority ?? "normal");
     setNote(job?.description ?? "");
     setPanel("none");
   }, [job]);
 
   const vehicles = job?.vehicles.map((jv) => jv.vehicle) ?? [];
   const jobMechanics = job?.mechanics.map((jm) => jm.user) ?? [];
-  const customers = job
+  const linkedCustomers = job
     ? [
         ...new Map(
           job.vehicles
@@ -414,6 +645,7 @@ export function JobDetail({
     : [];
   const totals = job ? orderTotals(job.parts) : null;
   const primary = vehicles[0];
+  const hasVehicle = vehicles.length > 0;
   const canReschedule = canManage && !!job?.scheduledStart && !!job?.scheduledEnd;
   const meta = statusMeta[status];
 
@@ -508,26 +740,48 @@ export function JobDetail({
               {/* Detaljer */}
               <div className="divide-y divide-line border-t border-line">
                 <Row icon={Clock} label="Tid">
-                  {job.scheduledStart && job.scheduledEnd ? (
-                    <>
-                      {dtf.format(new Date(job.scheduledStart))} ·{" "}
-                      {tf.format(new Date(job.scheduledStart))}–
-                      {tf.format(new Date(job.scheduledEnd))}
-                    </>
-                  ) : (
-                    "Ej tidsatt"
-                  )}
+                  <EditableValue
+                    editable={canReschedule}
+                    onClick={() => setPanel("reschedule")}
+                  >
+                    {job.scheduledStart && job.scheduledEnd ? (
+                      <>
+                        {dtf.format(new Date(job.scheduledStart))} ·{" "}
+                        {tf.format(new Date(job.scheduledStart))}–
+                        {tf.format(new Date(job.scheduledEnd))}
+                      </>
+                    ) : (
+                      "Ej tidsatt"
+                    )}
+                  </EditableValue>
                 </Row>
                 <Row icon={UserIcon} label="Mekaniker">
-                  {jobMechanics.length > 0
-                    ? jobMechanics.map((m) => m.name).join(", ")
-                    : "Ej tilldelad"}
+                  <EditableValue
+                    editable={canReschedule}
+                    onClick={() => setPanel("reschedule")}
+                  >
+                    {jobMechanics.length > 0
+                      ? jobMechanics.map((m) => m.name).join(", ")
+                      : "Ej tilldelad"}
+                  </EditableValue>
                 </Row>
                 <Row icon={Wrench} label="Typ">
-                  {job.type}
+                  {canManage ? (
+                    <TypePicker jobId={job.id} type={type} onType={setType} />
+                  ) : (
+                    type
+                  )}
                 </Row>
                 <Row icon={Flag} label="Prioritet">
-                  {priorityLabels[job.priority] ?? job.priority}
+                  {canManage ? (
+                    <PriorityPicker
+                      jobId={job.id}
+                      priority={priority}
+                      onPriority={setPriority}
+                    />
+                  ) : (
+                    priorityLabels[priority] ?? priority
+                  )}
                 </Row>
                 <Row icon={Car} label="Fordon">
                   {vehicles.length > 0 ? (
@@ -545,11 +799,20 @@ export function JobDetail({
                     "—"
                   )}
                 </Row>
-                {customers.length > 0 ? (
-                  <Row icon={Users} label="Kunder">
-                    {customers.map((c) => c.name).join(", ")}
-                  </Row>
-                ) : null}
+                <Row icon={Users} label="Kunder">
+                  {canManage ? (
+                    <CustomerEditor
+                      jobId={job.id}
+                      current={linkedCustomers}
+                      options={customers}
+                      hasVehicle={hasVehicle}
+                    />
+                  ) : linkedCustomers.length > 0 ? (
+                    linkedCustomers.map((c) => c.name).join(", ")
+                  ) : (
+                    "—"
+                  )}
+                </Row>
                 {totals && job.parts.length > 0 ? (
                   <Row icon={Receipt} label="Delar / inköp">
                     <span className="text-ink-soft">
@@ -562,11 +825,22 @@ export function JobDetail({
                     </span>
                   </Row>
                 ) : null}
-                {note ? (
+                {canManage || note ? (
                   <Row icon={StickyNote} label="Anteckning">
-                    <span className="font-normal whitespace-pre-wrap text-ink-soft">
-                      {note}
-                    </span>
+                    <EditableValue
+                      editable={canManage}
+                      onClick={() => setPanel("note")}
+                    >
+                      {note ? (
+                        <span className="font-normal whitespace-pre-wrap text-ink-soft">
+                          {note}
+                        </span>
+                      ) : (
+                        <span className="font-normal text-muted-foreground">
+                          Lägg till anteckning…
+                        </span>
+                      )}
+                    </EditableValue>
                   </Row>
                 ) : null}
               </div>
