@@ -9,6 +9,7 @@ import { JobDetail } from "./job-detail";
 import { type MoveArgs } from "./time-grid";
 import { DayBoard } from "./day-board";
 import { WeekBoard } from "./week-board";
+import { MobileAgenda } from "./mobile-agenda";
 import { moveJob } from "./actions";
 import { CreateWorkOrderButton } from "../arbetsordrar/create-work-order-button";
 import {
@@ -24,6 +25,7 @@ export function ScheduleCalendar({
   view,
   anchorISO,
   fromISO,
+  toISO,
   mechanics,
   jobs,
   vehicles,
@@ -129,8 +131,9 @@ export function ScheduleCalendar({
 
   return (
     <div className="flex h-full flex-col px-4 py-4 sm:px-6 lg:px-8 lg:py-5">
-      {/* Verktygsrad */}
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-line pb-3">
+      {/* Verktygsrad – desktop/iPad-liggande (rutnätet). På mobil/iPad-stående
+          har agendan sin egen kompakta rubrik + veckoremsa i stället. */}
+      <header className="hidden shrink-0 flex-wrap items-center justify-between gap-2 border-b border-line pb-3 lg:flex">
         {/* Vy-växel – dag/vecka på alla skärmar */}
         <div className="inline-flex rounded-xl border border-line bg-surface-muted p-0.5">
           {(["day", "week"] as View[]).map((v) => (
@@ -185,8 +188,8 @@ export function ScheduleCalendar({
         </div>
       </header>
 
-      {/* Kropp */}
-      <div className="mt-4 flex min-h-0 flex-1 flex-col">
+      {/* Kropp – desktop/iPad-liggande: dra-och-släpp-rutnätet */}
+      <div className="mt-4 hidden min-h-0 flex-1 flex-col lg:flex">
         {!hasOrg ? (
           <EmptyState text="Välj en verkstad för att se dess arbetskalender." />
         ) : mechanics.length === 0 ? (
@@ -210,6 +213,26 @@ export function ScheduleCalendar({
             movedId={movedId}
             onOpen={openJob}
             onMove={handleMove}
+          />
+        )}
+      </div>
+
+      {/* Kropp – mobil/iPad-stående: touch-först dag-agenda med veckoremsa */}
+      <div className="flex min-h-0 flex-1 flex-col lg:hidden">
+        {!hasOrg ? (
+          <EmptyState text="Välj en verkstad för att se dess arbetskalender." />
+        ) : (
+          <MobileAgenda
+            key={anchorISO}
+            fromISO={fromISO}
+            toISO={toISO}
+            anchorISO={anchorISO}
+            mechanics={mechanics}
+            jobs={localJobs}
+            onOpen={openJob}
+            createButton={
+              <CreateWorkOrderButton mechanics={mechanics} vehicles={vehicles} />
+            }
           />
         )}
       </div>
