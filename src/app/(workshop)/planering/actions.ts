@@ -23,6 +23,7 @@ export async function moveJob(
   data: {
     fromUserId?: string;
     toUserId?: string;
+    unassign?: boolean;
     scheduledStart?: string;
     scheduledEnd?: string;
   },
@@ -39,8 +40,15 @@ export async function moveJob(
   const job = await db.job.findFirst({ where: { id: jobId, organizationId } });
   if (!job) return { error: "Arbetsordern hittades inte." };
 
+  // Avtilldela: ta bara bort källmekanikern från jobbet (ordern blir
+  // otilldelad och hamnar i "Ej tilldelade"-raden).
+  if (data.unassign && data.fromUserId) {
+    await db.jobMechanic.deleteMany({
+      where: { jobId, userId: data.fromUserId },
+    });
+  }
   // Byt mekaniker: ta bort källan, lägg till målet (måste vara medlem).
-  if (data.toUserId && data.toUserId !== data.fromUserId) {
+  else if (data.toUserId && data.toUserId !== data.fromUserId) {
     const member = await db.member.findFirst({
       where: { organizationId, userId: data.toUserId },
     });

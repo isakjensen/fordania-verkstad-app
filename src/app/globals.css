@@ -54,12 +54,17 @@
   --shadow-soft: 0 1px 1px rgb(15 23 41 / 0.04);
   --shadow-card: 0 1px 2px rgb(15 23 41 / 0.04);
   --shadow-lift: 0 12px 32px -12px rgb(15 23 41 / 0.16);
+  /* Kalenderns orderkort – mjukt djup så korten "sitter" på rutnätet */
+  --shadow-chip: 0 1px 2px rgb(15 23 41 / 0.06), 0 2px 6px -2px rgb(15 23 41 / 0.09);
 
   /* Rörelse */
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Animationer */
   --animate-fade-up: fade-up 0.5s var(--ease-out-soft) both;
+  /* Kalenderkort som just släppts på en ny plats glider in i stället för att
+   * hoppa till (används vid drag-och-släpp av arbetsordrar). */
+  --animate-card-drop-in: card-drop-in 0.3s var(--ease-out-soft) both;
 
   @keyframes fade-up {
     from {
@@ -69,6 +74,17 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes card-drop-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
     }
   }
 }
@@ -82,6 +98,9 @@
   html {
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
+    /* Höjd som offline-baren (PwaManager) reserverar högst upp. 0 online;
+     * sätts till barens faktiska höjd när enheten är offline. */
+    --fv-topgap: 0px;
     @apply font-sans;
   }
 

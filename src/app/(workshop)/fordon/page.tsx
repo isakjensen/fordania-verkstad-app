@@ -6,28 +6,35 @@ import {
   getTenantRole,
   canManageUsers,
 } from "@/lib/session";
-import { getVehicles, getFieldDefinitions } from "@/lib/data/vehicles";
+import {
+  getVehicles,
+  getRemovedVehicles,
+  getFieldDefinitions,
+} from "@/lib/data/vehicles";
 import { CreateVehicleButton } from "./create-vehicle-button";
 import { SyncFordaniaButton } from "./sync-fordania-button";
+import { RemovedVehiclesButton } from "./removed-vehicles-button";
 import { VehiclesView } from "./vehicles-view";
 
 export const metadata: Metadata = { title: "Fordon" };
 
 export default async function VehiclesPage() {
   const organizationId = await getActiveOrganizationId();
-  const [vehicles, fieldDefinitions, role] = organizationId
+  const [vehicles, removedVehicles, fieldDefinitions, role] = organizationId
     ? await Promise.all([
         getVehicles(organizationId),
+        getRemovedVehicles(organizationId),
         getFieldDefinitions(organizationId),
         getTenantRole(organizationId),
       ])
-    : [[], [], null];
+    : [[], [], [], null];
 
   const isAdmin = canManageUsers(role);
 
   const action = organizationId ? (
     <div className="flex items-center gap-2">
       {isAdmin ? <SyncFordaniaButton /> : null}
+      <RemovedVehiclesButton removed={removedVehicles} />
       <CreateVehicleButton fieldDefinitions={fieldDefinitions} />
     </div>
   ) : null;

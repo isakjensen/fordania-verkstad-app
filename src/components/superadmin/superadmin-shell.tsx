@@ -106,15 +106,15 @@ function Sidebar() {
 
 export function SuperAdminShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-svh bg-canvas">
+    <div className="flex min-h-[calc(100svh-var(--fv-topgap,0px))] bg-canvas mt-[var(--fv-topgap,0px)] transition-[margin-top] duration-300 ease-out">
       {/* Sidomeny – endast desktop (mus). På touch används flikfältet. */}
-      <aside className="sticky top-0 hidden h-svh w-60 shrink-0 border-r border-line pointer-fine:lg:block">
+      <aside className="sticky top-[var(--fv-topgap,0px)] hidden h-[calc(100svh-var(--fv-topgap,0px))] w-60 shrink-0 border-r border-line pointer-fine:lg:block">
         <Sidebar />
       </aside>
 
       {/* Innehållskolumn */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-line bg-surface/80 px-4 pt-safe backdrop-blur-md md:px-6">
+        <header className="sticky top-[var(--fv-topgap,0px)] z-30 flex h-16 items-center gap-3 border-b border-line bg-surface/80 px-4 pt-safe backdrop-blur-md md:px-6">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-navy px-2.5 py-1 text-xs font-semibold text-white">
             <ShieldCheck className="size-3.5 text-brand-300" />
             Plattform

@@ -75,6 +75,7 @@ export default async function VehicleDetailPage({
             chassisNumber: vehicle.chassisNumber,
             brand: vehicle.brand,
             model: vehicle.model,
+            year: vehicle.year,
           }}
           fields={fields}
         />
@@ -99,6 +100,10 @@ export default async function VehicleDetailPage({
                 <Row key={f.id} label={f.label} value={f.value || "—"} />
               ))
             )}
+            <Row
+              label="Årtal"
+              value={vehicle.year ? String(vehicle.year) : "—"}
+            />
           </CardBody>
         </Card>
 

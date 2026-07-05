@@ -80,7 +80,7 @@ export function FieldSelect({
           alignItemWithTrigger={false}
           className="z-50"
         >
-          <Select.Popup className="max-h-[min(20rem,var(--available-height))] w-[var(--anchor-width)] min-w-[8rem] origin-[var(--transform-origin)] overflow-y-auto rounded-xl border border-line bg-surface p-1 shadow-lg ring-1 ring-black/[0.04] transition-[transform,opacity] duration-150 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
+          <Select.Popup className="max-h-[min(20rem,var(--available-height))] w-[var(--anchor-width)] min-w-[8rem] overflow-y-auto rounded-xl border border-line bg-surface p-1 shadow-lg ring-1 ring-black/[0.04] transition-opacity duration-100 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0">
             {options.map((o) => (
               <Select.Item
                 key={o.value}

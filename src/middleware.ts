@@ -18,8 +18,9 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Skydda allt utom inloggning, auth-API, Next-interna filer och statiska assets
+  // Skydda allt utom inloggning, offline-fallback, PWA-filer (manifest +
+  // service worker), auth-API, Next-interna filer och statiska assets.
   matcher: [
-    "/((?!login|api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!login|offline|manifest.webmanifest|sw.js|api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getActiveOrganizationId, getTenantRole, canManageUsers } from "@/lib/session";
 import { getMechanics, getScheduleJobs } from "@/lib/data/schedule";
+import { getVehicleOptions } from "@/lib/data/vehicles";
 import { ScheduleCalendar } from "./schedule-calendar";
 
 export const metadata: Metadata = { title: "Arbetskalender" };
@@ -44,12 +45,13 @@ export default async function PlaneringPage({
   const organizationId = await getActiveOrganizationId();
   const role = organizationId ? await getTenantRole(organizationId) : null;
 
-  const [mechanics, jobs] = organizationId
+  const [mechanics, jobs, vehicles] = organizationId
     ? await Promise.all([
         getMechanics(organizationId),
         getScheduleJobs(organizationId, from, to),
+        getVehicleOptions(organizationId),
       ])
-    : [[], []];
+    : [[], [], []];
 
   return (
     <ScheduleCalendar
@@ -59,6 +61,7 @@ export default async function PlaneringPage({
       toISO={to.toISOString()}
       mechanics={mechanics}
       jobs={jobs}
+      vehicles={vehicles}
       canManage={canManageUsers(role)}
       hasOrg={!!organizationId}
     />

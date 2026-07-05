@@ -18,7 +18,8 @@ import { Avatar } from "@/components/ui/avatar";
 import { Car, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Mechanic, ScheduleJob } from "@/lib/data/schedule";
-import { statusMeta, statusLabels } from "./calendar-meta";
+import { statusLabels } from "./calendar-meta";
+import { cardStyleFor } from "./card-style";
 import type { MoveArgs } from "./time-grid";
 import {
   type PlacedH,
@@ -39,15 +40,16 @@ import {
   groupByMechVehicle,
   UNASSIGNED_KEY,
 } from "./calendar-utils";
+import { MovedProvider, useJustMoved } from "./moved-context";
 
 const LABEL_W = 208;
 const TRACK_MIN = 1152; // px – 24 timmar; under detta scrollar tidslinjen i sidled
-const BLOCK_H = 50;
-const GAP = 6;
-const ROW_PAD = 8;
+const BLOCK_H = 44;
+const GAP = 5;
+const ROW_PAD = 6;
 
 function rowHeight(sublanes: number) {
-  return Math.max(64, sublanes * (BLOCK_H + GAP) - GAP + ROW_PAD * 2);
+  return Math.max(52, sublanes * (BLOCK_H + GAP) - GAP + ROW_PAD * 2);
 }
 const pct = (hours: number) => `${(hours / WORK_HOURS) * 100}%`;
 
@@ -75,6 +77,7 @@ export function DayBoard({
   mechanics,
   jobs,
   canManage,
+  movedId,
   onOpen,
   onMove,
 }: {
@@ -82,6 +85,7 @@ export function DayBoard({
   mechanics: Mechanic[];
   jobs: ScheduleJob[];
   canManage: boolean;
+  movedId?: string | null;
   onOpen: (job: ScheduleJob) => void;
   onMove: (args: MoveArgs) => void;
 }) {
@@ -191,8 +195,10 @@ export function DayBoard({
   }
 
   const activeJob = activeId ? jobById.get(activeId.split("|")[0]) : null;
+  const activeCs = activeJob ? cardStyleFor(activeJob.status) : null;
 
   return (
+    <MovedProvider value={movedId ?? null}>
     <DndContext
       id="day-board"
       sensors={sensors}
@@ -226,122 +232,113 @@ export function DayBoard({
             </div>
           </div>
 
-          {/* Grupper: mekaniker → fordonsrader */}
+          {/* Grupper: mekaniker → fordonsrader. Mekaniker utan ordrar får ingen
+              rad – man släpper istället en order direkt på namnbandet. */}
           {groups.map((g) => (
             <div key={g.group.key}>
-              <GroupBand group={g.group} dateLabel={dateLabel} />
-              {g.rows.length === 0 ? (
-                <EmptyRow mechId={g.mechId} canManage={canManage} />
-              ) : (
-                g.rows.map((r) => (
-                  <VehicleRow
-                    key={r.row.key}
-                    laid={r}
-                    mechId={g.mechId}
-                    canManage={canManage}
-                    nowOffset={nowOffset}
-                    onOpen={onOpen}
-                  />
-                ))
-              )}
+              <GroupBand
+                group={g.group}
+                mechId={g.mechId}
+                dateLabel={dateLabel}
+                canManage={canManage}
+              />
+              {g.rows.map((r) => (
+                <VehicleRow
+                  key={r.row.key}
+                  laid={r}
+                  mechId={g.mechId}
+                  canManage={canManage}
+                  nowOffset={nowOffset}
+                  onOpen={onOpen}
+                />
+              ))}
             </div>
           ))}
         </div>
       </div>
 
-      <DragOverlay>
-        {activeJob ? (
+      <DragOverlay dropAnimation={null}>
+        {activeJob && activeCs ? (
           <div
-            className="flex items-stretch overflow-hidden rounded-lg bg-surface shadow-lift ring-2 ring-brand-400/50"
-            style={{ width: 170, height: BLOCK_H, rotate: "1deg" }}
+            className={cn(
+              "relative flex flex-col justify-center gap-0.5 overflow-hidden rounded-lg pr-2.5 pl-3.5 shadow-lift ring-1 ring-line-strong",
+              activeCs.tint,
+            )}
+            style={{ width: 178, height: BLOCK_H, rotate: "2.5deg" }}
           >
             <span
-              className={cn(
-                "w-1.5 shrink-0",
-                statusMeta[activeJob.status]?.accent ?? "bg-slate-400",
-              )}
+              className={cn("absolute inset-y-0 left-0 w-1", activeCs.bar)}
+              aria-hidden
             />
-            <span className="flex min-w-0 flex-col justify-center px-2.5 py-1">
-              <span className="truncate text-xs font-bold text-ink">
-                {activeJob.type}
-              </span>
+            <span className="truncate text-[0.82rem] font-semibold leading-tight tracking-tight text-ink">
+              {activeJob.type}
             </span>
+            {activeJob.scheduledStart ? (
+              <span className="truncate text-[0.66rem] font-medium leading-none text-muted-foreground tabular-nums">
+                {hm(new Date(activeJob.scheduledStart))}
+                {activeJob.scheduledEnd
+                  ? `–${hm(new Date(activeJob.scheduledEnd))}`
+                  : ""}
+              </span>
+            ) : null}
           </div>
         ) : null}
       </DragOverlay>
     </DndContext>
+    </MovedProvider>
   );
 }
 
-/** Grupprubrik – mekanikern (eller "Ej tilldelade") med dagens datum på samma rad. */
+/**
+ * Grupprubrik – mekanikern (eller "Ej tilldelade") med dagens datum. Hela
+ * bandet är en droppzon: släpp en order på mekanikerns namn för att tilldela
+ * den (tiden behålls). Ej tilldelade är inget mål.
+ */
 const GroupBand = memo(function GroupBand({
   group,
+  mechId,
   dateLabel,
+  canManage,
 }: {
   group: CalGroup;
+  mechId: string;
   dateLabel: string;
+  canManage: boolean;
 }) {
   const unassigned = group.key === UNASSIGNED_KEY;
-  const vehicleCount = group.rows.filter((r) => r.vehicle).length;
+  const { setNodeRef, isOver } = useDroppable({
+    id: `row:${mechId}::band`,
+    disabled: unassigned,
+  });
+  const active = isOver && canManage && !unassigned;
   return (
-    <div className="flex items-center justify-between border-b border-line bg-surface-muted/60">
-      <div className="sticky left-0 z-20 flex items-center gap-2.5 bg-surface-muted/60 px-4 py-2">
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "flex items-center justify-between border-b border-line",
+        active ? "bg-brand-50/70" : "bg-surface-muted/60",
+      )}
+    >
+      <div
+        className={cn(
+          "sticky left-0 z-20 flex items-center gap-2.5 px-4 py-1.5",
+          active ? "bg-brand-50" : "bg-surface-muted/60",
+        )}
+      >
         {unassigned ? (
-          <span className="flex size-8 items-center justify-center rounded-full bg-warning-soft text-warning">
-            <Layers className="size-4" />
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-warning-soft text-warning">
+            <Layers className="size-3.5" />
           </span>
         ) : (
-          <Avatar initials={group.mech!.initials} size="size-8 text-[0.7rem]" />
+          <Avatar initials={group.mech!.initials} size="size-7 text-[0.65rem]" />
         )}
-        <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-ink">
-            {unassigned ? "Ej tilldelade" : group.mech!.name}
-          </p>
-          <p className="text-[0.7rem] text-muted-foreground">
-            {vehicleCount > 0
-              ? `${vehicleCount} fordon · ${group.orderCount} ${group.orderCount === 1 ? "order" : "ordrar"}`
-              : "Inga fordon"}
-          </p>
-        </div>
+        <p className="truncate text-[0.82rem] font-bold text-ink">
+          {unassigned ? "Ej tilldelade" : group.mech!.name}
+        </p>
       </div>
       <span className="shrink-0 px-4 text-xs font-semibold capitalize tabular-nums text-muted-foreground">
         {dateLabel}
       </span>
-    </div>
-  );
-});
-
-/** Tom mekaniker utan fordon – ändå en droppzon så man kan dra hit ordrar. */
-const EmptyRow = memo(function EmptyRow({
-  mechId,
-  canManage,
-}: {
-  mechId: string;
-  canManage: boolean;
-}) {
-  const { setNodeRef, isOver } = useDroppable({ id: `row:${mechId}::empty` });
-  return (
-    <div
-      className={cn(
-        "flex border-b border-line last:border-b-0",
-        isOver && canManage && "bg-brand-50/50",
-      )}
-      style={{ height: 56 }}
-    >
-      <div
-        className="sticky left-0 z-10 flex shrink-0 items-center gap-2 border-r border-line bg-surface px-4 text-xs italic text-muted-foreground/60"
-        style={{ width: LABEL_W }}
-      >
-        <Car className="size-4" />
-        Inga fordon
-      </div>
-      <div
-        ref={setNodeRef}
-        className="flex items-center px-3 text-xs italic text-muted-foreground/50"
-        style={{ width: `calc(100% - ${LABEL_W}px)`, minWidth: TRACK_MIN }}
-      >
-        Dra hit en order för att tilldela
-      </div>
     </div>
   );
 });
@@ -365,7 +362,7 @@ const VehicleRow = memo(function VehicleRow({
   });
   const hours = Array.from({ length: WORK_HOURS }, (_, i) => i);
   const vehicle = row.vehicle;
-  const subtitle = vehicle
+  const vehicleName = vehicle
     ? [vehicle.brand, vehicle.model].filter(Boolean).join(" ")
     : "Utan fordon";
 
@@ -380,25 +377,29 @@ const VehicleRow = memo(function VehicleRow({
       {/* Fordons-etikett (sticky vänster) */}
       <div
         className={cn(
-          "sticky left-0 z-20 flex shrink-0 items-center gap-2.5 border-r border-line px-4",
+          "sticky left-0 z-20 flex shrink-0 items-center gap-2 border-r border-line px-4",
           isOver && canManage ? "bg-brand-50" : "bg-surface",
         )}
         style={{ width: LABEL_W }}
       >
         {vehicle ? (
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold uppercase tracking-wide text-ink">
+            <p className="truncate text-sm font-extrabold uppercase leading-tight tracking-wide text-ink">
               {vehicle.regNo}
             </p>
-            <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+            {vehicleName ? (
+              <p className="truncate text-[0.7rem] font-medium leading-tight text-ink-soft">
+                {vehicleName}
+              </p>
+            ) : null}
           </div>
         ) : (
-          <div className="flex min-w-0 flex-1 items-center gap-2.5">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-muted-foreground">
-              <Car className="size-4" />
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-surface-muted text-muted-foreground">
+              <Car className="size-3.5" />
             </span>
-            <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-              {subtitle}
+            <p className="min-w-0 flex-1 truncate text-[0.7rem] text-muted-foreground">
+              {vehicleName}
             </p>
           </div>
         )}
@@ -457,7 +458,8 @@ const JobBlock = memo(function JobBlock({
     id: `${job.id}|${mechId}`,
     disabled: !canManage,
   });
-  const meta = statusMeta[job.status];
+  const justMoved = useJustMoved(job.id);
+  const cs = cardStyleFor(job.status);
   const start = job.scheduledStart ? new Date(job.scheduledStart) : null;
   const end = job.scheduledEnd ? new Date(job.scheduledEnd) : null;
   const top = ROW_PAD + sublane * (BLOCK_H + GAP);
@@ -469,11 +471,12 @@ const JobBlock = memo(function JobBlock({
       onClick={() => onOpen(job)}
       title={`${job.type} · ${statusLabels[job.status] ?? job.status}`}
       className={cn(
-        "absolute z-20 flex items-stretch overflow-hidden rounded-xl text-left ring-1 ring-line",
-        meta?.tint ?? "bg-surface",
+        "absolute z-20 flex flex-col justify-center gap-0.5 overflow-hidden rounded-lg py-1 pl-3.5 pr-2.5 text-left ring-1 ring-line transition duration-150",
+        cs.tint,
+        justMoved && "animate-card-drop-in",
         isDragging
-          ? "opacity-30"
-          : "shadow-soft transition-shadow hover:z-30 hover:shadow-lift hover:ring-brand-200",
+          ? "opacity-40"
+          : "shadow-chip hover:z-30 hover:-translate-y-0.5 hover:shadow-lift hover:ring-line-strong",
         canManage ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
       )}
       style={{
@@ -486,18 +489,19 @@ const JobBlock = memo(function JobBlock({
       {...(canManage ? listeners : {})}
       {...(canManage ? attributes : {})}
     >
-      <span className={cn("w-1.5 shrink-0", meta?.accent ?? "bg-slate-400")} aria-hidden />
-      <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-2.5">
-        <span className="truncate text-[0.82rem] font-bold leading-tight text-ink">
-          {job.type}
-        </span>
-        {start ? (
-          <span className="truncate text-[0.68rem] font-medium leading-tight text-muted-foreground tabular-nums">
-            {hm(start)}
-            {end ? `–${hm(end)}` : ""}
-          </span>
-        ) : null}
+      <span
+        className={cn("absolute inset-y-0 left-0 w-1", cs.bar)}
+        aria-hidden
+      />
+      <span className="truncate text-[0.82rem] font-semibold leading-tight tracking-tight text-ink">
+        {job.type}
       </span>
+      {start ? (
+        <span className="truncate text-[0.66rem] font-medium leading-tight text-muted-foreground tabular-nums">
+          {hm(start)}
+          {end ? `–${hm(end)}` : ""}
+        </span>
+      ) : null}
     </button>
   );
 });

@@ -32,6 +32,20 @@ function str(value: FormDataEntryValue | null): string | null {
   return s.length ? s : null;
 }
 
+/** Tolkar ett årtal (4 siffror); ogiltigt/tomt → null. */
+function parseYear(raw: string | null): number | null {
+  const s = String(raw ?? "").trim();
+  const m = s.match(/\d{4}/);
+  if (!m) return null;
+  const n = Number.parseInt(m[0], 10);
+  return n >= 1900 && n <= 2100 ? n : null;
+}
+
+/** Årtal ur ett formulärfält. */
+function year(value: FormDataEntryValue | null): number | null {
+  return parseYear(value === null ? null : String(value));
+}
+
 /** Läser de dynamiska fältvärdena ur formuläret (ett per definition). */
 async function readFieldValues(organizationId: string, formData: FormData) {
   const definitions = await db.vehicleFieldDefinition.findMany({
@@ -64,6 +78,7 @@ export async function createVehicle(formData: FormData): Promise<ActionResult> {
       regNo,
       brand: str(formData.get("brand")),
       model: str(formData.get("model")),
+      year: year(formData.get("year")),
       chassisNumber: str(formData.get("chassisNumber")),
       fieldValues: { create: fieldValues },
       ...(odoValue !== null && Number.isFinite(odoValue)
@@ -107,6 +122,7 @@ export async function updateVehicle(formData: FormData): Promise<ActionResult> {
       regNo,
       brand: str(formData.get("brand")),
       model: str(formData.get("model")),
+      year: year(formData.get("year")),
       chassisNumber: str(formData.get("chassisNumber")),
     },
   });
@@ -150,18 +166,24 @@ export async function updateVehicle(formData: FormData): Promise<ActionResult> {
   return { success: true };
 }
 
-/** Tar bort ett fordon (och dess fältvärden + mätarställningar via cascade). */
+/**
+ * Mjukraderar ett fordon: sätter `deletedAt` så det döljs överallt men kan
+ * återställas. Historik (arbetsordrar, mätarställningar) rörs inte.
+ */
 export async function deleteVehicle(id: string): Promise<ActionResult> {
   await requireUser();
   const organizationId = await getActiveOrganizationId();
   if (!organizationId) return { error: NO_ORG };
 
   const existing = await db.vehicle.findFirst({
-    where: { id, organizationId },
+    where: { id, organizationId, deletedAt: null },
   });
   if (!existing) return { error: "Fordonet hittades inte." };
 
-  await db.vehicle.delete({ where: { id } });
+  await db.vehicle.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
 
   await recordAudit({
     action: "vehicle.delete",
@@ -176,7 +198,36 @@ export async function deleteVehicle(id: string): Promise<ActionResult> {
   return { success: true };
 }
 
-/** Tar bort flera fordon på en gång (tenant-scopat). Returnerar antalet. */
+/** Återställer ett mjukraderat fordon så det blir aktivt igen. */
+export async function restoreVehicle(id: string): Promise<ActionResult> {
+  await requireUser();
+  const organizationId = await getActiveOrganizationId();
+  if (!organizationId) return { error: NO_ORG };
+
+  const existing = await db.vehicle.findFirst({
+    where: { id, organizationId, deletedAt: { not: null } },
+  });
+  if (!existing) return { error: "Fordonet hittades inte bland de borttagna." };
+
+  await db.vehicle.update({
+    where: { id },
+    data: { deletedAt: null },
+  });
+
+  await recordAudit({
+    action: "vehicle.restore",
+    category: "vehicle",
+    summary: `Återställde fordonet ${existing.regNo}`,
+    organizationId,
+    entityType: "vehicle",
+    entityId: id,
+  });
+
+  revalidatePath("/fordon");
+  return { success: true };
+}
+
+/** Mjukraderar flera fordon på en gång (tenant-scopat). Returnerar antalet. */
 export async function deleteVehicles(
   ids: string[],
 ): Promise<{ success: true; count: number } | { error: string }> {
@@ -187,15 +238,16 @@ export async function deleteVehicles(
   const clean = [...new Set(ids.filter(Boolean))];
   if (clean.length === 0) return { error: "Inga fordon valda." };
 
-  // Scopa till tenanten och hämta reg.nr för loggen innan raderingen.
+  // Scopa till tenanten och hämta reg.nr för loggen innan borttagningen.
   const targets = await db.vehicle.findMany({
-    where: { id: { in: clean }, organizationId },
+    where: { id: { in: clean }, organizationId, deletedAt: null },
     select: { id: true, regNo: true },
   });
   if (targets.length === 0) return { error: "Fordonen hittades inte." };
 
-  const { count } = await db.vehicle.deleteMany({
+  const { count } = await db.vehicle.updateMany({
     where: { id: { in: targets.map((t) => t.id) }, organizationId },
+    data: { deletedAt: new Date() },
   });
 
   const regs = targets.map((t) => t.regNo);
@@ -257,10 +309,22 @@ export async function previewFordaniaSync(): Promise<FordaniaSyncPreview> {
   await requireUser();
   const organizationId = await getActiveOrganizationId();
   if (!organizationId) {
-    return { newVehicles: [], existingCount: 0, total: 0, error: NO_ORG };
+    return {
+      newVehicles: [],
+      existingCount: 0,
+      overwrites: [],
+      total: 0,
+      error: NO_ORG,
+    };
   }
   if (!canManageUsers(await getTenantRole(organizationId))) {
-    return { newVehicles: [], existingCount: 0, total: 0, error: NOT_ADMIN };
+    return {
+      newVehicles: [],
+      existingCount: 0,
+      overwrites: [],
+      total: 0,
+      error: NOT_ADMIN,
+    };
   }
   return getFordaniaSyncPreview(organizationId);
 }
@@ -296,11 +360,13 @@ export async function syncVehiclesFromFordania(): Promise<SyncResult> {
   const colorDef = definitions.find((d) => /färg|color/i.test(d.label));
 
   // Befintliga fordon i verkstaden, indexerade på normaliserat reg.nr.
+  // Inkluderar borttagna: de ska varken uppdateras eller återskapas (då skulle
+  // en dubblett skapas) – borttaget förblir borttaget tills det återställs.
   const existing = await db.vehicle.findMany({
     where: { organizationId },
-    select: { id: true, regNo: true },
+    select: { id: true, regNo: true, deletedAt: true },
   });
-  const byReg = new Map(existing.map((v) => [v.regNo.toUpperCase(), v.id]));
+  const byReg = new Map(existing.map((v) => [v.regNo.toUpperCase(), v]));
 
   let created = 0;
   let updated = 0;
@@ -310,23 +376,32 @@ export async function syncVehiclesFromFordania(): Promise<SyncResult> {
     if (!regNo) continue;
 
     const model = v.model?.trim() || null;
-    const vehicleId = byReg.get(regNo);
+    const yr = parseYear(v.year);
+    const match = byReg.get(regNo);
+
+    // Borttaget fordon: rör det inte alls.
+    if (match?.deletedAt) continue;
+    const vehicleId = match?.id;
 
     if (vehicleId) {
-      // Uppdatera bara modell om Fordania har ett värde – rör inte annat.
-      if (model) {
+      // Uppdatera bara fält där Fordania har ett värde – rör inte annat.
+      if (model || yr !== null) {
         await db.vehicle.update({
           where: { id: vehicleId },
-          data: { model },
+          data: { ...(model ? { model } : {}), ...(yr !== null ? { year: yr } : {}) },
         });
       }
       await syncDynamicFields(vehicleId, v, yearDef, colorDef);
       updated++;
     } else {
       const createdVehicle = await db.vehicle.create({
-        data: { organizationId, regNo, model },
+        data: { organizationId, regNo, model, year: yr },
       });
-      byReg.set(regNo, createdVehicle.id);
+      byReg.set(regNo, {
+        id: createdVehicle.id,
+        regNo: createdVehicle.regNo,
+        deletedAt: null,
+      });
       await syncDynamicFields(createdVehicle.id, v, yearDef, colorDef);
       created++;
     }

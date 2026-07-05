@@ -41,6 +41,7 @@ export function VehicleActions({
     chassisNumber: string | null;
     brand: string | null;
     model: string | null;
+    year: number | null;
   };
   fields: Field[];
 }) {
@@ -133,6 +134,19 @@ export function VehicleActions({
                   defaultValue={vehicle.model ?? ""}
                 />
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ev-year">Årtal</Label>
+                <Input
+                  id="ev-year"
+                  name="year"
+                  type="number"
+                  inputMode="numeric"
+                  min={1900}
+                  max={2100}
+                  placeholder="ÅÅÅÅ"
+                  defaultValue={vehicle.year ?? ""}
+                />
+              </div>
             </div>
 
             {fields.length > 0 ? (
@@ -190,8 +204,9 @@ export function VehicleActions({
           <DialogHeader>
             <DialogTitle>Ta bort fordon?</DialogTitle>
             <DialogDescription>
-              {vehicle.regNo} och dess mätarställningshistorik tas bort
-              permanent. Detta går inte att ångra.
+              {vehicle.regNo} döljs från registret men raderas inte helt. Du kan
+              återställa det när som helst under &quot;Borttagna&quot; på
+              fordonssidan.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

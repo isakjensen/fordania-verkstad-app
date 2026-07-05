@@ -84,10 +84,11 @@ export async function getDashboardData(organizationId: string) {
     db.job.count({
       where: { organizationId, scheduledStart: { gte: todayStart, lt: todayEnd } },
     }),
-    db.vehicle.count({ where: { organizationId } }),
+    db.vehicle.count({ where: { organizationId, deletedAt: null } }),
     db.vehicle.count({
       where: {
         organizationId,
+        deletedAt: null,
         jobVehicles: {
           some: {
             job: { status: { in: ["in_progress", "waiting_parts", "delayed"] } },
@@ -98,6 +99,7 @@ export async function getDashboardData(organizationId: string) {
     db.vehicle.count({
       where: {
         organizationId,
+        deletedAt: null,
         jobVehicles: {
           some: { job: { status: { in: ["waiting_parts", "delayed"] } } },
         },

@@ -109,7 +109,7 @@ export async function createWorkOrder(formData: FormData): Promise<ActionResult>
   const vehicleId = str(formData.get("vehicleId"));
   if (vehicleId) {
     const v = await db.vehicle.findFirst({
-      where: { id: vehicleId, organizationId: guard.organizationId },
+      where: { id: vehicleId, organizationId: guard.organizationId, deletedAt: null },
     });
     if (v) await db.jobVehicle.create({ data: { jobId: job.id, vehicleId } });
   }
@@ -242,7 +242,7 @@ export async function linkVehicle(jobId: string, vehicleId: string): Promise<Act
   if ("error" in guard) return guard;
   const [job, vehicle] = await Promise.all([
     jobInOrg(jobId, guard.organizationId),
-    db.vehicle.findFirst({ where: { id: vehicleId, organizationId: guard.organizationId } }),
+    db.vehicle.findFirst({ where: { id: vehicleId, organizationId: guard.organizationId, deletedAt: null } }),
   ]);
   if (!job) return { error: "Arbetsordern hittades inte." };
   if (!vehicle) return { error: "Fordonet hittades inte." };

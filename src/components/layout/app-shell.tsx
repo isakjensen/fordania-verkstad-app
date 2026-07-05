@@ -34,13 +34,13 @@ export function AppShell({
   }, []);
 
   return (
-    <div className="flex h-svh overflow-hidden bg-canvas">
+    <div className="flex h-[calc(100svh-var(--fv-topgap,0px))] overflow-hidden bg-canvas mt-[var(--fv-topgap,0px)] transition-[margin-top,height] duration-300 ease-out">
       {/* Sidomeny – endast på desktop (mus/fine pointer + bredd). På iPad
           (touch) och mobil används i stället flikfältet längst ner, oavsett
           om iPaden hålls i stående eller liggande läge. */}
       <aside
         className={cn(
-          "sticky top-0 hidden h-svh shrink-0 border-r border-line",
+          "sticky top-0 hidden h-full shrink-0 border-r border-line",
           "transition-[width] duration-300 ease-out pointer-fine:lg:block",
           collapsed ? "w-[76px]" : "w-60",
         )}

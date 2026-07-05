@@ -3,6 +3,8 @@ import { Hanken_Grotesk, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { themeScript } from "@/lib/theme";
+import { InlineScript } from "@/components/inline-script";
+import { PwaManager } from "@/components/pwa/pwa-manager";
 
 const sans = Hanken_Grotesk({
   variable: "--font-sans",
@@ -25,6 +27,16 @@ export const metadata: Metadata = {
   description:
     "Verkstadsplanerare för biluthyrning – planera jobb, följ fordon och håll verkstaden i rörelse.",
   applicationName: "Fordania Verkstad",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  // Native-känsla när appen läggs på iOS-hemskärmen.
+  appleWebApp: {
+    capable: true,
+    title: "Verkstad",
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {
@@ -47,9 +59,12 @@ export default function RootLayout({
       className={cn("h-full antialiased", sans.variable, geistMono.variable)}
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <InlineScript html={themeScript} />
       </head>
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        <PwaManager />
+        {children}
+      </body>
     </html>
   );
 }

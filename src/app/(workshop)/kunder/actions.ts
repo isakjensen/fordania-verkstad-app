@@ -220,7 +220,7 @@ export async function linkVehicle(
 
   const [customer, vehicle] = await Promise.all([
     db.customer.findFirst({ where: { id: customerId, organizationId } }),
-    db.vehicle.findFirst({ where: { id: vehicleId, organizationId } }),
+    db.vehicle.findFirst({ where: { id: vehicleId, organizationId, deletedAt: null } }),
   ]);
   if (!customer) return { error: "Kunden hittades inte." };
   if (!vehicle) return { error: "Fordonet hittades inte." };

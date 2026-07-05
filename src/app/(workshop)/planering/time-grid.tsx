@@ -46,6 +46,8 @@ export interface MoveArgs {
   newEnd: Date;
   fromUserId?: string;
   toUserId?: string;
+  /** Ta bort `fromUserId` från jobbet (avtilldela) i stället för att byta. */
+  unassign?: boolean;
 }
 
 interface Column {

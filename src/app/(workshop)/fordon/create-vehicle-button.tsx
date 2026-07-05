@@ -92,6 +92,18 @@ export function CreateVehicleButton({
               <Label htmlFor="v-model">Modell</Label>
               <Input id="v-model" name="model" placeholder="t.ex. XC60" />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="v-year">Årtal</Label>
+              <Input
+                id="v-year"
+                name="year"
+                type="number"
+                inputMode="numeric"
+                min={1900}
+                max={2100}
+                placeholder="ÅÅÅÅ"
+              />
+            </div>
           </div>
 
           {/* Dynamiska fält */}

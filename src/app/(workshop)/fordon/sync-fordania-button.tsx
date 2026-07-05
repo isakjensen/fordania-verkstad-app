@@ -31,6 +31,8 @@ export function SyncFordaniaButton() {
 
   const newCount = preview?.newVehicles.length ?? 0;
   const hasNew = newCount > 0;
+  const overwrites = preview?.overwrites ?? [];
+  const hasOverwrites = overwrites.length > 0;
   const ok = result && "success" in result;
 
   // Öppnar dialogen och hämtar previewn från Fordania (först vid klick).
@@ -156,6 +158,50 @@ export function SyncFordaniaButton() {
                 </ul>
               ) : null}
 
+              {/* Varning: befintliga fordon vars ändrade uppgifter skrivs över */}
+              {hasOverwrites ? (
+                <div className="rounded-xl border border-warning/40 bg-warning-soft/60 p-3">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-warning">
+                    <AlertTriangle className="size-4 shrink-0" />
+                    {overwrites.length}{" "}
+                    {overwrites.length === 1 ? "fordon" : "fordon"} skrivs över
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Uppgifter du ändrat i verkstaden ersätts med Fordanias
+                    värden för dessa fordon:
+                  </p>
+                  <ul className="mt-2.5 space-y-2">
+                    {overwrites.map((o) => (
+                      <li
+                        key={o.plate}
+                        className="rounded-lg border border-line bg-surface p-2.5"
+                      >
+                        <LicensePlate value={o.plate} className="shrink-0" />
+                        <ul className="mt-2 space-y-1">
+                          {o.changes.map((c, i) => (
+                            <li
+                              key={i}
+                              className="flex flex-wrap items-baseline gap-x-1.5 text-xs"
+                            >
+                              <span className="font-semibold text-ink-soft">
+                                {c.label}:
+                              </span>
+                              <span className="text-muted-foreground line-through">
+                                {c.from}
+                              </span>
+                              <span className="text-muted-foreground">→</span>
+                              <span className="font-semibold text-ink">
+                                {c.to}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
               <DialogFooter>
                 <DialogClose
                   render={
@@ -169,13 +215,22 @@ export function SyncFordaniaButton() {
                   variant="success"
                   onClick={onSync}
                   disabled={pending || !!preview.error}
+                  className={
+                    hasOverwrites
+                      ? "bg-warning text-white hover:bg-warning/90 focus-visible:ring-warning/30"
+                      : undefined
+                  }
                 >
                   {pending ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : (
                     <RefreshCw className="size-4" />
                   )}
-                  {hasNew ? `Hämta ${newCount}` : "Hämta ändå"}
+                  {hasOverwrites
+                    ? "Synka och skriv över"
+                    : hasNew
+                      ? `Hämta ${newCount}`
+                      : "Hämta ändå"}
                 </Button>
               </DialogFooter>
             </>

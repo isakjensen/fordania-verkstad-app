@@ -10,6 +10,7 @@ import { type MoveArgs } from "./time-grid";
 import { DayBoard } from "./day-board";
 import { WeekBoard } from "./week-board";
 import { moveJob } from "./actions";
+import { CreateWorkOrderButton } from "../arbetsordrar/create-work-order-button";
 import {
   type View,
   WEEKDAYS_SHORT,
@@ -25,6 +26,7 @@ export function ScheduleCalendar({
   fromISO,
   mechanics,
   jobs,
+  vehicles,
   canManage,
   hasOrg,
 }: {
@@ -34,6 +36,7 @@ export function ScheduleCalendar({
   toISO: string;
   mechanics: Mechanic[];
   jobs: ScheduleJob[];
+  vehicles: { id: string; regNo: string; chassisNumber: string | null }[];
   canManage: boolean;
   hasOrg: boolean;
 }) {
@@ -42,6 +45,9 @@ export function ScheduleCalendar({
   const [open, setOpen] = useState(false);
   const [localJobs, setLocalJobs] = useState(jobs);
   useEffect(() => setLocalJobs(jobs), [jobs]);
+  // Id på ordern som just släppts – kortet på sin nya plats får en "glid in"-
+  // animation i stället för att hoppa dit. Nollas strax efter.
+  const [movedId, setMovedId] = useState<string | null>(null);
 
   const anchor = new Date(anchorISO);
   const from = new Date(fromISO);
@@ -52,14 +58,15 @@ export function ScheduleCalendar({
   }, []);
 
   const handleMove = useCallback(
-    ({ job, newStart, newEnd, fromUserId, toUserId }: MoveArgs) => {
+    ({ job, newStart, newEnd, fromUserId, toUserId, unassign }: MoveArgs) => {
       const targetMech = toUserId
         ? mechanics.find((m) => m.id === toUserId)
         : null;
       const optimistic: ScheduleJob = {
         ...job,
-        mechanics:
-          targetMech && toUserId
+        mechanics: unassign
+          ? job.mechanics.filter((m) => m.userId !== fromUserId)
+          : targetMech && toUserId
             ? [
                 ...job.mechanics.filter((m) => m.userId !== fromUserId),
                 {
@@ -75,8 +82,14 @@ export function ScheduleCalendar({
         scheduledEnd: newEnd,
       };
       setLocalJobs((prev) => prev.map((j) => (j.id === job.id ? optimistic : j)));
+      setMovedId(job.id);
+      window.setTimeout(() => setMovedId((id) => (id === job.id ? null : id)), 400);
       moveJob(job.id, {
-        ...(toUserId ? { fromUserId: fromUserId!, toUserId } : {}),
+        ...(unassign && fromUserId
+          ? { fromUserId, unassign: true }
+          : toUserId
+            ? { fromUserId: fromUserId!, toUserId }
+            : {}),
         scheduledStart: newStart.toISOString(),
         scheduledEnd: newEnd.toISOString(),
       }).then((res) => {
@@ -164,6 +177,9 @@ export function ScheduleCalendar({
               <ChevronRight className="size-5" />
             </button>
           </div>
+          {hasOrg ? (
+            <CreateWorkOrderButton mechanics={mechanics} vehicles={vehicles} />
+          ) : null}
         </div>
       </header>
 
@@ -179,6 +195,7 @@ export function ScheduleCalendar({
             mechanics={mechanics}
             jobs={localJobs}
             canManage={canManage}
+            movedId={movedId}
             onOpen={openJob}
             onMove={handleMove}
           />
@@ -188,6 +205,7 @@ export function ScheduleCalendar({
             mechanics={mechanics}
             jobs={localJobs}
             canManage={canManage}
+            movedId={movedId}
             onOpen={openJob}
             onMove={handleMove}
           />

@@ -41,15 +41,15 @@ export function FleetStatus({ fleet }: { fleet: DashboardData["fleet"] }) {
   let acc = 0;
 
   return (
-    <Card className="shrink-0">
+    <Card className="flex h-full min-h-0 flex-col">
       <CardHeader
         tone="brand"
         title="Fordonsstatus"
         subtitle={`${fleet.total} fordon i flottan`}
       />
-      <div className="flex flex-col items-center gap-6 px-5 pt-5 pb-5 sm:flex-row sm:items-center">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-5 py-5 sm:flex-row sm:items-center">
         {/* Donut */}
-        <div className="relative size-40 shrink-0">
+        <div className="relative size-36 shrink-0 lg:size-40">
           <svg viewBox="0 0 100 100" className="size-full -rotate-90">
             <circle
               cx="50"

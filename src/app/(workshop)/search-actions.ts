@@ -21,6 +21,7 @@ export async function globalSearch(query: string): Promise<SearchHit[]> {
     db.vehicle.findMany({
       where: {
         organizationId,
+        deletedAt: null,
         OR: [
           { regNo: contains },
           { brand: contains },

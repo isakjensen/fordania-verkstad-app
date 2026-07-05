@@ -336,9 +336,9 @@ export function VehiclesView({
           <DialogHeader>
             <DialogTitle>Ta bort {count} fordon?</DialogTitle>
             <DialogDescription>
-              {count === 1 ? "Fordonet" : "Fordonen"} och tillhörande
-              mätarställningshistorik tas bort permanent. Detta går inte att
-              ångra.
+              {count === 1 ? "Fordonet" : "Fordonen"} döljs från registret men
+              raderas inte helt. Du kan återställa {count === 1 ? "det" : "dem"}{" "}
+              under &quot;Borttagna&quot; på fordonssidan.
             </DialogDescription>
           </DialogHeader>
           {error ? (

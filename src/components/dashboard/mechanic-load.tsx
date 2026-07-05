@@ -18,7 +18,7 @@ export function MechanicLoad({
   mechanics: DashboardData["mechanicLoad"];
 }) {
   return (
-    <Card className="flex min-h-0 flex-1 flex-col">
+    <Card className="flex h-full min-h-0 flex-col">
       <CardHeader
         tone="brand"
         title="Beläggning"

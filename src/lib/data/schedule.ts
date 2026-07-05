@@ -53,6 +53,7 @@ export async function getScheduleJobs(
               regNo: true,
               brand: true,
               model: true,
+              year: true,
               customers: {
                 select: { customer: { select: { id: true, name: true } } },
               },
@@ -110,7 +111,7 @@ export async function getJobsForUserOnDay(
       vehicles: {
         include: {
           vehicle: {
-            select: { id: true, regNo: true, brand: true, model: true },
+            select: { id: true, regNo: true, brand: true, model: true, year: true },
           },
         },
       },

@@ -10,7 +10,12 @@ export async function getCustomers(organizationId: string) {
     where: { organizationId },
     orderBy: { createdAt: "desc" },
     include: {
-      _count: { select: { comments: true, vehicles: true } },
+      _count: {
+        select: {
+          comments: true,
+          vehicles: { where: { vehicle: { deletedAt: null } } },
+        },
+      },
     },
   });
 }
@@ -27,7 +32,9 @@ export async function getCustomer(id: string, organizationId: string) {
       comments: { orderBy: { createdAt: "desc" } },
       // Primär kontaktperson (företagets kontaktperson) först, sedan äldst först.
       contacts: { orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }] },
+      // Borttagna (mjukraderade) fordon ska inte visas på kundkortet.
       vehicles: {
+        where: { vehicle: { deletedAt: null } },
         include: {
           vehicle: {
             include: {
