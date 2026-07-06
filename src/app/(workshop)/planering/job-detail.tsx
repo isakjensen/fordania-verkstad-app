@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import {
   Car,
   User as UserIcon,
@@ -12,14 +12,12 @@ import {
   Users,
   Receipt,
   Loader2,
-  Check,
   StickyNote,
   CircleDot,
   Pencil,
   X,
 } from "lucide-react";
 import { LicensePlate } from "@/components/ui/license-plate";
-import { Button } from "@/components/ui/button";
 import { TimePicker } from "@/components/ui/time-picker";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FieldSelect } from "@/components/ui/field-select";
@@ -30,6 +28,7 @@ import {
   SheetTitle,
   SheetClose,
 } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 import type { Mechanic, ScheduleJob } from "@/lib/data/schedule";
 import { orderTotals, formatOre } from "@/lib/pricing";
 import { statusLabels, priorityLabels } from "./calendar-meta";
@@ -88,6 +87,18 @@ function combine(date: string, time: string) {
   const [y, mo, d] = date.split("-").map(Number);
   const [h, m] = time.split(":").map(Number);
   return new Date(y, (mo || 1) - 1, d || 1, h || 0, m || 0, 0, 0);
+}
+
+/** Unika kunder kopplade via orderns fordon. */
+function customersOf(job: ScheduleJob | null): { id: string; name: string }[] {
+  if (!job) return [];
+  return [
+    ...new Map(
+      job.vehicles
+        .flatMap((jv) => jv.vehicle.customers)
+        .map((c) => [c.customer.id, c.customer]),
+    ).values(),
+  ];
 }
 
 /* ------------------------------------------------------------------ *
@@ -150,99 +161,121 @@ function StatusPicker({
 }
 
 /**
- * Inline-redigering av tid direkt på Tid-raden: dag (DatePicker) + start/slut
- * (custom TimePicker). Öppnas på plats vid tidsblocket – ingen panel högst upp.
+ * Tid – tryck på värdet så fälls dag/start/slut fram sömlöst på plats (inga
+ * boxar). Varje giltig ändring sparas automatiskt; visar tiden från lokalt
+ * state så nya värden syns direkt.
  */
-function InlineTimeEditor({
-  job,
-  onClose,
+function TimeField({
+  jobId,
+  start,
+  end,
+  editable,
+  onCommit,
 }: {
-  job: ScheduleJob;
-  onClose: () => void;
+  jobId: string;
+  start: Date | null;
+  end: Date | null;
+  editable: boolean;
+  onCommit: (start: Date, end: Date) => void;
 }) {
   const router = useRouter();
-  const startD = new Date(job.scheduledStart as Date);
-  const endD = new Date(job.scheduledEnd as Date);
-
-  const [date, setDate] = useState(isoDate(startD));
-  const [start, setStart] = useState(hhmm(startD));
-  const [end, setEnd] = useState(hhmm(endD));
+  const [editing, setEditing] = useState(false);
+  const [date, setDate] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [error, setError] = useState("");
-  const [pending, startTransition] = useTransition();
+  const [saving, setSaving] = useState(false);
 
-  const changed =
-    date !== isoDate(startD) || start !== hhmm(startD) || end !== hhmm(endD);
-
-  function save() {
+  function open() {
+    if (!editable || !start || !end) return;
+    setDate(isoDate(start));
+    setFrom(hhmm(start));
+    setTo(hhmm(end));
     setError("");
-    const newStart = combine(date, start);
-    const newEnd = combine(date, end);
-    if (newEnd.getTime() <= newStart.getTime()) {
+    setEditing(true);
+  }
+
+  // Sparar direkt när ett fält ändras (om tiderna är giltiga).
+  function persist(d: string, f: string, t: string) {
+    const ns = combine(d, f);
+    const ne = combine(d, t);
+    if (ne.getTime() <= ns.getTime()) {
       setError("Sluttiden måste vara efter starttiden.");
       return;
     }
-    startTransition(async () => {
-      const res = await moveJob(job.id, {
-        scheduledStart: newStart.toISOString(),
-        scheduledEnd: newEnd.toISOString(),
-      });
-      if ("error" in res) {
-        setError(res.error);
-        return;
-      }
-      router.refresh();
-      onClose();
-    });
+    setError("");
+    onCommit(ns, ne); // optimistiskt – syns direkt på raden
+    setSaving(true);
+    moveJob(jobId, {
+      scheduledStart: ns.toISOString(),
+      scheduledEnd: ne.toISOString(),
+    })
+      .then((res) => {
+        if (!("error" in res)) router.refresh();
+      })
+      .finally(() => setSaving(false));
+  }
+
+  if (!editing) {
+    return (
+      <EditableValue editable={editable && !!start && !!end} onClick={open}>
+        {start && end ? (
+          <>
+            {dtf.format(start)} · {tf.format(start)}–{tf.format(end)}
+          </>
+        ) : (
+          "Ej tidsatt"
+        )}
+      </EditableValue>
+    );
   }
 
   return (
     <motion.div {...inlineReveal} className="overflow-hidden">
-      <div className="mt-1 space-y-3 rounded-2xl border border-line bg-surface-muted/40 p-3 shadow-sm ring-1 ring-black/[0.02]">
-        <div className="space-y-1.5">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground">
-            Dag
-          </p>
-          <DatePicker value={date} onChange={setDate} size="sm" clearable={false} />
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1.5">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground">
-              Start
-            </p>
-            <TimePicker value={start} onChange={setStart} />
-          </div>
-          <div className="space-y-1.5">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground">
-              Slut
-            </p>
-            <TimePicker value={end} onChange={setEnd} />
-          </div>
-        </div>
-        {error ? (
-          <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
-            {error}
-          </p>
-        ) : null}
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="success"
+      <div className="space-y-2 pt-1">
+          <DatePicker
+            value={date}
+            onChange={(v) => {
+              setDate(v);
+              persist(v, from, to);
+            }}
             size="sm"
-            className="flex-1"
-            disabled={pending || !changed}
-            onClick={save}
-          >
-            {pending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Check className="size-4" />
-            )}
-            Spara
-          </Button>
-          <Button type="button" variant="outline" size="sm" onClick={onClose}>
-            Avbryt
-          </Button>
-        </div>
+            clearable={false}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <TimePicker
+              value={from}
+              onChange={(v) => {
+                setFrom(v);
+                persist(date, v, to);
+              }}
+            />
+            <TimePicker
+              value={to}
+              onChange={(v) => {
+                setTo(v);
+                persist(date, from, v);
+              }}
+            />
+          </div>
+          <div className="flex min-h-5 items-center justify-between">
+            <span className="text-xs text-muted-foreground">
+              {error ? (
+                <span className="font-medium text-danger">{error}</span>
+              ) : saving ? (
+                "Sparar…"
+              ) : (
+                "Sparas automatiskt"
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="rounded-lg px-2.5 py-1 text-xs font-semibold text-brand-600 transition-colors hover:bg-brand-50"
+            >
+              Klar
+            </button>
+          </div>
       </div>
     </motion.div>
   );
@@ -299,80 +332,98 @@ function MechanicPicker({
 }
 
 /**
- * Inline-redigering av anteckning direkt på raden – öppnas på plats vid
- * anteckningsblocket, ingen panel högst upp.
+ * Anteckning – tryck på texten och skriv direkt på plats (inga boxar/knappar).
+ * Sparas när fältet lämnas; Escape ångrar. Visar värdet från lokalt state.
  */
-function InlineNoteEditor({
-  job,
-  initial,
-  onClose,
-  onSaved,
+function NoteField({
+  jobId,
+  value,
+  editable,
+  onChange,
 }: {
-  job: ScheduleJob;
-  initial: string;
-  onClose: () => void;
-  onSaved: (note: string) => void;
+  jobId: string;
+  value: string;
+  editable: boolean;
+  onChange: (note: string) => void;
 }) {
   const router = useRouter();
-  const [value, setValue] = useState(initial);
-  const [error, setError] = useState("");
-  const [pending, startTransition] = useTransition();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const [saving, setSaving] = useState(false);
+  const ref = useRef<HTMLTextAreaElement>(null);
 
-  function save() {
-    setError("");
-    startTransition(async () => {
-      const res = await setJobNote(job.id, value);
-      if ("error" in res) {
-        setError(res.error);
-        return;
-      }
-      onSaved(value.trim());
-      router.refresh();
-      onClose();
-    });
+  // Autofokus + markör sist när man börjar redigera.
+  useEffect(() => {
+    if (!editing) return;
+    const el = ref.current;
+    if (!el) return;
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
+  }, [editing]);
+
+  function begin() {
+    if (!editable) return;
+    setDraft(value);
+    setEditing(true);
+  }
+
+  function commit() {
+    setEditing(false);
+    const next = draft.trim();
+    if (next === value) return;
+    const prev = value;
+    onChange(next); // optimistiskt
+    setSaving(true);
+    setJobNote(jobId, next)
+      .then((res) => {
+        if ("error" in res) onChange(prev);
+        else router.refresh();
+      })
+      .finally(() => setSaving(false));
+  }
+
+  if (editing) {
+    return (
+      <textarea
+        ref={ref}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            e.preventDefault();
+            setDraft(value);
+            setEditing(false);
+          }
+        }}
+        rows={Math.max(2, draft.split("\n").length)}
+        placeholder="Skriv en anteckning…"
+        className="w-full resize-none border-0 bg-transparent p-0 text-sm text-ink-soft outline-none placeholder:text-muted-foreground"
+      />
+    );
   }
 
   return (
-    <motion.div {...inlineReveal} className="overflow-hidden">
-      <div className="mt-1 space-y-3 rounded-2xl border border-line bg-surface-muted/40 p-3 shadow-sm ring-1 ring-black/[0.02]">
-        <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground">
-          Anteckning
-        </p>
-        <textarea
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          rows={4}
-          autoFocus
-          placeholder="Skriv en anteckning om jobbet…"
-          className="w-full resize-none rounded-xl border border-input bg-surface px-3 py-2.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
-        />
-        {error ? (
-          <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
-            {error}
-          </p>
-        ) : null}
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="success"
-            size="sm"
-            className="flex-1"
-            disabled={pending}
-            onClick={save}
-          >
-            {pending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Check className="size-4" />
-            )}
-            Spara
-          </Button>
-          <Button type="button" variant="outline" size="sm" onClick={onClose}>
-            Avbryt
-          </Button>
-        </div>
-      </div>
-    </motion.div>
+    <button
+      type="button"
+      onClick={begin}
+      disabled={!editable}
+      className="group/edit flex w-full items-start justify-between gap-2 text-left transition-colors enabled:hover:text-brand-700"
+    >
+      <span
+        className={cn(
+          "min-w-0 whitespace-pre-wrap",
+          value ? "text-ink-soft" : "text-muted-foreground",
+        )}
+      >
+        {value || "Lägg till anteckning…"}
+      </span>
+      {saving ? (
+        <Loader2 className="mt-0.5 size-3.5 shrink-0 animate-spin text-muted-foreground" />
+      ) : editable ? (
+        <Pencil className="mt-0.5 size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/edit:opacity-100" />
+      ) : null}
+    </button>
   );
 }
 
@@ -467,11 +518,13 @@ function CustomerEditor({
   current,
   options,
   hasVehicle,
+  onChange,
 }: {
   jobId: string;
   current: { id: string; name: string }[];
   options: { id: string; name: string }[];
   hasVehicle: boolean;
+  onChange: (next: { id: string; name: string }[]) => void;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -482,10 +535,15 @@ function CustomerEditor({
 
   function add(customerId: string) {
     setError("");
+    const cust = options.find((o) => o.id === customerId);
+    if (!cust) return;
+    const prev = current;
+    onChange([...current, cust]); // optimistiskt – syns direkt i drawern
     startTransition(async () => {
       const res = await linkJobCustomer(jobId, customerId);
       if ("error" in res) {
         setError(res.error);
+        onChange(prev); // återställ vid fel
         return;
       }
       router.refresh();
@@ -494,10 +552,13 @@ function CustomerEditor({
 
   function remove(customerId: string) {
     setError("");
+    const prev = current;
+    onChange(current.filter((c) => c.id !== customerId)); // optimistiskt
     startTransition(async () => {
       const res = await unlinkJobCustomer(jobId, customerId);
       if ("error" in res) {
         setError(res.error);
+        onChange(prev); // återställ vid fel
         return;
       }
       router.refresh();
@@ -628,9 +689,15 @@ export function JobDetail({
   const [priority, setPriority] = useState(job?.priority ?? "normal");
   const [note, setNote] = useState(job?.description ?? "");
   const [mechId, setMechId] = useState(job?.mechanics[0]?.userId ?? "");
-  // Vilken rad som redigeras inline (bara en i taget).
-  const [editingTime, setEditingTime] = useState(false);
-  const [editingNote, setEditingNote] = useState(false);
+  // Kopplade kunder hålls lokalt så tillägg/borttag syns direkt (optimistiskt).
+  const [linkedCustomers, setLinkedCustomers] = useState(() => customersOf(job));
+  // Tider hålls lokalt så nya värden syns direkt efter sparning.
+  const [schedStart, setSchedStart] = useState<Date | null>(
+    job?.scheduledStart ? new Date(job.scheduledStart) : null,
+  );
+  const [schedEnd, setSchedEnd] = useState<Date | null>(
+    job?.scheduledEnd ? new Date(job.scheduledEnd) : null,
+  );
 
   useEffect(() => {
     setStatus(job?.status ?? "planned");
@@ -638,68 +705,46 @@ export function JobDetail({
     setPriority(job?.priority ?? "normal");
     setNote(job?.description ?? "");
     setMechId(job?.mechanics[0]?.userId ?? "");
-    setEditingTime(false);
-    setEditingNote(false);
+    setLinkedCustomers(customersOf(job));
+    setSchedStart(job?.scheduledStart ? new Date(job.scheduledStart) : null);
+    setSchedEnd(job?.scheduledEnd ? new Date(job.scheduledEnd) : null);
   }, [job]);
 
   const vehicles = job?.vehicles.map((jv) => jv.vehicle) ?? [];
   const jobMechanics = job?.mechanics.map((jm) => jm.user) ?? [];
-  const linkedCustomers = job
-    ? [
-        ...new Map(
-          job.vehicles
-            .flatMap((jv) => jv.vehicle.customers)
-            .map((c) => [c.customer.id, c.customer]),
-        ).values(),
-      ]
-    : [];
   const totals = job ? orderTotals(job.parts) : null;
   const hasVehicle = vehicles.length > 0;
   const canReschedule = canManage && !!job?.scheduledStart && !!job?.scheduledEnd;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet
+      open={open}
+      onOpenChange={(next, details) => {
+        // Stäng inte med Escape – bara via Stäng-knappen eller klick utanför.
+        if (!next && details?.reason === "escape-key") return;
+        onOpenChange(next);
+      }}
+    >
       <SheetContent className="w-full sm:max-w-md" showCloseButton={false}>
         {job ? (
           <>
             {/* Rubrik dold visuellt – behålls för skärmläsare (dialogen kräver en titel) */}
             <SheetTitle className="sr-only">{job.type}</SheetTitle>
 
-            {/* Diskret, touchvänlig stäng-knapp som flyter i hörnet (ingen egen rad) */}
-            <SheetClose className="absolute right-3 top-3 z-20 flex size-8 items-center justify-center rounded-full bg-surface-muted text-muted-foreground transition-colors hover:bg-line-strong hover:text-ink pointer-coarse:size-9">
-              <X className="size-4" />
-              <span className="sr-only">Stäng</span>
-            </SheetClose>
-
             <SheetBody className="space-y-4">
               {/* Detaljer */}
-              <div className="divide-y divide-line border-t border-line">
+              <div className="divide-y divide-line">
                 <Row icon={Clock} label="Tid">
-                  {!editingTime ? (
-                    <EditableValue
-                      editable={canReschedule}
-                      onClick={() => setEditingTime(true)}
-                    >
-                      {job.scheduledStart && job.scheduledEnd ? (
-                        <>
-                          {dtf.format(new Date(job.scheduledStart))} ·{" "}
-                          {tf.format(new Date(job.scheduledStart))}–
-                          {tf.format(new Date(job.scheduledEnd))}
-                        </>
-                      ) : (
-                        "Ej tidsatt"
-                      )}
-                    </EditableValue>
-                  ) : null}
-                  <AnimatePresence initial={false}>
-                    {editingTime && canReschedule ? (
-                      <InlineTimeEditor
-                        key="time-edit"
-                        job={job}
-                        onClose={() => setEditingTime(false)}
-                      />
-                    ) : null}
-                  </AnimatePresence>
+                  <TimeField
+                    jobId={job.id}
+                    start={schedStart}
+                    end={schedEnd}
+                    editable={canReschedule}
+                    onCommit={(s, e) => {
+                      setSchedStart(s);
+                      setSchedEnd(e);
+                    }}
+                  />
                 </Row>
                 <Row icon={CircleDot} label="Status">
                   <StatusPicker
@@ -763,6 +808,7 @@ export function JobDetail({
                       current={linkedCustomers}
                       options={customers}
                       hasVehicle={hasVehicle}
+                      onChange={setLinkedCustomers}
                     />
                   ) : linkedCustomers.length > 0 ? (
                     linkedCustomers.map((c) => c.name).join(", ")
@@ -784,37 +830,24 @@ export function JobDetail({
                 ) : null}
                 {canManage || note ? (
                   <Row icon={StickyNote} label="Anteckning">
-                    {!editingNote ? (
-                      <EditableValue
-                        editable={canManage}
-                        onClick={() => setEditingNote(true)}
-                      >
-                        {note ? (
-                          <span className="font-normal whitespace-pre-wrap text-ink-soft">
-                            {note}
-                          </span>
-                        ) : (
-                          <span className="font-normal text-muted-foreground">
-                            Lägg till anteckning…
-                          </span>
-                        )}
-                      </EditableValue>
-                    ) : null}
-                    <AnimatePresence initial={false}>
-                      {editingNote && canManage ? (
-                        <InlineNoteEditor
-                          key="note-edit"
-                          job={job}
-                          initial={note}
-                          onClose={() => setEditingNote(false)}
-                          onSaved={setNote}
-                        />
-                      ) : null}
-                    </AnimatePresence>
+                    <NoteField
+                      jobId={job.id}
+                      value={note}
+                      editable={canManage}
+                      onChange={setNote}
+                    />
                   </Row>
                 ) : null}
               </div>
             </SheetBody>
+
+            {/* Tydlig stäng-knapp fastnaglad längst ner – funkar för alla vyer
+                (touch och mus). Utöver den stänger man genom att klicka utanför. */}
+            <div className="sticky bottom-0 z-10 mt-auto border-t border-line bg-surface/95 px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
+              <SheetClose className="flex h-12 w-full items-center justify-center rounded-xl bg-surface-muted text-sm font-semibold text-ink transition-colors hover:bg-line-strong active:bg-line-strong">
+                Stäng
+              </SheetClose>
+            </div>
           </>
         ) : null}
       </SheetContent>
