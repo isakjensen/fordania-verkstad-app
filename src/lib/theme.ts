@@ -5,8 +5,11 @@ import { useEffect, useState } from "react";
 export type Theme = "light" | "dark" | "system";
 export const THEME_KEY = "fv-theme";
 
-/** Skript som körs före paint för att undvika "flash of wrong theme". */
-export const themeScript = `(function(){try{var t=localStorage.getItem('${THEME_KEY}')||'system';var m=window.matchMedia('(prefers-color-scheme: dark)').matches;var d=t==='dark'||(t==='system'&&m);document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light';}catch(e){}})();`;
+/**
+ * Skript som körs före paint för att undvika "flash of wrong theme".
+ * Default är alltid ljust – mörkt/system används bara om användaren valt det.
+ */
+export const themeScript = `(function(){try{var t=localStorage.getItem('${THEME_KEY}')||'light';var m=window.matchMedia('(prefers-color-scheme: dark)').matches;var d=t==='dark'||(t==='system'&&m);document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light';}catch(e){}})();`;
 
 function systemPrefersDark() {
   return (
@@ -27,9 +30,9 @@ export function applyTheme(theme: Theme) {
 }
 
 function getStored(): Theme {
-  if (typeof window === "undefined") return "system";
+  if (typeof window === "undefined") return "light";
   const t = window.localStorage.getItem(THEME_KEY);
-  return t === "light" || t === "dark" || t === "system" ? t : "system";
+  return t === "light" || t === "dark" || t === "system" ? t : "light";
 }
 
 /**

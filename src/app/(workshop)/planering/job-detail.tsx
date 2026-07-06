@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Car,
   User as UserIcon,
@@ -13,28 +13,26 @@ import {
   Receipt,
   Loader2,
   Check,
-  CalendarClock,
   StickyNote,
-  ArrowUpRight,
+  CircleDot,
   Pencil,
   X,
 } from "lucide-react";
 import { LicensePlate } from "@/components/ui/license-plate";
 import { Button } from "@/components/ui/button";
 import { TimePicker } from "@/components/ui/time-picker";
+import { DatePicker } from "@/components/ui/date-picker";
 import { FieldSelect } from "@/components/ui/field-select";
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetBody,
   SheetTitle,
-  SheetDescription,
+  SheetClose,
 } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
 import type { Mechanic, ScheduleJob } from "@/lib/data/schedule";
 import { orderTotals, formatOre } from "@/lib/pricing";
-import { statusMeta, statusLabels, priorityLabels } from "./calendar-meta";
+import { statusLabels, priorityLabels } from "./calendar-meta";
 import {
   moveJob,
   setJobStatus,
@@ -82,18 +80,32 @@ function pad(n: number) {
 function hhmm(d: Date) {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
-function withTime(base: Date, value: string) {
-  const [h, m] = value.split(":").map(Number);
-  const d = new Date(base);
-  d.setHours(h || 0, m || 0, 0, 0);
-  return d;
+function isoDate(d: Date) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+/** Kombinerar datum ("YYYY-MM-DD") och tid ("HH:MM") till ett Date. */
+function combine(date: string, time: string) {
+  const [y, mo, d] = date.split("-").map(Number);
+  const [h, m] = time.split(":").map(Number);
+  return new Date(y, (mo || 1) - 1, d || 1, h || 0, m || 0, 0, 0);
 }
 
 /* ------------------------------------------------------------------ *
  *  Snabbåtgärder
  * ------------------------------------------------------------------ */
 
-/** Statusväljare – ett tryck byter status direkt. */
+/**
+ * Mjuk in-/utglidning för inline-editorerna (tid/anteckning). Höjden animeras
+ * så att raderna nedanför flyttar sig lugnt istället för att bara poppa.
+ */
+const inlineReveal = {
+  initial: { opacity: 0, height: 0 },
+  animate: { opacity: 1, height: "auto" as const },
+  exit: { opacity: 0, height: 0 },
+  transition: { duration: 0.24, ease: [0.22, 1, 0.36, 1] as const },
+};
+
+/** Statusväljare – dropdown som byter status direkt vid val (optimistiskt). */
 function StatusPicker({
   jobId,
   status,
@@ -104,96 +116,73 @@ function StatusPicker({
   onStatus: (s: string) => void;
 }) {
   const router = useRouter();
-  const [pending, setPending] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
-  function pick(s: string) {
-    if (s === status || pending) return;
+  function pick(next: string) {
+    if (next === status) return;
     const prev = status;
-    onStatus(s); // optimistiskt
-    setPending(s);
-    setJobStatus(jobId, s)
+    onStatus(next); // optimistiskt
+    setPending(true);
+    setJobStatus(jobId, next)
       .then((res) => {
         if ("error" in res) onStatus(prev);
         else router.refresh();
       })
-      .finally(() => setPending(null));
+      .finally(() => setPending(false));
   }
 
   return (
-    <div>
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        Status
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {STATUS_ORDER.map((s) => {
-          const meta = statusMeta[s];
-          const active = s === status;
-          const loading = pending === s;
-          return (
-            <button
-              key={s}
-              type="button"
-              onClick={() => pick(s)}
-              disabled={!!pending}
-              aria-pressed={active}
-              className={cn(
-                "inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold transition-colors pointer-coarse:h-10",
-                active
-                  ? `${meta?.badge ?? ""} border-transparent ring-1 ring-inset ring-ink/10`
-                  : "border-line bg-surface text-ink-soft active:bg-surface-muted hover:bg-surface-muted",
-              )}
-            >
-              {loading ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <span className={cn("size-1.5 rounded-full", meta?.dot ?? "bg-slate-400")} />
-              )}
-              {statusLabels[s] ?? s}
-            </button>
-          );
-        })}
-      </div>
+    <div className="flex items-center gap-2">
+      <FieldSelect
+        value={status}
+        onValueChange={pick}
+        options={STATUS_ORDER.map((s) => ({
+          value: s,
+          label: statusLabels[s] ?? s,
+        }))}
+        className="min-w-[9rem]"
+      />
+      {pending ? (
+        <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
+      ) : null}
     </div>
   );
 }
 
-/** Omboka – ändra tid och mekaniker. */
-function ReschedulePanel({
+/**
+ * Inline-redigering av tid direkt på Tid-raden: dag (DatePicker) + start/slut
+ * (custom TimePicker). Öppnas på plats vid tidsblocket – ingen panel högst upp.
+ */
+function InlineTimeEditor({
   job,
-  mechanics,
   onClose,
 }: {
   job: ScheduleJob;
-  mechanics: Mechanic[];
   onClose: () => void;
 }) {
   const router = useRouter();
-  const baseDate = new Date(job.scheduledStart as Date);
-  const currentMech = job.mechanics[0]?.userId ?? "";
+  const startD = new Date(job.scheduledStart as Date);
+  const endD = new Date(job.scheduledEnd as Date);
 
-  const [start, setStart] = useState(hhmm(new Date(job.scheduledStart as Date)));
-  const [end, setEnd] = useState(hhmm(new Date(job.scheduledEnd as Date)));
-  const [mech, setMech] = useState(currentMech);
+  const [date, setDate] = useState(isoDate(startD));
+  const [start, setStart] = useState(hhmm(startD));
+  const [end, setEnd] = useState(hhmm(endD));
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
 
   const changed =
-    start !== hhmm(new Date(job.scheduledStart as Date)) ||
-    end !== hhmm(new Date(job.scheduledEnd as Date)) ||
-    mech !== currentMech;
+    date !== isoDate(startD) || start !== hhmm(startD) || end !== hhmm(endD);
 
   function save() {
     setError("");
-    const newStart = withTime(baseDate, start);
-    const newEnd = withTime(baseDate, end);
+    const newStart = combine(date, start);
+    const newEnd = combine(date, end);
     if (newEnd.getTime() <= newStart.getTime()) {
       setError("Sluttiden måste vara efter starttiden.");
       return;
     }
-    const toUserId = mech && mech !== currentMech ? mech : undefined;
     startTransition(async () => {
       const res = await moveJob(job.id, {
-        ...(toUserId ? { fromUserId: currentMech, toUserId } : {}),
         scheduledStart: newStart.toISOString(),
         scheduledEnd: newEnd.toISOString(),
       });
@@ -207,70 +196,125 @@ function ReschedulePanel({
   }
 
   return (
-    <div className="space-y-3 rounded-2xl border border-line bg-surface-muted/50 p-3.5">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Omboka
-        </p>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-muted"
-          aria-label="Stäng"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
-      <div className="grid grid-cols-2 gap-2.5">
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-ink-soft">Start</label>
-          <TimePicker value={start} onChange={setStart} />
+    <motion.div {...inlineReveal} className="overflow-hidden">
+      <div className="mt-1 space-y-3 rounded-2xl border border-line bg-surface-muted/40 p-3 shadow-sm ring-1 ring-black/[0.02]">
+        <div className="space-y-1.5">
+          <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground">
+            Dag
+          </p>
+          <DatePicker value={date} onChange={setDate} size="sm" clearable={false} />
         </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-ink-soft">Slut</label>
-          <TimePicker value={end} onChange={setEnd} />
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground">
+              Start
+            </p>
+            <TimePicker value={start} onChange={setStart} />
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground">
+              Slut
+            </p>
+            <TimePicker value={end} onChange={setEnd} />
+          </div>
+        </div>
+        {error ? (
+          <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
+            {error}
+          </p>
+        ) : null}
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="success"
+            size="sm"
+            className="flex-1"
+            disabled={pending || !changed}
+            onClick={save}
+          >
+            {pending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Check className="size-4" />
+            )}
+            Spara
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={onClose}>
+            Avbryt
+          </Button>
         </div>
       </div>
-      <div className="space-y-1">
-        <label className="text-xs font-medium text-ink-soft">Mekaniker</label>
-        <FieldSelect
-          value={mech}
-          onValueChange={setMech}
-          placeholder="Välj mekaniker…"
-          options={mechanics.map((m) => ({ value: m.id, label: m.name }))}
-        />
-      </div>
-      {error ? (
-        <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
-          {error}
-        </p>
+    </motion.div>
+  );
+}
+
+/**
+ * Inline-dropdown för mekaniker direkt på raden – sparar vid val (optimistiskt),
+ * precis som Typ/Prioritet.
+ */
+function MechanicPicker({
+  jobId,
+  mechanics,
+  value,
+  onChange,
+}: {
+  jobId: string;
+  mechanics: Mechanic[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+
+  function pick(next: string) {
+    if (next === value) return;
+    const prev = value;
+    onChange(next); // optimistiskt
+    setPending(true);
+    moveJob(jobId, {
+      fromUserId: prev || undefined,
+      toUserId: next || undefined,
+    })
+      .then((res) => {
+        if ("error" in res) onChange(prev);
+        else router.refresh();
+      })
+      .finally(() => setPending(false));
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <FieldSelect
+        value={value}
+        onValueChange={pick}
+        placeholder="Välj mekaniker…"
+        options={mechanics.map((m) => ({ value: m.id, label: m.name }))}
+        className="min-w-[9rem]"
+      />
+      {pending ? (
+        <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
       ) : null}
-      <Button
-        type="button"
-        variant="success"
-        className="w-full"
-        disabled={pending || !changed}
-        onClick={save}
-      >
-        {pending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-        Spara ny tid
-      </Button>
     </div>
   );
 }
 
-/** Anteckning – fritt textfält som sparas på arbetsordern. */
-function NotePanel({
+/**
+ * Inline-redigering av anteckning direkt på raden – öppnas på plats vid
+ * anteckningsblocket, ingen panel högst upp.
+ */
+function InlineNoteEditor({
   job,
+  initial,
   onClose,
   onSaved,
 }: {
   job: ScheduleJob;
+  initial: string;
   onClose: () => void;
   onSaved: (note: string) => void;
 }) {
   const router = useRouter();
-  const [value, setValue] = useState(job.description ?? "");
+  const [value, setValue] = useState(initial);
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
 
@@ -289,44 +333,46 @@ function NotePanel({
   }
 
   return (
-    <div className="space-y-3 rounded-2xl border border-line bg-surface-muted/50 p-3.5">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <motion.div {...inlineReveal} className="overflow-hidden">
+      <div className="mt-1 space-y-3 rounded-2xl border border-line bg-surface-muted/40 p-3 shadow-sm ring-1 ring-black/[0.02]">
+        <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground">
           Anteckning
         </p>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-muted"
-          aria-label="Stäng"
-        >
-          <X className="size-4" />
-        </button>
+        <textarea
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          rows={4}
+          autoFocus
+          placeholder="Skriv en anteckning om jobbet…"
+          className="w-full resize-none rounded-xl border border-input bg-surface px-3 py-2.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
+        />
+        {error ? (
+          <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
+            {error}
+          </p>
+        ) : null}
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="success"
+            size="sm"
+            className="flex-1"
+            disabled={pending}
+            onClick={save}
+          >
+            {pending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Check className="size-4" />
+            )}
+            Spara
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={onClose}>
+            Avbryt
+          </Button>
+        </div>
       </div>
-      <textarea
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        rows={4}
-        autoFocus
-        placeholder="Skriv en anteckning om jobbet…"
-        className="w-full resize-none rounded-xl border border-input bg-surface px-3 py-2.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
-      />
-      {error ? (
-        <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
-          {error}
-        </p>
-      ) : null}
-      <Button
-        type="button"
-        variant="success"
-        className="w-full"
-        disabled={pending}
-        onClick={save}
-      >
-        {pending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-        Spara anteckning
-      </Button>
-    </div>
+    </motion.div>
   );
 }
 
@@ -507,45 +553,6 @@ function CustomerEditor({
   );
 }
 
-function QuickAction({
-  icon: Icon,
-  label,
-  onClick,
-  href,
-  active,
-}: {
-  icon: typeof Clock;
-  label: string;
-  onClick?: () => void;
-  href?: string;
-  active?: boolean;
-}) {
-  const cls = cn(
-    "flex flex-1 flex-col items-center justify-center gap-1.5 rounded-2xl border px-2 py-3 text-xs font-semibold transition-colors",
-    active
-      ? "border-brand-300 bg-brand-50 text-brand-700"
-      : "border-line bg-surface text-ink-soft active:bg-surface-muted hover:bg-surface-muted",
-  );
-  const inner = (
-    <>
-      <Icon className="size-5" />
-      <span className="text-center leading-tight">{label}</span>
-    </>
-  );
-  if (href) {
-    return (
-      <Link href={href} onClick={onClick} className={cls}>
-        {inner}
-      </Link>
-    );
-  }
-  return (
-    <button type="button" onClick={onClick} className={cls}>
-      {inner}
-    </button>
-  );
-}
-
 function Row({
   icon: Icon,
   label,
@@ -600,8 +607,6 @@ function EditableValue({
  *  Detaljpanel
  * ------------------------------------------------------------------ */
 
-type Panel = "none" | "reschedule" | "note";
-
 export function JobDetail({
   job,
   open,
@@ -622,14 +627,19 @@ export function JobDetail({
   const [type, setType] = useState(job?.type ?? "");
   const [priority, setPriority] = useState(job?.priority ?? "normal");
   const [note, setNote] = useState(job?.description ?? "");
-  const [panel, setPanel] = useState<Panel>("none");
+  const [mechId, setMechId] = useState(job?.mechanics[0]?.userId ?? "");
+  // Vilken rad som redigeras inline (bara en i taget).
+  const [editingTime, setEditingTime] = useState(false);
+  const [editingNote, setEditingNote] = useState(false);
 
   useEffect(() => {
     setStatus(job?.status ?? "planned");
     setType(job?.type ?? "");
     setPriority(job?.priority ?? "normal");
     setNote(job?.description ?? "");
-    setPanel("none");
+    setMechId(job?.mechanics[0]?.userId ?? "");
+    setEditingTime(false);
+    setEditingNote(false);
   }, [job]);
 
   const vehicles = job?.vehicles.map((jv) => jv.vehicle) ?? [];
@@ -644,126 +654,73 @@ export function JobDetail({
       ]
     : [];
   const totals = job ? orderTotals(job.parts) : null;
-  const primary = vehicles[0];
   const hasVehicle = vehicles.length > 0;
   const canReschedule = canManage && !!job?.scheduledStart && !!job?.scheduledEnd;
-  const meta = statusMeta[status];
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-md">
+      <SheetContent className="w-full sm:max-w-md" showCloseButton={false}>
         {job ? (
           <>
-            <SheetHeader>
-              <div className="flex items-center gap-3 pr-8">
-                <LicensePlate
-                  value={primary?.regNo ?? "—"}
-                  size="md"
-                  className="shrink-0"
-                />
-                <div className="min-w-0">
-                  <SheetTitle>{job.type}</SheetTitle>
-                  <SheetDescription>
-                    {primary
-                      ? [primary.brand, primary.model].filter(Boolean).join(" ") ||
-                        primary.regNo
-                      : "Inget fordon"}
-                    {vehicles.length > 1 ? ` +${vehicles.length - 1} fordon` : ""}
-                  </SheetDescription>
-                </div>
-              </div>
-              <div className="mt-3 flex items-center gap-2">
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                    meta?.badge ?? "",
-                  )}
-                >
-                  <span className={cn("size-1.5 rounded-full", meta?.dot ?? "bg-slate-400")} />
-                  {statusLabels[status] ?? status}
-                </span>
-                {job.scheduledStart ? (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground tabular-nums">
-                    <Clock className="size-3.5" />
-                    {tf.format(new Date(job.scheduledStart))}
-                    {job.scheduledEnd ? `–${tf.format(new Date(job.scheduledEnd))}` : ""}
-                  </span>
-                ) : null}
-              </div>
-            </SheetHeader>
+            {/* Rubrik dold visuellt – behålls för skärmläsare (dialogen kräver en titel) */}
+            <SheetTitle className="sr-only">{job.type}</SheetTitle>
 
-            <SheetBody className="space-y-5">
-              {/* Snabb status */}
-              <StatusPicker jobId={job.id} status={status} onStatus={setStatus} />
+            {/* Diskret, touchvänlig stäng-knapp som flyter i hörnet (ingen egen rad) */}
+            <SheetClose className="absolute right-3 top-3 z-20 flex size-8 items-center justify-center rounded-full bg-surface-muted text-muted-foreground transition-colors hover:bg-line-strong hover:text-ink pointer-coarse:size-9">
+              <X className="size-4" />
+              <span className="sr-only">Stäng</span>
+            </SheetClose>
 
-              {/* Snabbåtgärder */}
-              <div className="flex gap-2">
-                {canReschedule ? (
-                  <QuickAction
-                    icon={CalendarClock}
-                    label="Omboka"
-                    active={panel === "reschedule"}
-                    onClick={() =>
-                      setPanel((p) => (p === "reschedule" ? "none" : "reschedule"))
-                    }
-                  />
-                ) : null}
-                <QuickAction
-                  icon={StickyNote}
-                  label="Anteckning"
-                  active={panel === "note"}
-                  onClick={() => setPanel((p) => (p === "note" ? "none" : "note"))}
-                />
-                <QuickAction
-                  icon={ArrowUpRight}
-                  label="Arbetsorder"
-                  href={`/arbetsordrar/${job.id}`}
-                  onClick={() => onOpenChange(false)}
-                />
-              </div>
-
-              {panel === "reschedule" && canReschedule ? (
-                <ReschedulePanel
-                  job={job}
-                  mechanics={mechanics}
-                  onClose={() => setPanel("none")}
-                />
-              ) : null}
-              {panel === "note" ? (
-                <NotePanel
-                  job={job}
-                  onClose={() => setPanel("none")}
-                  onSaved={setNote}
-                />
-              ) : null}
-
+            <SheetBody className="space-y-4">
               {/* Detaljer */}
               <div className="divide-y divide-line border-t border-line">
                 <Row icon={Clock} label="Tid">
-                  <EditableValue
-                    editable={canReschedule}
-                    onClick={() => setPanel("reschedule")}
-                  >
-                    {job.scheduledStart && job.scheduledEnd ? (
-                      <>
-                        {dtf.format(new Date(job.scheduledStart))} ·{" "}
-                        {tf.format(new Date(job.scheduledStart))}–
-                        {tf.format(new Date(job.scheduledEnd))}
-                      </>
-                    ) : (
-                      "Ej tidsatt"
-                    )}
-                  </EditableValue>
+                  {!editingTime ? (
+                    <EditableValue
+                      editable={canReschedule}
+                      onClick={() => setEditingTime(true)}
+                    >
+                      {job.scheduledStart && job.scheduledEnd ? (
+                        <>
+                          {dtf.format(new Date(job.scheduledStart))} ·{" "}
+                          {tf.format(new Date(job.scheduledStart))}–
+                          {tf.format(new Date(job.scheduledEnd))}
+                        </>
+                      ) : (
+                        "Ej tidsatt"
+                      )}
+                    </EditableValue>
+                  ) : null}
+                  <AnimatePresence initial={false}>
+                    {editingTime && canReschedule ? (
+                      <InlineTimeEditor
+                        key="time-edit"
+                        job={job}
+                        onClose={() => setEditingTime(false)}
+                      />
+                    ) : null}
+                  </AnimatePresence>
+                </Row>
+                <Row icon={CircleDot} label="Status">
+                  <StatusPicker
+                    jobId={job.id}
+                    status={status}
+                    onStatus={setStatus}
+                  />
                 </Row>
                 <Row icon={UserIcon} label="Mekaniker">
-                  <EditableValue
-                    editable={canReschedule}
-                    onClick={() => setPanel("reschedule")}
-                  >
-                    {jobMechanics.length > 0
-                      ? jobMechanics.map((m) => m.name).join(", ")
-                      : "Ej tilldelad"}
-                  </EditableValue>
+                  {canManage ? (
+                    <MechanicPicker
+                      jobId={job.id}
+                      mechanics={mechanics}
+                      value={mechId}
+                      onChange={setMechId}
+                    />
+                  ) : jobMechanics.length > 0 ? (
+                    jobMechanics.map((m) => m.name).join(", ")
+                  ) : (
+                    "Ej tilldelad"
+                  )}
                 </Row>
                 <Row icon={Wrench} label="Typ">
                   {canManage ? (
@@ -827,20 +784,33 @@ export function JobDetail({
                 ) : null}
                 {canManage || note ? (
                   <Row icon={StickyNote} label="Anteckning">
-                    <EditableValue
-                      editable={canManage}
-                      onClick={() => setPanel("note")}
-                    >
-                      {note ? (
-                        <span className="font-normal whitespace-pre-wrap text-ink-soft">
-                          {note}
-                        </span>
-                      ) : (
-                        <span className="font-normal text-muted-foreground">
-                          Lägg till anteckning…
-                        </span>
-                      )}
-                    </EditableValue>
+                    {!editingNote ? (
+                      <EditableValue
+                        editable={canManage}
+                        onClick={() => setEditingNote(true)}
+                      >
+                        {note ? (
+                          <span className="font-normal whitespace-pre-wrap text-ink-soft">
+                            {note}
+                          </span>
+                        ) : (
+                          <span className="font-normal text-muted-foreground">
+                            Lägg till anteckning…
+                          </span>
+                        )}
+                      </EditableValue>
+                    ) : null}
+                    <AnimatePresence initial={false}>
+                      {editingNote && canManage ? (
+                        <InlineNoteEditor
+                          key="note-edit"
+                          job={job}
+                          initial={note}
+                          onClose={() => setEditingNote(false)}
+                          onSaved={setNote}
+                        />
+                      ) : null}
+                    </AnimatePresence>
                   </Row>
                 ) : null}
               </div>

@@ -48,7 +48,7 @@ function Column({
   return (
     <div
       ref={containerRef}
-      className="relative flex-1 overflow-y-auto px-1 [scrollbar-width:thin]"
+      className="relative flex-1 overflow-y-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       <div className="py-1">
         {items.map((v) => {
