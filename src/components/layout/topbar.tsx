@@ -1,7 +1,6 @@
 "use client";
 
 import { Bell, BellOff } from "lucide-react";
-import { TenantLogo } from "@/components/ui/tenant-logo";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -11,42 +10,27 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { GlobalSearch } from "./global-search";
 import { UserMenu } from "./user-menu";
-import type { SwitcherData } from "@/lib/data/tenant-context";
 
-export function Topbar({ switcher }: { switcher: SwitcherData }) {
-  const active =
-    switcher.tenants.find((t) => t.id === switcher.activeId) ??
-    switcher.tenants[0] ??
-    null;
-
+/**
+ * Topbar – endast på desktop (mus/fine pointer + lg-bredd). På iPad och mobil
+ * används i stället flikfältet längst ner (BottomNav) med verkstad, sök och
+ * konto i "Mer", så toppen kan hållas ren och ge mer plats åt innehållet.
+ */
+export function Topbar() {
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center gap-2 border-b border-line bg-surface/80 px-3 pt-safe backdrop-blur-md sm:gap-3 sm:px-4 md:px-6">
-      {/* Aktiv verkstad som kontext – endast mobil/stående (sidomenyn visar
-          detta på lg+). */}
-      {active ? (
-        <div className="flex min-w-0 items-center gap-2 pointer-fine:lg:hidden">
-          <TenantLogo tenant={active} size="sm" />
-          <span className="min-w-0 max-w-[8.5rem] truncate text-sm font-bold text-ink sm:max-w-[14rem]">
-            {active.name}
-          </span>
-        </div>
-      ) : null}
-
+    <header className="sticky top-0 z-40 hidden h-16 items-center gap-3 border-b border-line bg-surface/80 px-4 pt-safe backdrop-blur-md pointer-fine:lg:flex md:px-6">
       {/* Global sök */}
       <GlobalSearch />
 
-      {/* Spacer på mobil när söket är komprimerat */}
-      <div className="flex-1 sm:hidden" />
-
       {/* Höger: åtgärder – förankrade i högra hörnet */}
-      <div className="flex items-center gap-1.5 sm:ml-auto sm:gap-2">
+      <div className="ml-auto flex items-center gap-2">
         {/* Notiser */}
         <DropdownMenu>
           <DropdownMenuTrigger
-            className="flex size-10 items-center justify-center rounded-xl text-ink-soft transition-colors hover:bg-surface-muted data-popup-open:bg-surface-muted pointer-coarse:size-12"
+            className="flex size-10 items-center justify-center rounded-xl text-ink-soft transition-colors hover:bg-surface-muted data-popup-open:bg-surface-muted"
             aria-label="Notiser"
           >
-            <Bell className="size-5 pointer-coarse:size-6" />
+            <Bell className="size-5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" sideOffset={6} className="min-w-72">
             <DropdownMenuGroup>
@@ -61,11 +45,9 @@ export function Topbar({ switcher }: { switcher: SwitcherData }) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Användarmeny – endast desktop (iPad/mobil har den i "Mer") */}
-        <div className="mx-1 hidden h-7 w-px bg-line pointer-fine:lg:block" />
-        <div className="hidden pointer-fine:lg:block">
-          <UserMenu subtitle="Verkstad" />
-        </div>
+        {/* Användarmeny */}
+        <div className="mx-1 h-7 w-px bg-line" />
+        <UserMenu subtitle="Verkstad" />
       </div>
     </header>
   );

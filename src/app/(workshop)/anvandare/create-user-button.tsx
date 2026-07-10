@@ -84,7 +84,7 @@ export function CreateUserButton() {
         render={
           <Button size="md" variant="success">
             <Plus className="size-4" />
-            <span className="hidden sm:inline">Lägg till användare</span>
+            Lägg till användare
           </Button>
         }
       />

@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { TenantLogo } from "@/components/ui/tenant-logo";
 import {
   DropdownMenu,
@@ -18,9 +19,12 @@ import type { SwitcherData } from "@/lib/data/tenant-context";
 export function TenantSwitcher({
   data,
   collapsed = false,
+  dark = false,
 }: {
   data: SwitcherData;
   collapsed?: boolean;
+  /** Mörk skena – ljusa texter och genomskinliga ytor */
+  dark?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -40,7 +44,14 @@ export function TenantSwitcher({
     if (collapsed) return null;
     return (
       <div className="px-3 py-3">
-        <p className="rounded-lg border border-dashed border-line px-2.5 py-2 text-xs text-muted-foreground">
+        <p
+          className={cn(
+            "rounded-lg border border-dashed px-2.5 py-2 text-xs",
+            dark
+              ? "border-white/15 text-white/50"
+              : "border-line text-muted-foreground",
+          )}
+        >
           Ingen verkstad
         </p>
       </div>
@@ -50,7 +61,12 @@ export function TenantSwitcher({
   if (collapsed) {
     return (
       <div className="flex justify-center px-2 py-3">
-        <span className="flex size-8 items-center justify-center rounded-lg bg-ink text-xs font-bold text-white">
+        <span
+          className={cn(
+            "flex size-8 items-center justify-center rounded-lg text-xs font-bold text-white",
+            dark ? "bg-white/10" : "bg-ink",
+          )}
+        >
           {active.initials}
         </span>
       </div>
@@ -66,10 +82,20 @@ export function TenantSwitcher({
         <div className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left">
           <TenantLogo tenant={active} size="sm" />
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-semibold text-ink">
+            <span
+              className={cn(
+                "block truncate text-sm font-semibold",
+                dark ? "text-white" : "text-ink",
+              )}
+            >
               {active.name}
             </span>
-            <span className="block truncate text-xs text-muted-foreground">
+            <span
+              className={cn(
+                "block truncate text-xs",
+                dark ? "text-white/55" : "text-muted-foreground",
+              )}
+            >
               {active.city ?? "Verkstad"}
             </span>
           </span>
@@ -81,21 +107,48 @@ export function TenantSwitcher({
   return (
     <div className="px-3 py-3">
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex w-full items-center gap-2.5 rounded-lg border border-line bg-surface px-2.5 py-2 text-left transition-colors hover:bg-surface-muted data-popup-open:border-brand-300 data-popup-open:bg-surface-muted">
+        <DropdownMenuTrigger
+          className={cn(
+            "flex w-full items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left transition-colors",
+            dark
+              ? "border-white/10 bg-white/[0.04] hover:bg-white/[0.08] data-popup-open:border-white/20 data-popup-open:bg-white/[0.08]"
+              : "border-line bg-surface hover:bg-surface-muted data-popup-open:border-brand-300 data-popup-open:bg-surface-muted",
+          )}
+        >
           <TenantLogo tenant={active} size="sm" />
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-semibold text-ink">
+            <span
+              className={cn(
+                "block truncate text-sm font-semibold",
+                dark ? "text-white" : "text-ink",
+              )}
+            >
               {active.name}
             </span>
-            <span className="block truncate text-xs text-muted-foreground">
+            <span
+              className={cn(
+                "block truncate text-xs",
+                dark ? "text-white/55" : "text-muted-foreground",
+              )}
+            >
               {data.isSuperadmin ? "Superadmin · " : ""}
               {active.city ?? "Verkstad"}
             </span>
           </span>
           {pending ? (
-            <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
+            <Loader2
+              className={cn(
+                "size-4 shrink-0 animate-spin",
+                dark ? "text-white/50" : "text-muted-foreground",
+              )}
+            />
           ) : (
-            <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
+            <ChevronsUpDown
+              className={cn(
+                "size-4 shrink-0",
+                dark ? "text-white/50" : "text-muted-foreground",
+              )}
+            />
           )}
         </DropdownMenuTrigger>
 

@@ -18,6 +18,7 @@ import {
   LogOut,
   Check,
   ChevronRight,
+  ScanLine,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -73,8 +74,22 @@ export function BottomNav({ switcher }: { switcher: SwitcherData }) {
 
   return (
     <>
+      {/* Mobilförst: flytande skanna-knapp för mekaniker. Bara på telefon –
+          iPad väntar vi med (sm:hidden döljer den från surfplatta uppåt).
+          Döljs på själva skanningsvyn. */}
+      {!pathname.startsWith("/scanna") ? (
+        <Link
+          href="/scanna"
+          aria-label="Skanna skylt"
+          className="fixed bottom-[calc(4.9rem+env(safe-area-inset-bottom))] left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-[0_10px_24px_-8px_rgb(26_100_189/0.8)] transition-colors active:bg-brand-700 sm:hidden"
+        >
+          <ScanLine className="size-5" />
+          Skanna skylt
+        </Link>
+      ) : null}
+
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 px-1 pb-safe backdrop-blur-xl pointer-fine:lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 pl-safe pr-safe pb-safe backdrop-blur-xl pointer-fine:lg:hidden"
         aria-label="Huvudnavigation"
       >
         <div className="mx-auto flex max-w-2xl items-stretch justify-around">
@@ -178,7 +193,10 @@ function MoreSheet({
             <span className="h-1.5 w-10 rounded-full bg-line-strong" aria-hidden />
           </div>
 
-          <div className="overflow-y-auto px-4 pb-safe-bottom" style={{ ["--pb-extra" as string]: "1rem" }}>
+          <div
+            className="overflow-y-auto pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))] pb-safe-bottom"
+            style={{ ["--pb-extra" as string]: "1rem" }}
+          >
             <DialogPrimitive.Title className="sr-only">Meny</DialogPrimitive.Title>
 
             {/* Användare */}

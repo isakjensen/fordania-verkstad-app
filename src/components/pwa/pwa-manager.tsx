@@ -138,7 +138,7 @@ export function PwaManager() {
       )}
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent showCloseButton className="sm:max-w-md">
           <DialogHeader>
             <span className="flex size-11 items-center justify-center rounded-2xl bg-warning-soft text-warning">
               <CloudOff className="size-6" />
@@ -171,8 +171,15 @@ export function PwaManager() {
             <li className="flex gap-2.5">
               <Dot />
               <span>
-                Sidor du redan besökt visas från en sparad kopia och kan skilja
-                sig från hur det faktiskt ser ut just nu.
+                Sidor du öppnat medan du hade nät visas från en sparad kopia.
+                Sidor du inte hunnit öppna går inte att visa offline.
+              </span>
+            </li>
+            <li className="flex gap-2.5">
+              <Dot />
+              <span>
+                Sparade kopior gäller i upp till 24 timmar. Äldre än så visas
+                inte – då slipper du läsa inaktuell information.
               </span>
             </li>
             <li className="flex gap-2.5">

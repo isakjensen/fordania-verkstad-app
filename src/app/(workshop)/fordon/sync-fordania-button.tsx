@@ -61,7 +61,8 @@ export function SyncFordaniaButton() {
     <>
       <Button variant="default" size="md" onClick={onOpen}>
         <RefreshCw className="size-4" />
-        Synka från Fordania
+        <span className="sm:hidden">Synka</span>
+        <span className="hidden sm:inline">Synka från Fordania</span>
       </Button>
 
       <Dialog

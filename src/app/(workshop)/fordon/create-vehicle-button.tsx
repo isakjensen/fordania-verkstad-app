@@ -61,7 +61,7 @@ export function CreateVehicleButton({
         render={
           <Button size="md" variant="success">
             <Plus className="size-4" />
-            <span className="hidden sm:inline">Lägg till fordon</span>
+            Lägg till fordon
           </Button>
         }
       />

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState, useTransition, type ReactNode } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
@@ -84,10 +84,14 @@ function AnimatedCheckbox({
 
 export function VehiclesView({
   vehicles,
-  action,
+  syncButton,
+  removedButton,
+  createButton,
 }: {
   vehicles: VehicleListItem[];
-  action?: ReactNode;
+  syncButton?: ReactNode;
+  removedButton?: ReactNode;
+  createButton?: ReactNode;
 }) {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -134,71 +138,70 @@ export function VehiclesView({
 
   return (
     <>
-      {/* Kortets huvud – cross-fade mellan normalt läge och markeringsläge.
-          Båda lägena ligger i samma grid-cell så höjden alltid blir den
-          högsta av dem → kortet byter aldrig höjd (ingen hoppande layout).
-          På mobil staplas titel och knappar; sida vid sida från sm och upp. */}
-      <div className="grid border-b border-line">
-        <div
-          className={cn(
-            "col-start-1 row-start-1 flex flex-col gap-3 px-5 py-4 transition-opacity duration-200",
-            "sm:flex-row sm:items-center sm:justify-between",
-            selectMode && "pointer-events-none opacity-0",
-          )}
-        >
-          <div className="min-w-0">
-            <h3 className="text-[0.95rem] font-bold tracking-tight text-ink">
-              Fordon
-            </h3>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              {vehicles.length} fordon i registret
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Fragment key="action">{action}</Fragment>
-            <Button
-              key="select"
-              variant="outline"
-              size="md"
-              onClick={() => setSelectMode(true)}
+      {/* Kortets huvud – bara det aktiva läget renderas (inget grid-överlapp),
+          så höjden matchar innehållet och markeringsläget lämnar inget tomrum. */}
+      <div className="border-b border-line">
+        {selectMode ? (
+          <div className="flex items-center justify-between gap-3 px-5 py-4">
+            <button
+              type="button"
+              onClick={toggleAll}
+              className="flex items-center gap-2.5 text-left"
             >
-              Välj
-            </Button>
+              <Checkbox checked={allSelected} />
+              <span className="text-[0.95rem] font-bold tracking-tight text-ink">
+                {count > 0 ? `${count} valda` : "Markera fordon"}
+              </span>
+            </button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="md" onClick={exitSelect}>
+                Avbryt
+              </Button>
+              <Button
+                variant="destructive"
+                size="md"
+                disabled={count === 0}
+                onClick={() => setConfirmOpen(true)}
+              >
+                <Trash2 className="size-4" />
+                Ta bort{count > 0 ? ` (${count})` : ""}
+              </Button>
+            </div>
           </div>
-        </div>
-
-        <div
-          className={cn(
-            "col-start-1 row-start-1 flex items-center justify-between gap-3 px-5 py-4 transition-opacity duration-200",
-            selectMode ? "opacity-100" : "pointer-events-none opacity-0",
-          )}
-          aria-hidden={!selectMode}
-        >
-          <button
-            type="button"
-            onClick={toggleAll}
-            className="flex items-center gap-2.5 text-left"
-          >
-            <Checkbox checked={allSelected} />
-            <span className="text-[0.95rem] font-bold tracking-tight text-ink">
-              {count > 0 ? `${count} valda` : "Markera fordon"}
-            </span>
-          </button>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="md" onClick={exitSelect}>
-              Avbryt
-            </Button>
-            <Button
-              variant="destructive"
-              size="md"
-              disabled={count === 0}
-              onClick={() => setConfirmOpen(true)}
-            >
-              <Trash2 className="size-4" />
-              Ta bort{count > 0 ? ` (${count})` : ""}
-            </Button>
+        ) : (
+          <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <h3 className="text-[0.95rem] font-bold tracking-tight text-ink">
+                Fordon
+              </h3>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {vehicles.length} fordon i registret
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              {/* Lägg till fordon – grön primär, full bredd på mobil (sist på desktop) */}
+              <div className="[&_button]:w-full sm:order-last sm:[&_button]:w-auto">
+                {createButton}
+              </div>
+              {/* Åtgärdsrad: Synka fyller ut, papperskorg + Välj kompakt bredvid */}
+              <div className="flex items-center gap-2">
+                {syncButton ? (
+                  <div className="min-w-0 flex-1 [&_button]:w-full sm:flex-none sm:[&_button]:w-auto">
+                    {syncButton}
+                  </div>
+                ) : null}
+                {removedButton}
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={() => setSelectMode(true)}
+                >
+                  Välj
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Mobil / iPad-stående: touch-kort */}

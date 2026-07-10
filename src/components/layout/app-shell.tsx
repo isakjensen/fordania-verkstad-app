@@ -52,9 +52,10 @@ export function AppShell({
         />
       </aside>
 
-      {/* Innehållskolumn */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <Topbar switcher={switcher} />
+      {/* Innehållskolumn. På mobil/iPad saknas topbaren, så kolumnen bär
+          själv notch-skyddet (krymper till 0 när offline-baren redan gör det). */}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col pt-safe-gap pl-safe pr-safe pointer-fine:lg:pt-0">
+        <Topbar />
         <main className="min-h-0 flex-1 overflow-hidden">
           <PageTransition>{children}</PageTransition>
         </main>

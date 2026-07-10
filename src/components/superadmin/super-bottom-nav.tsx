@@ -22,7 +22,7 @@ export function SuperBottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 px-1 pb-safe backdrop-blur-xl pointer-fine:lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 pl-safe pr-safe pb-safe backdrop-blur-xl pointer-fine:lg:hidden"
       aria-label="Superadmin-navigation"
     >
       <div className="mx-auto flex max-w-xl items-stretch justify-around">

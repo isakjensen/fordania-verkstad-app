@@ -44,7 +44,7 @@ export function CreateCustomerButton() {
         render={
           <Button size="md" variant="success">
             <Plus className="size-4" />
-            <span className="hidden sm:inline">Lägg till kund</span>
+            Lägg till kund
           </Button>
         }
       />

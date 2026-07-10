@@ -8,7 +8,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border border-line bg-surface shadow-card",
+        "overflow-hidden rounded-xl border border-line bg-surface",
         className,
       )}
       {...props}
@@ -40,7 +40,7 @@ export function CardHeader({
     >
       <div className="flex min-w-0 items-center gap-2.5">
         <div className="min-w-0">
-          <h3 className="text-[0.95rem] font-bold tracking-tight text-ink">
+          <h3 className="text-[0.95rem] font-semibold tracking-[-0.01em] text-ink">
             {title}
           </h3>
           {subtitle ? (

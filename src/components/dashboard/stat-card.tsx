@@ -2,19 +2,21 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { ArrowUpRight, ArrowDownRight, type LucideIcon } from "lucide-react";
+import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fadeUpItem } from "./motion";
 
 type Tone = "brand" | "success" | "warning" | "danger" | "violet";
 
-/** Mjukt tonat ikon-chip per ton – bär färgmarkören, annars svalt och rent. */
-const chip: Record<Tone, string> = {
-  brand: "bg-brand-50 text-brand-600",
-  success: "bg-success-soft text-success",
-  warning: "bg-warning-soft text-warning",
-  danger: "bg-danger-soft text-danger",
-  violet: "bg-violet-100 text-violet-600 dark:bg-violet-400/15 dark:text-violet-300",
+/* Nordisk Precision: monokromt som grund. Ikonen är dämpad, siffran är i
+ * bläck – tonfärgen visas bara när något faktiskt kräver uppmärksamhet
+ * (emphasize), så det som är viktigt läses på ett ögonkast. */
+const toneColor: Record<Tone, string> = {
+  brand: "text-brand-600",
+  success: "text-success",
+  warning: "text-warning",
+  danger: "text-danger",
+  violet: "text-violet-500",
 };
 
 interface StatCardProps {
@@ -23,7 +25,8 @@ interface StatCardProps {
   value: string | number;
   hint?: string;
   tone?: Tone;
-  trend?: { value: string; up: boolean };
+  /** Färga siffran i tonfärgen (t.ex. röd när något faktiskt kräver åtgärd). */
+  emphasize?: boolean;
   /** Gör hela kortet till en genväg. */
   href?: string;
 }
@@ -34,16 +37,16 @@ export function StatCard({
   value,
   hint,
   tone = "brand",
-  trend,
+  emphasize,
   href,
 }: StatCardProps) {
   return (
     <motion.div
       variants={fadeUpItem}
       className={cn(
-        "group relative overflow-hidden rounded-xl border border-line bg-surface",
-        "p-4 transition-all duration-200",
-        href && "hover:-translate-y-0.5 hover:border-line-strong hover:shadow-lift",
+        "group relative rounded-xl border border-line bg-surface p-5 sm:p-6",
+        "transition-colors duration-200",
+        href && "hover:border-line-strong",
       )}
     >
       {href ? (
@@ -53,43 +56,32 @@ export function StatCard({
           className="absolute inset-0 z-10 rounded-xl focus-visible:outline-none"
         />
       ) : null}
-      <div className="flex items-start justify-between gap-3">
-        <p className="mt-1 text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           {label}
         </p>
+        <Icon
+          className="size-[1.1rem] shrink-0 text-muted-foreground/70"
+          strokeWidth={1.5}
+          aria-hidden
+        />
+      </div>
+
+      <div className="mt-4 flex items-baseline">
         <span
           className={cn(
-            "flex size-9 shrink-0 items-center justify-center rounded-xl",
-            chip[tone],
+            "text-[2.5rem] font-semibold leading-none tracking-[-0.03em] tabular-nums",
+            emphasize ? toneColor[tone] : "text-ink",
           )}
-          aria-hidden
         >
-          <Icon className="size-[1.1rem]" strokeWidth={2} />
-        </span>
-      </div>
-
-      <div className="mt-2.5 flex items-baseline gap-2.5">
-        <span className="text-[1.9rem] font-bold leading-none tracking-tight text-ink tabular-nums">
           {value}
         </span>
-        {trend ? (
-          <span
-            className={cn(
-              "inline-flex items-center gap-0.5 text-xs font-semibold",
-              trend.up ? "text-success" : "text-danger",
-            )}
-          >
-            {trend.up ? (
-              <ArrowUpRight className="size-3.5" />
-            ) : (
-              <ArrowDownRight className="size-3.5" />
-            )}
-            {trend.value}
-          </span>
-        ) : null}
       </div>
 
-      {hint ? <p className="mt-1.5 text-xs text-muted-foreground">{hint}</p> : null}
+      {hint ? (
+        <p className="mt-2.5 text-xs text-muted-foreground">{hint}</p>
+      ) : null}
     </motion.div>
   );
 }

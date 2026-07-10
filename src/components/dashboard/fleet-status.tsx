@@ -11,9 +11,6 @@ interface Segment {
   dot: string;
 }
 
-const R = 42;
-const CIRC = 2 * Math.PI * R;
-
 export function FleetStatus({ fleet }: { fleet: DashboardData["fleet"] }) {
   const segments: Segment[] = [
     {
@@ -38,7 +35,6 @@ export function FleetStatus({ fleet }: { fleet: DashboardData["fleet"] }) {
 
   // Undvik division med noll om flottan är tom
   const denom = fleet.total > 0 ? fleet.total : 1;
-  let acc = 0;
 
   return (
     <Card className="flex h-full min-h-0 flex-col">
@@ -47,59 +43,37 @@ export function FleetStatus({ fleet }: { fleet: DashboardData["fleet"] }) {
         title="Fordonsstatus"
         subtitle={`${fleet.total} fordon i flottan`}
       />
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-5 py-5 sm:flex-row sm:items-center">
-        {/* Donut */}
-        <div className="relative size-36 shrink-0 lg:size-40">
-          <svg viewBox="0 0 100 100" className="size-full -rotate-90">
-            <circle
-              cx="50"
-              cy="50"
-              r={R}
-              fill="none"
-              stroke="var(--color-line)"
-              strokeWidth="9"
-            />
-            {segments.map((seg) => {
-              const frac = seg.value / denom;
-              const len = frac * CIRC;
-              const rotation = (acc / denom) * 360;
-              acc += seg.value;
-              if (seg.value <= 0) return null;
-              return (
-                <motion.circle
-                  key={seg.label}
-                  cx="50"
-                  cy="50"
-                  r={R}
-                  fill="none"
-                  stroke={seg.color}
-                  strokeWidth="9"
-                  strokeLinecap="round"
-                  strokeDasharray={`${len} ${CIRC}`}
-                  initial={{ strokeDashoffset: len }}
-                  animate={{ strokeDashoffset: 0 }}
-                  transition={{
-                    duration: 0.9,
-                    ease: [0.22, 1, 0.36, 1],
-                    delay: 0.15,
-                  }}
-                  style={{ transformOrigin: "50px 50px", rotate: rotation }}
-                />
-              );
-            })}
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-bold tracking-tight text-ink tabular-nums">
-              {fleet.readyPct}%
-            </span>
-            <span className="text-xs font-medium text-muted-foreground">
-              tillgängliga
-            </span>
-          </div>
+      <div className="flex min-h-0 flex-1 flex-col justify-center gap-6 px-5 py-6">
+        {/* Stort tal – hur många som faktiskt är tillgängliga */}
+        <div className="flex items-end gap-3">
+          <span className="text-[3rem] font-semibold leading-[0.9] tracking-[-0.03em] text-ink tabular-nums">
+            {fleet.available}
+          </span>
+          <span className="pb-1 text-sm leading-snug text-muted-foreground">
+            av {fleet.total} fordon
+            <br />
+            tillgängliga just nu
+          </span>
         </div>
 
-        {/* Legend */}
-        <ul className="w-full space-y-3">
+        {/* Segmenterad stapel – ersätter donuten, samma info men lugnare */}
+        <div className="flex h-2.5 w-full gap-0.5 overflow-hidden rounded-full bg-surface-muted">
+          {segments.map((seg) =>
+            seg.value > 0 ? (
+              <motion.div
+                key={seg.label}
+                className="h-full first:rounded-l-full last:rounded-r-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${(seg.value / denom) * 100}%` }}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+                style={{ backgroundColor: seg.color }}
+              />
+            ) : null,
+          )}
+        </div>
+
+        {/* Legend med antal */}
+        <ul className="space-y-2.5">
           {segments.map((seg) => (
             <li key={seg.label} className="flex items-center gap-2.5">
               <span className={`size-2.5 rounded-full ${seg.dot}`} aria-hidden />

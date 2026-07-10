@@ -18,10 +18,14 @@ export default async function CustomersPage() {
       ])
     : [[], []];
 
+  const removedButton = <RemovedCustomersButton removed={removedCustomers} />;
+  const createButton = <CreateCustomerButton />;
+
+  // Samlad knapprad för tomt-läget (CardHeader).
   const action = organizationId ? (
     <div className="flex items-center gap-2">
-      <RemovedCustomersButton removed={removedCustomers} />
-      <CreateCustomerButton />
+      {removedButton}
+      {createButton}
     </div>
   ) : null;
 
@@ -64,7 +68,11 @@ export default async function CustomersPage() {
             </div>
           </>
         ) : (
-          <CustomersView customers={customers} action={action} />
+          <CustomersView
+            customers={customers}
+            removedButton={removedButton}
+            createButton={createButton}
+          />
         )}
       </Card>
     </div>

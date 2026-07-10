@@ -113,7 +113,7 @@ export function SuperAdminShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Innehållskolumn */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col pl-safe pr-safe">
         <header className="sticky top-[var(--fv-topgap,0px)] z-30 flex h-16 items-center gap-3 border-b border-line bg-surface/80 px-4 pt-safe backdrop-blur-md md:px-6">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-navy px-2.5 py-1 text-xs font-semibold text-white">
             <ShieldCheck className="size-3.5 text-brand-300" />

@@ -31,11 +31,16 @@ export default async function VehiclesPage() {
 
   const isAdmin = canManageUsers(role);
 
+  const syncButton = isAdmin ? <SyncFordaniaButton /> : null;
+  const removedButton = <RemovedVehiclesButton removed={removedVehicles} />;
+  const createButton = <CreateVehicleButton fieldDefinitions={fieldDefinitions} />;
+
+  // Samlad knapprad för tomt-läget (CardHeader) – enkel rad räcker där.
   const action = organizationId ? (
     <div className="flex items-center gap-2">
-      {isAdmin ? <SyncFordaniaButton /> : null}
-      <RemovedVehiclesButton removed={removedVehicles} />
-      <CreateVehicleButton fieldDefinitions={fieldDefinitions} />
+      {syncButton}
+      {removedButton}
+      {createButton}
     </div>
   ) : null;
 
@@ -68,7 +73,12 @@ export default async function VehiclesPage() {
             </div>
           </>
         ) : (
-          <VehiclesView vehicles={vehicles} action={action} />
+          <VehiclesView
+            vehicles={vehicles}
+            syncButton={syncButton}
+            removedButton={removedButton}
+            createButton={createButton}
+          />
         )}
       </Card>
     </div>

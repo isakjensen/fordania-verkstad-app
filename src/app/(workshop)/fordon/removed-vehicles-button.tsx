@@ -110,7 +110,10 @@ export function RemovedVehiclesButton({
           </Button>
         }
       />
-      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-2xl">
+      <DialogContent
+        showCloseButton={false}
+        className="flex max-h-[85vh] flex-col sm:max-w-2xl"
+      >
         <DialogHeader>
           <DialogTitle>Borttagna fordon</DialogTitle>
           <DialogDescription>
@@ -146,13 +149,15 @@ export function RemovedVehiclesButton({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Sök reg.nr, märke eller modell…"
-                className="pl-9"
+                className="pl-10 pointer-coarse:pl-10"
                 aria-label="Sök bland borttagna fordon"
               />
             </div>
 
-            {/* Tabell med scrollande kropp och fastnaglad rubrik */}
-            <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-line">
+            {/* Tabell med scrollande kropp och fastnaglad rubrik. overflow-auto
+                håller ev. sidled-scroll INUTI boxen så hela dialogen aldrig
+                kan dras i sidled. */}
+            <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-line">
               <Table>
                 <TableHeader>
                   <TableRow className="sticky top-0 z-10 bg-surface-muted [&_th]:bg-surface-muted hover:bg-surface-muted">
@@ -204,13 +209,14 @@ export function RemovedVehiclesButton({
                               size="sm"
                               onClick={() => onRestore(v.id)}
                               disabled={pending}
+                              aria-label={`Återställ ${v.regNo}`}
                             >
                               {busy ? (
                                 <Loader2 className="size-4 animate-spin" />
                               ) : (
                                 <RotateCcw className="size-4" />
                               )}
-                              Återställ
+                              <span className="hidden sm:inline">Återställ</span>
                             </Button>
                           </TableCell>
                         </TableRow>

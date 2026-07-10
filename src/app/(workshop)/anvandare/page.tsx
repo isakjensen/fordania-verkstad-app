@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Users, ShieldCheck } from "lucide-react";
-import { Card, CardHeader } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import {
   Table,
@@ -42,11 +42,21 @@ export default async function UsersPage() {
   return (
     <div className="w-full px-4 py-4 sm:px-6 lg:px-8">
       <Card>
-        <CardHeader
-          title="Användare"
-          subtitle={`${members.length} användare i verkstaden`}
-          action={organizationId && canManage ? <CreateUserButton /> : null}
-        />
+        <div className="flex flex-col gap-3 border-b border-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h3 className="text-[0.95rem] font-bold tracking-tight text-ink">
+              Användare
+            </h3>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {members.length} användare i verkstaden
+            </p>
+          </div>
+          {organizationId && canManage ? (
+            <div className="[&_button]:w-full sm:[&_button]:w-auto">
+              <CreateUserButton />
+            </div>
+          ) : null}
+        </div>
 
         {!organizationId ? (
           <p className="px-5 py-12 text-center text-sm text-muted-foreground">

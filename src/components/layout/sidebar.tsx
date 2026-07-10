@@ -42,8 +42,8 @@ function NavLink({
           ? "h-9 w-9 justify-center pointer-coarse:h-11 pointer-coarse:w-11"
           : "h-9 gap-2.5 px-2.5 pointer-coarse:h-12 pointer-coarse:px-3",
         active
-          ? "bg-brand-50 font-semibold text-brand-700"
-          : "font-medium text-ink-soft hover:bg-surface-muted hover:text-ink",
+          ? "bg-white font-semibold text-brand-700 shadow-[0_1px_2px_rgb(15_42_67/0.08)] ring-1 ring-brand-100"
+          : "font-medium text-ink-soft hover:bg-white/70 hover:text-ink",
       )}
     >
       {/* Blå accentstapel för aktiv vy */}
@@ -59,7 +59,9 @@ function NavLink({
       <Icon
         className={cn(
           "size-[18px] shrink-0 transition-colors",
-          active ? "text-brand-600" : "text-muted-foreground group-hover:text-ink-soft",
+          active
+            ? "text-brand-600"
+            : "text-muted-foreground group-hover:text-ink-soft",
         )}
         strokeWidth={active ? 2.25 : 2}
       />
@@ -72,7 +74,7 @@ function NavLink({
                 "ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1.5 text-[0.7rem] font-semibold tabular-nums",
                 active
                   ? "bg-brand-600 text-white"
-                  : "bg-surface-muted text-ink-soft",
+                  : "bg-white/80 text-ink-soft",
               )}
             >
               {item.badge}
@@ -80,7 +82,7 @@ function NavLink({
           ) : null}
         </>
       ) : item.badge ? (
-        <span className="absolute right-1 top-1 size-1.5 rounded-full bg-brand-600 ring-2 ring-surface" />
+        <span className="absolute right-1 top-1 size-1.5 rounded-full bg-brand-600 ring-2 ring-white" />
       ) : null}
     </Link>
   );
@@ -88,7 +90,7 @@ function NavLink({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-1 px-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.13em] text-muted-foreground/55">
+    <p className="mb-1 px-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.13em] text-muted-foreground/70">
       {children}
     </p>
   );
@@ -106,11 +108,11 @@ export function Sidebar({
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
-    <div className="flex h-full flex-col bg-surface">
+    <div className="flex h-full flex-col bg-linear-to-b from-[#dcebfb] via-[#eef5fd] to-white">
       {/* Toppsektion med logga */}
       <div
         className={cn(
-          "flex h-16 items-center border-b border-line",
+          "flex h-16 items-center border-b border-line/70",
           collapsed ? "justify-center px-2" : "px-4",
         )}
       >
@@ -118,7 +120,7 @@ export function Sidebar({
       </div>
 
       {/* Aktiv tenant / byt verkstad */}
-      <div className="border-b border-line">
+      <div className="border-b border-line/70">
         <TenantSwitcher data={switcher} collapsed={collapsed} />
       </div>
 
@@ -157,7 +159,7 @@ export function Sidebar({
         {/* Sekundär navigation – förankrad nederst */}
         <div
           className={cn(
-            "mt-auto flex flex-col gap-0.5 border-t border-line pt-3",
+            "mt-auto flex flex-col gap-0.5 border-t border-line/70 pt-3",
             collapsed && "w-full items-center",
           )}
         >
@@ -179,7 +181,7 @@ export function Sidebar({
               title={collapsed ? "Superadmin" : undefined}
               className={cn(
                 "group flex items-center rounded-lg text-[0.85rem] font-medium",
-                "text-ink-soft transition-colors hover:bg-surface-muted/70 hover:text-ink",
+                "text-ink-soft transition-colors hover:bg-white/70 hover:text-ink",
                 collapsed ? "h-9 w-9 justify-center" : "h-9 gap-2.5 px-2.5",
               )}
             >
@@ -192,12 +194,12 @@ export function Sidebar({
 
       {/* Bottensektion: kollaps-knapp (endast desktop) */}
       {onToggleCollapse ? (
-        <div className="border-t border-line p-2.5">
+        <div className="border-t border-line/70 p-2.5">
           <button
             onClick={onToggleCollapse}
             className={cn(
               "hidden h-9 items-center rounded-lg text-[0.85rem] font-medium text-muted-foreground lg:flex",
-              "transition-colors hover:bg-surface-muted hover:text-ink",
+              "transition-colors hover:bg-white/70 hover:text-ink",
               collapsed ? "w-full justify-center" : "w-full gap-2 px-2.5",
             )}
             title={collapsed ? "Expandera meny" : "Fäll ihop meny"}

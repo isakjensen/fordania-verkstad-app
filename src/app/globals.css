@@ -11,31 +11,31 @@
  * ------------------------------------------------------------------ */
 
 @theme {
-  /* Primär – Fordania-blå (lugn azure) */
-  --color-brand-50: #edf4fc;
-  --color-brand-100: #d4e6f9;
-  --color-brand-200: #aecef2;
-  --color-brand-300: #7eafe8;
-  --color-brand-400: #4a8bd9;
-  --color-brand-500: #2a72c9;
-  --color-brand-600: #1a64bd; /* primär (knappar, länkar) */
-  --color-brand-700: #17539d;
-  --color-brand-800: #18477f;
-  --color-brand-900: #173d69;
-  --color-brand-950: #0f2545;
+  /* Primär – Fordania-azure, ljusare i "Nordisk Precision"-riktningen */
+  --color-brand-50: #eef5fd;
+  --color-brand-100: #d9e9fb;
+  --color-brand-200: #b9d6f5;
+  --color-brand-300: #8dbcec;
+  --color-brand-400: #5f9de3;
+  --color-brand-500: #3f86d9; /* ljus azure-accent (tints, ringar) */
+  --color-brand-600: #2f7ad4; /* primär (knappar, länkar) – ljusare än förr */
+  --color-brand-700: #245fa8; /* mörkare azure för text/kontrast på vitt */
+  --color-brand-800: #21568f;
+  --color-brand-900: #1f4a78;
+  --color-brand-950: #16304f;
 
-  /* Ytor & struktur */
-  --color-canvas: #eef3f9; /* app-/sektionsbakgrund (ljus blågrå) */
+  /* Ytor & struktur – svalt nära-monokromt, hårfina linjer */
+  --color-canvas: #f5f7fa; /* app-/sektionsbakgrund (nästan vit, sval) */
   --color-surface: #ffffff; /* kort/paneler */
-  --color-surface-muted: #f4f8fc; /* nedtonad yta / input */
-  --color-line: #e2e9f1; /* kantlinjer */
-  --color-line-strong: #d0d9e5;
+  --color-surface-muted: #f3f5f8; /* nedtonad yta / input */
+  --color-line: #e9ecf1; /* hårfina kantlinjer */
+  --color-line-strong: #dbe0e7;
 
-  /* Text – mörk navy i Fordania-anda */
-  --color-ink: #0f2a43; /* rubriker / primär text */
-  --color-ink-soft: #33485f; /* sekundär text */
-  --color-muted: #4d5a70; /* dämpad text (mörk nog för god läsbarhet) */
-  --color-navy: #0e2741; /* mörka sektioner (footer m.m.) */
+  /* Text – svalt nära-svart slate (behåller en aning Fordania-djup) */
+  --color-ink: #172230; /* rubriker / primär text */
+  --color-ink-soft: #3c4655; /* sekundär text */
+  --color-muted: #697384; /* dämpad text (mörk nog för god läsbarhet) */
+  --color-navy: #0e1c33; /* mörka sektioner (footer m.m.) */
 
   /* Semantiska status */
   --color-success: #21a35b;
@@ -44,16 +44,16 @@
   --color-warning-soft: #fbeedb;
   --color-danger: #d63b3b;
   --color-danger-soft: #fbe7e7;
-  --color-info: #1a64bd;
-  --color-info-soft: #e6effa;
+  --color-info: #2f7ad4;
+  --color-info-soft: #eaf2fc;
 
   /* Typografi (--font-sans hanteras av shadcn @theme inline + layout) */
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  /* Hårfina, återhållsamma skuggor – proffsig look bärs av kantlinjer */
-  --shadow-soft: 0 1px 1px rgb(15 23 41 / 0.04);
-  --shadow-card: 0 1px 2px rgb(15 23 41 / 0.04);
-  --shadow-lift: 0 12px 32px -12px rgb(15 23 41 / 0.16);
+  /* Nästan inga skuggor – "Nordisk Precision" bärs av hårlinjer och luft */
+  --shadow-soft: 0 1px 1px rgb(20 28 40 / 0.03);
+  --shadow-card: 0 1px 2px rgb(20 28 40 / 0.035);
+  --shadow-lift: 0 10px 30px -14px rgb(20 28 40 / 0.13);
   /* Kalenderns orderkort – mjukt djup så korten "sitter" på rutnätet */
   --shadow-chip: 0 1px 2px rgb(15 23 41 / 0.06), 0 2px 6px -2px rgb(15 23 41 / 0.09);
 
@@ -186,6 +186,12 @@
   .pt-safe {
     padding-top: env(safe-area-inset-top);
   }
+  /* Notch-skydd för vyer utan egen topbar (mobil/iPad). Krymper till 0 när
+   * offline-baren redan reserverat plats högst upp (--fv-topgap), så vi aldrig
+   * får dubbelt mellanrum. */
+  .pt-safe-gap {
+    padding-top: max(0px, env(safe-area-inset-top) - var(--fv-topgap, 0px));
+  }
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
   }
@@ -259,39 +265,39 @@
 
 :root {
   color-scheme: light;
-  --radius: 0.7rem;
+  --radius: 0.65rem;
   /* shadcn-tokens mappade till Fordanias designsystem (explicita värden) */
-  --background: #eef3f9;
-  --foreground: #0f2a43;
+  --background: #f5f7fa;
+  --foreground: #172230;
   --card: #ffffff;
-  --card-foreground: #0f2a43;
+  --card-foreground: #172230;
   --popover: #ffffff;
-  --popover-foreground: #0f2a43;
-  --primary: #1a64bd;
+  --popover-foreground: #172230;
+  --primary: #2f7ad4;
   --primary-foreground: #ffffff;
-  --secondary: #edf4fc;
-  --secondary-foreground: #17539d;
-  --muted: #f4f8fc;
-  --muted-foreground: #4d5a70;
-  --accent: #f4f8fc;
-  --accent-foreground: #0f2a43;
-  --destructive: #d63b3b;
-  --border: #e2e9f1;
-  --input: #e2e9f1;
-  --ring: #2a72c9;
-  --chart-1: #2a72c9;
+  --secondary: #eef5fd;
+  --secondary-foreground: #245fa8;
+  --muted: #f3f5f8;
+  --muted-foreground: #697384;
+  --accent: #f3f5f8;
+  --accent-foreground: #172230;
+  --destructive: #d6483f;
+  --border: #e9ecf1;
+  --input: #e9ecf1;
+  --ring: #3f86d9;
+  --chart-1: #3f86d9;
   --chart-2: #21a35b;
   --chart-3: #d9881f;
-  --chart-4: #7eafe8;
-  --chart-5: #0f2a43;
+  --chart-4: #8dbcec;
+  --chart-5: #172230;
   --sidebar: #ffffff;
-  --sidebar-foreground: #0f2a43;
-  --sidebar-primary: #1a64bd;
+  --sidebar-foreground: #172230;
+  --sidebar-primary: #2f7ad4;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f4f8fc;
-  --sidebar-accent-foreground: #0f2a43;
-  --sidebar-border: #e2e9f1;
-  --sidebar-ring: #2a72c9;
+  --sidebar-accent: #f3f5f8;
+  --sidebar-accent-foreground: #172230;
+  --sidebar-border: #e9ecf1;
+  --sidebar-ring: #3f86d9;
 }
 
 /* ------------------------------------------------------------------ *

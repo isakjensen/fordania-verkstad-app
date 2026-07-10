@@ -166,7 +166,7 @@ export function OrdersView({
     <>
       {/* Kortets huvud: titel + växlare + skapa-knapp, och statusfilter */}
       <div className="flex flex-col gap-3 border-b border-line px-4 py-3.5 sm:px-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div className="min-w-0">
             <h2 className="text-base font-bold tracking-tight text-ink">
               {scope === "mine" ? "Mina arbetsordrar" : "Alla arbetsordrar"}
@@ -178,8 +178,9 @@ export function OrdersView({
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex gap-0.5 rounded-xl bg-surface-muted p-1">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            {/* Mina/Alla – full bredd och jämnt delad på mobil, kompakt på desktop */}
+            <div className="inline-flex w-full gap-0.5 rounded-xl bg-surface-muted p-1 sm:w-auto">
               {scopeTabs.map((s) => {
                 const active = scope === s.value;
                 return (
@@ -189,7 +190,7 @@ export function OrdersView({
                     onClick={() => changeScope(s.value)}
                     aria-pressed={active}
                     className={cn(
-                      "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors",
+                      "inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors sm:flex-none sm:py-1.5",
                       active
                         ? "bg-surface text-ink shadow-sm"
                         : "text-muted-foreground hover:text-ink",
@@ -208,23 +209,29 @@ export function OrdersView({
                 );
               })}
             </div>
-            {removedButton}
-            {shown.length > 0 || selectMode ? (
-              <Button
-                variant="outline"
-                size="md"
-                onClick={() => setSelectMode(true)}
-              >
-                Välj
-              </Button>
-            ) : null}
-            {createButton}
+
+            {/* Åtgärder – en jämn rad; "Ny arbetsorder" fyller ut på mobil */}
+            <div className="flex items-center gap-2">
+              {removedButton}
+              {shown.length > 0 || selectMode ? (
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={() => setSelectMode(true)}
+                >
+                  Välj
+                </Button>
+              ) : null}
+              <div className="flex-1 sm:flex-none [&_button]:w-full sm:[&_button]:w-auto">
+                {createButton}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Statusfilter – flikar under titeln, fyller raden från vänster */}
+        {/* Statusfilter – dras i sidled på mobil (dold scrollbar), wrappar på desktop */}
         {scoped.length > 0 ? (
-          <div className="-mx-1 flex flex-nowrap gap-1.5 overflow-x-auto px-1 pb-0.5 sm:flex-wrap sm:overflow-visible">
+          <div className="no-scrollbar -mx-1 flex flex-nowrap gap-1.5 overflow-x-auto px-1 sm:flex-wrap sm:overflow-visible">
             {tabs.map((t) => {
               const active = filter === t.value;
               return (

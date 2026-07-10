@@ -11,6 +11,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { LicensePlate } from "@/components/ui/license-plate";
 import type { Mechanic, ScheduleJob } from "@/lib/data/schedule";
 import { statusMeta, statusLabels } from "./calendar-meta";
@@ -133,13 +134,9 @@ export function MobileAgenda({
           {monthLabel}
         </h2>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={goToday}
-            className="rounded-xl border border-line bg-surface px-3.5 py-2 text-sm font-semibold text-ink transition-colors active:bg-surface-muted"
-          >
+          <Button variant="outline" size="md" onClick={goToday}>
             Idag
-          </button>
+          </Button>
           {createButton}
         </div>
       </div>

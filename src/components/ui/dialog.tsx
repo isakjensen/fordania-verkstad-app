@@ -42,7 +42,10 @@ function DialogOverlay({
 function DialogContent({
   className,
   children,
-  showCloseButton = true,
+  // X:et döljs som standard – nästan alla dialoger har en Avbryt/Stäng-knapp
+  // i botten, och två stängningsknappar ser rörigt ut. Sätt showCloseButton
+  // för dialoger som saknar bottenknapp (t.ex. rena info-modaler).
+  showCloseButton = false,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
