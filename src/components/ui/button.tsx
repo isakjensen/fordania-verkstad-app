@@ -34,6 +34,10 @@ const buttonVariants = cva(
           "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
         "icon-sm":
           "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg pointer-coarse:size-10",
+        // Lika hög som text-storleken "md" (h-10 / coarse h-12) – för ikonknappar
+        // som ligger BREDVID md-knappar, så raden blir jämnhög.
+        "icon-md":
+          "size-10 pointer-coarse:size-12 pointer-coarse:[&_svg:not([class*='size-'])]:size-[1.2rem]",
         "icon-lg": "size-9",
       },
     },

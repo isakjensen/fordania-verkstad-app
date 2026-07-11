@@ -160,7 +160,7 @@ export function WorkOrderActions({ job }: { job: JobInfo }) {
       <Dialog>
         <DialogTrigger
           render={
-            <Button variant="destructive" size="icon" aria-label="Ta bort arbetsorder">
+            <Button variant="destructive" size="icon-md" aria-label="Ta bort arbetsorder">
               <Trash2 className="size-4" />
             </Button>
           }

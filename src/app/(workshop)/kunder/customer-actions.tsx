@@ -128,7 +128,7 @@ export function CustomerActions({ customer }: { customer: CustomerData }) {
       <Dialog open={delOpen} onOpenChange={setDelOpen}>
         <DialogTrigger
           render={
-            <Button variant="destructive" size="icon" aria-label="Ta bort kund">
+            <Button variant="destructive" size="icon-md" aria-label="Ta bort kund">
               <Trash2 className="size-4" />
             </Button>
           }

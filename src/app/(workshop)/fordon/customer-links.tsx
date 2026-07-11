@@ -129,7 +129,7 @@ export function CustomerLinks({
               onValueChange={setSelected}
               options={available.map((o) => ({ value: o.id, label: o.name }))}
             />
-            <Button type="button" onClick={add} disabled={pending || !selected}>
+            <Button type="button" size="sm" onClick={add} disabled={pending || !selected}>
               {busyId === "add" ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (

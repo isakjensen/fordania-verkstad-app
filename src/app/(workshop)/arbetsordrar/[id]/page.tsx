@@ -10,6 +10,8 @@ import {
   ReceiptText,
 } from "lucide-react";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { BackButton } from "@/components/ui/back-button";
 import { getActiveOrganizationId } from "@/lib/session";
 import { getJob, getMechanics } from "@/lib/data/schedule";
@@ -111,7 +113,7 @@ export default async function WorkOrderDetailPage({
             href={`/print/arbetsorder/${job.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-surface-muted"
+            className={cn(buttonVariants({ variant: "outline", size: "md" }))}
           >
             <Printer className="size-4" />
             Skriv ut
@@ -120,7 +122,7 @@ export default async function WorkOrderDetailPage({
             href={`/print/faktura/${job.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-surface-muted"
+            className={cn(buttonVariants({ variant: "outline", size: "md" }))}
           >
             <ReceiptText className="size-4" />
             Faktura

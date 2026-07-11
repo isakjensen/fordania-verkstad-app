@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { Fragment, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
@@ -187,13 +187,17 @@ export function CustomersView({
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               {/* Lägg till kund – grön primär, full bredd på mobil (sist på desktop) */}
-              <div className="[&_button]:w-full sm:order-last sm:[&_button]:w-auto">
+              <div
+                key="create"
+                className="[&_button]:w-full sm:order-last sm:[&_button]:w-auto"
+              >
                 {createButton}
               </div>
               {/* Åtgärdsrad: Välj fyller ut, papperskorg kompakt bredvid */}
-              <div className="flex items-center gap-2">
-                {removedButton}
+              <div key="actions" className="flex items-center gap-2">
+                <Fragment key="removed">{removedButton}</Fragment>
                 <Button
+                  key="select"
                   variant="outline"
                   size="md"
                   onClick={() => setSelectMode(true)}

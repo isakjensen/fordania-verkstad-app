@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { Fragment, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
@@ -181,18 +181,26 @@ export function VehiclesView({
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               {/* Lägg till fordon – grön primär, full bredd på mobil (sist på desktop) */}
-              <div className="[&_button]:w-full sm:order-last sm:[&_button]:w-auto">
+              <div
+                key="create"
+                className="[&_button]:w-full sm:order-last sm:[&_button]:w-auto"
+              >
                 {createButton}
               </div>
-              {/* Åtgärdsrad: Synka fyller ut, papperskorg + Välj kompakt bredvid */}
-              <div className="flex items-center gap-2">
+              {/* Åtgärdsrad: Synka fyller ut, papperskorg + Välj kompakt bredvid.
+                  Explicita keys – villkorliga syskon aktiverar React:s nyckelkontroll. */}
+              <div key="actions" className="flex items-center gap-2">
                 {syncButton ? (
-                  <div className="min-w-0 flex-1 [&_button]:w-full sm:flex-none sm:[&_button]:w-auto">
+                  <div
+                    key="sync"
+                    className="min-w-0 flex-1 [&_button]:w-full sm:flex-none sm:[&_button]:w-auto"
+                  >
                     {syncButton}
                   </div>
                 ) : null}
-                {removedButton}
+                <Fragment key="removed">{removedButton}</Fragment>
                 <Button
+                  key="select"
                   variant="outline"
                   size="md"
                   onClick={() => setSelectMode(true)}

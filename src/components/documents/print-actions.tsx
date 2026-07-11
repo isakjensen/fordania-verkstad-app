@@ -35,7 +35,7 @@ export function PrintActions({
       <button
         type="button"
         onClick={() => history.back()}
-        className="mr-auto inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-ink"
+        className="mr-auto inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-muted-foreground transition-colors hover:text-ink"
       >
         <ArrowLeft className="size-4" />
         Tillbaka
@@ -51,7 +51,7 @@ export function PrintActions({
               ? undefined
               : "Kunden saknar e-postadress (eller fordonet saknar kund)."
           }
-          className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-600 h-10 px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
         >
           {pending ? (
             <Loader2 className="size-4 animate-spin" />
@@ -65,7 +65,7 @@ export function PrintActions({
       <button
         type="button"
         onClick={() => window.print()}
-        className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted"
+        className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface h-10 px-4 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted"
       >
         <Printer className="size-4" />
         Skriv ut / Spara som PDF

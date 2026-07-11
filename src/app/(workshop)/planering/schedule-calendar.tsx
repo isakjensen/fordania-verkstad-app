@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, CalendarRange } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import type { Mechanic, ScheduleJob } from "@/lib/data/schedule";
 import { JobDetail } from "./job-detail";
 import { type MoveArgs } from "./time-grid";
@@ -134,15 +135,15 @@ export function ScheduleCalendar({
       {/* Verktygsrad – desktop/iPad-liggande (rutnätet). På mobil/iPad-stående
           har agendan sin egen kompakta rubrik + veckoremsa i stället. */}
       <header className="hidden shrink-0 flex-wrap items-center justify-between gap-2 border-b border-line pb-3 lg:flex">
-        {/* Vy-växel – dag/vecka på alla skärmar */}
-        <div className="inline-flex rounded-xl border border-line bg-surface-muted p-0.5">
+        {/* Vy-växel – dag/vecka. Samma höjd som knapparna (h-10/coarse h-12). */}
+        <div className="inline-flex h-10 rounded-xl border border-line bg-surface-muted p-0.5 pointer-coarse:h-12">
           {(["day", "week"] as View[]).map((v) => (
             <button
               key={v}
               type="button"
               onClick={() => setView(v)}
               className={cn(
-                "rounded-lg px-4 py-1.5 text-sm font-semibold transition-all",
+                "inline-flex items-center rounded-lg px-4 text-sm font-semibold transition-all",
                 view === v
                   ? "bg-surface text-ink shadow-xs ring-1 ring-line"
                   : "text-muted-foreground hover:text-ink",
@@ -154,19 +155,16 @@ export function ScheduleCalendar({
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={goToday}
-            className="rounded-xl border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors active:bg-surface-muted lg:py-1.5"
-          >
+          <Button variant="outline" size="md" onClick={goToday}>
             Idag
-          </button>
-          <div className="flex items-center rounded-xl border border-line bg-surface">
+          </Button>
+          {/* Nav-grupp – varje pil lika hög som knapparna (40/48px). */}
+          <div className="flex h-10 items-center rounded-xl border border-line bg-surface pointer-coarse:h-12">
             <button
               type="button"
               onClick={() => navigate(-1)}
               aria-label="Föregående"
-              className="flex size-11 items-center justify-center rounded-l-xl text-muted-foreground transition-colors active:bg-surface-muted lg:size-9"
+              className="flex h-full w-10 items-center justify-center rounded-l-xl text-muted-foreground transition-colors active:bg-surface-muted pointer-coarse:w-12"
             >
               <ChevronLeft className="size-5" />
             </button>
@@ -177,7 +175,7 @@ export function ScheduleCalendar({
               type="button"
               onClick={() => navigate(1)}
               aria-label="Nästa"
-              className="flex size-11 items-center justify-center rounded-r-xl text-muted-foreground transition-colors active:bg-surface-muted lg:size-9"
+              className="flex h-full w-10 items-center justify-center rounded-r-xl text-muted-foreground transition-colors active:bg-surface-muted pointer-coarse:w-12"
             >
               <ChevronRight className="size-5" />
             </button>

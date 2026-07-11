@@ -195,7 +195,7 @@ export function VehicleActions({
       <Dialog>
         <DialogTrigger
           render={
-            <Button variant="destructive" size="icon" aria-label="Ta bort fordon">
+            <Button variant="destructive" size="icon-md" aria-label="Ta bort fordon">
               <Trash2 className="size-4" />
             </Button>
           }

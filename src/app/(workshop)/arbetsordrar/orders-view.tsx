@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   useCallback,
   useEffect,
   useMemo,
@@ -210,11 +211,14 @@ export function OrdersView({
               })}
             </div>
 
-            {/* Åtgärder – en jämn rad; "Ny arbetsorder" fyller ut på mobil */}
+            {/* Åtgärder – en jämn rad; "Ny arbetsorder" fyller ut på mobil.
+                Explicita keys eftersom en villkorlig (Välj) gör React:s
+                dev-nyckelkontroll aktiv för syskonen. */}
             <div className="flex items-center gap-2">
-              {removedButton}
+              <Fragment key="removed">{removedButton}</Fragment>
               {shown.length > 0 || selectMode ? (
                 <Button
+                  key="select"
                   variant="outline"
                   size="md"
                   onClick={() => setSelectMode(true)}
@@ -222,7 +226,10 @@ export function OrdersView({
                   Välj
                 </Button>
               ) : null}
-              <div className="flex-1 sm:flex-none [&_button]:w-full sm:[&_button]:w-auto">
+              <div
+                key="create"
+                className="flex-1 sm:flex-none [&_button]:w-full sm:[&_button]:w-auto"
+              >
                 {createButton}
               </div>
             </div>

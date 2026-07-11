@@ -27,7 +27,7 @@ export function Topbar() {
         {/* Notiser */}
         <DropdownMenu>
           <DropdownMenuTrigger
-            className="flex size-10 items-center justify-center rounded-xl text-ink-soft transition-colors hover:bg-surface-muted data-popup-open:bg-surface-muted"
+            className="flex size-11 items-center justify-center rounded-xl text-ink-soft transition-colors hover:bg-surface-muted data-popup-open:bg-surface-muted pointer-coarse:size-12"
             aria-label="Notiser"
           >
             <Bell className="size-5" />
