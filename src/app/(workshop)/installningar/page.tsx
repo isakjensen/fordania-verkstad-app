@@ -7,6 +7,7 @@ import {
   ListChecks,
   Info,
   ShieldCheck,
+  ReceiptText,
   type LucideIcon,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
@@ -19,9 +20,11 @@ import {
 } from "@/lib/session";
 import { getSwitcherData } from "@/lib/data/tenant-context";
 import { getFieldDefinitions } from "@/lib/data/vehicles";
+import { getWorkshopBilling } from "@/lib/data/settings";
 import { AppearanceSettings } from "./appearance";
 import { PasswordForm } from "./password-form";
 import { VehicleFieldsManager } from "./vehicle-fields-manager";
+import { BillingForm } from "./billing-form";
 
 export const metadata: Metadata = { title: "Inställningar" };
 
@@ -86,9 +89,12 @@ export default async function SettingsPage() {
   const organizationId = await getActiveOrganizationId();
   const role = organizationId ? await getTenantRole(organizationId) : null;
   const isAdmin = canManageUsers(role);
-  const [switcher, fields] = await Promise.all([
+  const [switcher, fields, billing] = await Promise.all([
     getSwitcherData(),
     organizationId ? getFieldDefinitions(organizationId) : Promise.resolve([]),
+    isAdmin && organizationId
+      ? getWorkshopBilling(organizationId)
+      : Promise.resolve(null),
   ]);
 
   const user = session?.user;
@@ -160,6 +166,17 @@ export default async function SettingsPage() {
                 <InfoRow label="Ort">{active.city}</InfoRow>
               ) : null}
             </div>
+          </Section>
+        ) : null}
+
+        {/* Fakturauppgifter – endast admin. Avsändare på arbetsorder/faktura. */}
+        {isAdmin && billing ? (
+          <Section
+            icon={ReceiptText}
+            title="Fakturauppgifter"
+            description="Verkstadens uppgifter som visas som avsändare på utskrivna arbetsordrar och fakturor."
+          >
+            <BillingForm billing={billing} />
           </Section>
         ) : null}
 

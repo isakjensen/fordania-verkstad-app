@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Gauge, User, ClipboardList, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LicensePlate } from "@/components/ui/license-plate";
+import { FleetTag } from "@/components/ui/fleet-tag";
 import type { ScanVehicle } from "@/lib/data/scan";
 
 const statusLabels: Record<string, string> = {
@@ -13,11 +14,11 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusStyles: Record<string, string> = {
-  planned: "bg-surface-muted text-ink-soft",
-  in_progress: "bg-brand-50 text-brand-700",
-  waiting_parts: "bg-warning-soft text-warning",
-  done: "bg-success-soft text-success",
-  delayed: "bg-danger-soft text-danger",
+  planned: "bg-surface text-muted-foreground ring-1 ring-inset ring-line-strong",
+  in_progress: "bg-surface text-brand-700 ring-1 ring-inset ring-brand-200",
+  waiting_parts: "bg-surface text-warning ring-1 ring-inset ring-warning/35",
+  done: "bg-surface text-success ring-1 ring-inset ring-success/35",
+  delayed: "bg-surface text-danger ring-1 ring-inset ring-danger/35",
 };
 
 const priorityLabels: Record<string, string> = {
@@ -53,7 +54,10 @@ export function ScanResult({ vehicle }: { vehicle: ScanVehicle }) {
 
       {/* Fordonshuvud */}
       <div className="rounded-2xl border border-line bg-surface p-4">
-        <LicensePlate value={vehicle.regNo} size="lg" />
+        <div className="flex items-center gap-2.5">
+          <LicensePlate value={vehicle.regNo} size="lg" />
+          <FleetTag internal={vehicle.customers.length === 0} />
+        </div>
         <h1 className="mt-3 text-xl font-bold tracking-[-0.01em] text-ink">
           {title}
         </h1>

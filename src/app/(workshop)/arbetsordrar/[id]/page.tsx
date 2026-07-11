@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Wrench, Flag, Clock, CalendarDays, Hash } from "lucide-react";
+import {
+  Wrench,
+  Flag,
+  Clock,
+  CalendarDays,
+  Hash,
+  Printer,
+  ReceiptText,
+} from "lucide-react";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { BackButton } from "@/components/ui/back-button";
 import { getActiveOrganizationId } from "@/lib/session";
@@ -98,17 +106,37 @@ export default async function WorkOrderDetailPage({
             </span>
           </div>
         </div>
-        <WorkOrderActions
-          job={{
-            id: job.id,
-            type: job.type,
-            status: job.status,
-            priority: job.priority,
-            description: job.description,
-            scheduledStart: job.scheduledStart,
-            scheduledEnd: job.scheduledEnd,
-          }}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <a
+            href={`/print/arbetsorder/${job.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-surface-muted"
+          >
+            <Printer className="size-4" />
+            Skriv ut
+          </a>
+          <a
+            href={`/print/faktura/${job.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-surface-muted"
+          >
+            <ReceiptText className="size-4" />
+            Faktura
+          </a>
+          <WorkOrderActions
+            job={{
+              id: job.id,
+              type: job.type,
+              status: job.status,
+              priority: job.priority,
+              description: job.description,
+              scheduledStart: job.scheduledStart,
+              scheduledEnd: job.scheduledEnd,
+            }}
+          />
+        </div>
       </div>
 
       <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">

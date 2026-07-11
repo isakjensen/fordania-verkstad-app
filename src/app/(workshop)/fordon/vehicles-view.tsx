@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { ChevronRight, Gauge, Check, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LicensePlate } from "@/components/ui/license-plate";
+import { FleetTag } from "@/components/ui/fleet-tag";
 import {
   Table,
   TableBody,
@@ -226,8 +227,9 @@ export function VehiclesView({
                 )}
               >
                 <AnimatedCheckbox show={selectMode} checked={isSel} />
-                <div className="flex min-w-0 flex-1 items-center gap-3">
+                <div className="flex min-w-0 flex-1 items-center gap-2.5">
                   <LicensePlate value={v.regNo} className="shrink-0" />
+                  <FleetTag internal={v._count.customers === 0} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[0.95rem] font-semibold text-ink">
                       {label || "Okänt fordon"}
@@ -280,7 +282,7 @@ export function VehiclesView({
                 onClick={selectMode ? () => toggle(v.id) : undefined}
               >
                 <TableCell className="px-4 py-3">
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-2.5">
                     <AnimatedCheckbox show={selectMode} checked={isSel} />
                     <Link
                       href={`/fordon/${v.id}`}
@@ -294,6 +296,7 @@ export function VehiclesView({
                     >
                       <LicensePlate value={v.regNo} />
                     </Link>
+                    <FleetTag internal={v._count.customers === 0} />
                   </div>
                 </TableCell>
                 <TableCell className="px-4 py-3">

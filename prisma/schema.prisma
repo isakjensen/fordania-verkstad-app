@@ -98,6 +98,15 @@ model Organization {
   city        String?
   plan        String       @default("Bas")
   status      String       @default("active")
+  // Fakturauppgifter – avsändare på arbetsorder/faktura (redigeras i Inställningar)
+  orgNumber        String?
+  vatNumber        String?
+  address          String?
+  postalCode       String?
+  email            String?
+  phone            String?
+  bankgiro         String?
+  paymentTermsDays Int     @default(30)
   members     Member[]
   invitations Invitation[]
   vehicles               Vehicle[]

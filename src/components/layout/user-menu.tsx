@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { LogOut, ChevronDown } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { clearOfflinePageCache } from "@/lib/offline-cache";
 import { Avatar } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -27,7 +27,6 @@ function initialsOf(name: string) {
 
 /** Användarmeny med utloggning. Hämtar inloggad användare via sessionen. */
 export function UserMenu({ subtitle }: { subtitle: string }) {
-  const router = useRouter();
   const { data: session } = authClient.useSession();
 
   const name = session?.user.name ?? "—";
@@ -35,9 +34,14 @@ export function UserMenu({ subtitle }: { subtitle: string }) {
   const initials = initialsOf(name);
 
   async function logout() {
-    await authClient.signOut();
-    router.push("/login");
-    router.refresh();
+    try {
+      await authClient.signOut();
+    } finally {
+      // Rensa offline-cachen och gör en HÅRD navigering till login, så ingen
+      // kvarhängande klient-vy av den inloggade appen kan visas efteråt.
+      await clearOfflinePageCache();
+      window.location.href = "/login";
+    }
   }
 
   return (

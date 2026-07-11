@@ -14,6 +14,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { setActiveTenant } from "@/lib/tenant-actions";
+import { clearOfflinePageCache } from "@/lib/offline-cache";
 import type { SwitcherData } from "@/lib/data/tenant-context";
 
 export function TenantSwitcher({
@@ -36,6 +37,7 @@ export function TenantSwitcher({
     if (id === active?.id) return;
     startTransition(async () => {
       await setActiveTenant(id);
+      await clearOfflinePageCache();
       router.refresh();
     });
   }

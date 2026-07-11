@@ -26,6 +26,7 @@ import { authClient } from "@/lib/auth-client";
 import { Avatar } from "@/components/ui/avatar";
 import { TenantLogo } from "@/components/ui/tenant-logo";
 import { setActiveTenant } from "@/lib/tenant-actions";
+import { clearOfflinePageCache } from "@/lib/offline-cache";
 import type { SwitcherData } from "@/lib/data/tenant-context";
 
 interface Tab {
@@ -167,15 +168,21 @@ function MoreSheet({
     if (id === active?.id) return;
     startTransition(async () => {
       await setActiveTenant(id);
+      await clearOfflinePageCache();
       router.refresh();
       onOpenChange(false);
     });
   }
 
   async function logout() {
-    await authClient.signOut();
-    router.push("/login");
-    router.refresh();
+    try {
+      await authClient.signOut();
+    } finally {
+      // Rensa offline-cachen och gör en HÅRD navigering till login, så ingen
+      // kvarhängande klient-vy av den inloggade appen kan visas efteråt.
+      await clearOfflinePageCache();
+      window.location.href = "/login";
+    }
   }
 
   return (

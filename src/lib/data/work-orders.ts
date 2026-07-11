@@ -43,6 +43,53 @@ export async function getRemovedWorkOrders(organizationId: string) {
   });
 }
 
+/**
+ * En enskild arbetsorder med allt som behövs för utskrift/faktura: verkstadens
+ * namn, mekaniker, fordon (inkl. kopplad kund och senaste mätarställning) samt
+ * fullständiga delrader (för prissummering). Scopas på organizationId.
+ */
+export async function getWorkOrderDocument(id: string, organizationId: string) {
+  return db.job.findFirst({
+    where: { id, organizationId, deletedAt: null },
+    include: {
+      organization: {
+        select: {
+          name: true,
+          city: true,
+          orgNumber: true,
+          vatNumber: true,
+          address: true,
+          postalCode: true,
+          email: true,
+          phone: true,
+          bankgiro: true,
+          paymentTermsDays: true,
+        },
+      },
+      assignedUser: { select: { name: true } },
+      mechanics: { include: { user: { select: { name: true } } } },
+      vehicles: {
+        include: {
+          vehicle: {
+            include: {
+              customers: {
+                include: { customer: true },
+                orderBy: { createdAt: "desc" },
+              },
+              odometer: { orderBy: { readingDate: "desc" }, take: 1 },
+            },
+          },
+        },
+      },
+      parts: { orderBy: { createdAt: "asc" } },
+    },
+  });
+}
+
+export type WorkOrderDocument = NonNullable<
+  Awaited<ReturnType<typeof getWorkOrderDocument>>
+>;
+
 export type WorkOrderListItem = Awaited<
   ReturnType<typeof getWorkOrders>
 >[number];

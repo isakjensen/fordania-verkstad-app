@@ -13,7 +13,7 @@ export const statusMeta: Record<
   }
 > = {
   planned: {
-    badge: "bg-surface-muted text-muted-foreground",
+    badge: "bg-surface text-muted-foreground ring-1 ring-inset ring-line-strong",
     dot: "bg-slate-400",
     box: "bg-surface-muted border-line text-ink-soft",
     accent: "bg-slate-400",
@@ -21,7 +21,7 @@ export const statusMeta: Record<
     chip: "border-slate-300 bg-surface",
   },
   in_progress: {
-    badge: "bg-info-soft text-info",
+    badge: "bg-surface text-brand-700 ring-1 ring-inset ring-brand-200",
     dot: "bg-info",
     box: "bg-info-soft border-info text-info",
     accent: "bg-info",
@@ -29,7 +29,7 @@ export const statusMeta: Record<
     chip: "border-info bg-info-soft",
   },
   waiting_parts: {
-    badge: "bg-warning-soft text-warning",
+    badge: "bg-surface text-warning ring-1 ring-inset ring-warning/35",
     dot: "bg-warning",
     box: "bg-warning-soft border-warning text-warning",
     accent: "bg-warning",
@@ -37,7 +37,7 @@ export const statusMeta: Record<
     chip: "border-warning bg-warning-soft",
   },
   done: {
-    badge: "bg-success-soft text-success",
+    badge: "bg-surface text-success ring-1 ring-inset ring-success/35",
     dot: "bg-success",
     box: "bg-success-soft border-success text-success",
     accent: "bg-success",
@@ -45,7 +45,7 @@ export const statusMeta: Record<
     chip: "border-success bg-success-soft",
   },
   delayed: {
-    badge: "bg-danger-soft text-danger",
+    badge: "bg-surface text-danger ring-1 ring-inset ring-danger/35",
     dot: "bg-danger",
     box: "bg-danger-soft border-danger text-danger",
     accent: "bg-danger",

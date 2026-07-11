@@ -112,8 +112,8 @@ export function Sidebar({
       {/* Toppsektion med logga */}
       <div
         className={cn(
-          "flex h-16 items-center border-b border-line/70",
-          collapsed ? "justify-center px-2" : "px-4",
+          "flex h-16 items-center justify-center border-b border-line/70",
+          collapsed ? "px-2" : "px-4",
         )}
       >
         <Logo iconOnly={collapsed} />

@@ -15,11 +15,11 @@
   --color-brand-50: #eef5fd;
   --color-brand-100: #d9e9fb;
   --color-brand-200: #b9d6f5;
-  --color-brand-300: #8dbcec;
-  --color-brand-400: #5f9de3;
-  --color-brand-500: #3f86d9; /* ljus azure-accent (tints, ringar) */
-  --color-brand-600: #2f7ad4; /* primär (knappar, länkar) – ljusare än förr */
-  --color-brand-700: #245fa8; /* mörkare azure för text/kontrast på vitt */
+  --color-brand-300: #93c0ee;
+  --color-brand-400: #66a3e6;
+  --color-brand-500: #4f93e2; /* ljus azure-accent (tints, ringar) */
+  --color-brand-600: #3a86dd; /* primär (knappar, länkar) – ljusare azure */
+  --color-brand-700: #2b6cbb; /* mörkare azure för text/kontrast på vitt */
   --color-brand-800: #21568f;
   --color-brand-900: #1f4a78;
   --color-brand-950: #16304f;
@@ -44,8 +44,8 @@
   --color-warning-soft: #fbeedb;
   --color-danger: #d63b3b;
   --color-danger-soft: #fbe7e7;
-  --color-info: #2f7ad4;
-  --color-info-soft: #eaf2fc;
+  --color-info: #3a86dd;
+  --color-info-soft: #ebf3fd;
 
   /* Typografi (--font-sans hanteras av shadcn @theme inline + layout) */
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
@@ -220,6 +220,14 @@
   }
 }
 
+/* Utskrift: dölj verktygsraden och skala bort marginaler/bakgrund så
+ * dokumentet (arbetsorder/faktura) skrivs ut rent på vitt. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
@@ -273,10 +281,10 @@
   --card-foreground: #172230;
   --popover: #ffffff;
   --popover-foreground: #172230;
-  --primary: #2f7ad4;
+  --primary: #3a86dd;
   --primary-foreground: #ffffff;
   --secondary: #eef5fd;
-  --secondary-foreground: #245fa8;
+  --secondary-foreground: #2b6cbb;
   --muted: #f3f5f8;
   --muted-foreground: #697384;
   --accent: #f3f5f8;
@@ -284,20 +292,20 @@
   --destructive: #d6483f;
   --border: #e9ecf1;
   --input: #e9ecf1;
-  --ring: #3f86d9;
-  --chart-1: #3f86d9;
+  --ring: #4f93e2;
+  --chart-1: #4f93e2;
   --chart-2: #21a35b;
   --chart-3: #d9881f;
   --chart-4: #8dbcec;
   --chart-5: #172230;
   --sidebar: #ffffff;
   --sidebar-foreground: #172230;
-  --sidebar-primary: #2f7ad4;
+  --sidebar-primary: #3a86dd;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f3f5f8;
   --sidebar-accent-foreground: #172230;
   --sidebar-border: #e9ecf1;
-  --sidebar-ring: #3f86d9;
+  --sidebar-ring: #4f93e2;
 }
 
 /* ------------------------------------------------------------------ *
