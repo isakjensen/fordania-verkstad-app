@@ -21,13 +21,6 @@ export function AppShell({
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
 
-  // Skanningsvyn tar hela skärmen: inget skal (topbar, sidomeny, flikfält)
-  // så kameran fyller hela ytan som en riktig app. Gäller bara själva
-  // skannern (/scanna), inte fordonsvyn efter en träff (/scanna/[id]).
-  if (pathname === "/scanna") {
-    return <div className="h-[100svh] w-full overflow-hidden bg-ink">{children}</div>;
-  }
-
   // Läs in sparat kollaps-läge efter mount (undviker hydration-mismatch)
   useEffect(() => {
     const saved = window.localStorage.getItem(COLLAPSE_KEY);
@@ -41,6 +34,15 @@ export function AppShell({
       return next;
     });
   }, []);
+
+  // Skanningsvyn tar hela skärmen: inget skal (topbar, sidomeny, flikfält)
+  // så kameran fyller hela ytan som en riktig app. Gäller bara själva
+  // skannern (/scanna), inte fordonsvyn efter en träff (/scanna/[id]).
+  // OBS: måste ligga EFTER alla hooks – en tidig return före hooks bryter mot
+  // React:s hook-regler och kraschar vid klient-navigering in i skannern.
+  if (pathname === "/scanna") {
+    return <div className="h-[100svh] w-full overflow-hidden bg-ink">{children}</div>;
+  }
 
   return (
     <div className="flex h-[calc(100svh-var(--fv-topgap,0px))] overflow-hidden bg-canvas mt-[var(--fv-topgap,0px)] transition-[margin-top,height] duration-300 ease-out">
