@@ -70,12 +70,14 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
         // registreringsnumret syns alltid (siblings får trunkeras i stället).
         // w-fit → skylten storleksanpassas efter innehållet och tänjs aldrig ut
         // till full bredd (t.ex. i en flex-kolumn med align-items: stretch).
-        "inline-flex w-fit shrink-0 select-none items-stretch overflow-hidden bg-white",
+        // Ljust läge: ren vit platta. Mörkt läge: en aning dämpad off-white så
+        // den inte glarar mot det svarta – men fortfarande en trovärdig skylt.
+        "inline-flex w-fit shrink-0 select-none items-stretch overflow-hidden bg-white dark:bg-[#ebebec]",
         // Kant + topp-gloss + upphöjning byggt med box-shadow så den kan
         // anpassas per läge: mörk hårlinje mot ljus yta, ljus hårlinje mot
-        // mörk yta – så den vita plattan alltid får en skarp, definierad kant.
+        // mörk yta – så plattan alltid får en skarp, definierad kant.
         "shadow-[0_0_0_1px_rgba(15,23,41,0.35),inset_0_1px_0_rgba(255,255,255,0.85),0_1px_2px_rgba(15,23,41,0.22)]",
-        "dark:shadow-[0_0_0_1px_rgba(255,255,255,0.18),inset_0_1px_0_rgba(255,255,255,0.85),0_2px_8px_rgba(0,0,0,0.55)]",
+        "dark:shadow-[0_0_0_1px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.55),0_1px_3px_rgba(0,0,0,0.45)]",
         s.plate,
         className,
       )}
@@ -83,7 +85,9 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
       {/* EU-band */}
       <span
         className={cn(
-          "relative flex flex-col items-center justify-center gap-[1px] bg-[#003399] shadow-[inset_-1px_0_0_rgba(0,0,0,0.18)]",
+          // Vivid, ren EU-blå med lodrät gradient + topp-glansdager, i stället
+          // för en platt, tung mörkblå – ger djup och en fräschare känsla.
+          "relative flex flex-col items-center justify-center gap-[1px] bg-linear-to-b from-[#0d54cc] to-[#00347f] shadow-[inset_-1px_0_0_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.28)]",
           s.band,
         )}
       >
@@ -105,7 +109,7 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
       {/* Registreringsnummer */}
       <span
         className={cn(
-          "flex items-center whitespace-nowrap bg-linear-to-b from-white to-slate-100 font-mono font-bold text-slate-900",
+          "flex items-center whitespace-nowrap bg-linear-to-b from-white to-[#efefef] font-mono font-bold text-[#181818] dark:from-[#f1f1f2] dark:to-[#dbdbdd]",
           s.text,
         )}
       >

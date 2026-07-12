@@ -22,8 +22,8 @@ export function FleetStatus({ fleet }: { fleet: DashboardData["fleet"] }) {
     {
       label: "Inne i verkstad",
       value: fleet.inWorkshop,
-      color: "var(--color-brand-500)",
-      dot: "bg-brand-500",
+      color: "var(--color-info)",
+      dot: "bg-info",
     },
     {
       label: "Väntar på delar",

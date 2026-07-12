@@ -71,7 +71,7 @@ export function OdometerSection({
       <CardBody className="space-y-4">
         {/* Senaste värdet */}
         <div className="flex items-end gap-2 rounded-xl bg-surface-muted p-4">
-          <Gauge className="mb-1 size-6 text-brand-600" />
+          <Gauge className="mb-1 size-6 text-brand-600 dark:text-ink-soft" />
           <span className="text-[2.25rem] font-bold leading-none text-ink tabular-nums">
             {latest ? nf.format(latest.value) : "—"}
           </span>

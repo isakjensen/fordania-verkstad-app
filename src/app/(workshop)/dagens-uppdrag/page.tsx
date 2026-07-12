@@ -55,7 +55,7 @@ export default async function DagensUppdragPage() {
         />
         {jobs.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-            <span className="flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+            <span className="flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 dark:text-ink-soft">
               <ClipboardCheck className="size-6" />
             </span>
             <p className="mt-4 font-semibold text-ink">Inga uppdrag idag</p>

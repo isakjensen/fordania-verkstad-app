@@ -42,8 +42,8 @@ function NavLink({
           ? "h-9 w-9 justify-center pointer-coarse:h-11 pointer-coarse:w-11"
           : "h-9 gap-2.5 px-2.5 pointer-coarse:h-12 pointer-coarse:px-3",
         active
-          ? "bg-white font-semibold text-brand-700 shadow-[0_1px_2px_rgb(15_42_67/0.08)] ring-1 ring-brand-100"
-          : "font-medium text-ink-soft hover:bg-white/70 hover:text-ink",
+          ? "bg-white font-semibold text-brand-700 shadow-[0_1px_2px_rgb(15_42_67/0.08)] ring-1 ring-brand-100 dark:bg-white/[0.07] dark:shadow-none dark:ring-white/10"
+          : "font-medium text-ink-soft hover:bg-white/70 hover:text-ink dark:hover:bg-white/[0.04]",
       )}
     >
       {/* Blå accentstapel för aktiv vy */}
@@ -108,7 +108,7 @@ export function Sidebar({
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
-    <div className="flex h-full flex-col bg-linear-to-b from-[#dcebfb] via-[#eef5fd] to-white">
+    <div className="flex h-full flex-col bg-linear-to-b from-[#fff1e4] via-[#fff9f4] to-white dark:from-[#1c1813] dark:via-[#151311] dark:to-[#100f0d]">
       {/* Toppsektion med logga */}
       <div
         className={cn(

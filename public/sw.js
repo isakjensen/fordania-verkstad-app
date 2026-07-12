@@ -21,7 +21,7 @@
  * stället. Statiska assets har ingen utgång. Höj VERSION vid brytande
  * ändringar för att slänga alla gamla cachar.
  */
-const VERSION = "fv-v2";
+const VERSION = "fv-v3";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGE_CACHE = `${VERSION}-pages`;
 const RSC_CACHE = `${VERSION}-rsc`;

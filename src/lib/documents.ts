@@ -136,7 +136,7 @@ export function invoiceEmailHtml(
     <div style="background:#fff;border:1px solid #e9ecf1;border-radius:14px;padding:28px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <div style="font-size:20px;font-weight:800;letter-spacing:-.02em;color:#3a86dd">${escapeHtml(workshop)}</div>
+          <div style="font-size:20px;font-weight:800;letter-spacing:-.02em;color:#e07a0d">${escapeHtml(workshop)}</div>
           <div style="font-size:12px;color:#697384;margin-top:4px;line-height:1.5">${senderLines
             .map((l) => escapeHtml(l))
             .join("<br>")}</div>

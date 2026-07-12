@@ -35,17 +35,18 @@ interface Tab {
   icon: LucideIcon;
 }
 
-/** Primära flikar – de fyra mest använda vyerna + "Mer". */
+/** Primära flikar – tre på var sida om den centrerade skanna-knappen.
+ * Vänster: Översikt, Kalender, Uppdrag. Höger: Ordrar, Fordon, Mer. */
 const TABS: Tab[] = [
   { label: "Översikt", href: "/", icon: LayoutDashboard },
   { label: "Kalender", href: "/planering", icon: CalendarRange },
+  { label: "Uppdrag", href: "/dagens-uppdrag", icon: ClipboardCheck },
   { label: "Ordrar", href: "/arbetsordrar", icon: ClipboardList },
   { label: "Fordon", href: "/fordon", icon: Car },
 ];
 
 /** Sekundära destinationer – nås via "Mer". */
 const MORE_LINKS: Tab[] = [
-  { label: "Dagens uppdrag", href: "/dagens-uppdrag", icon: ClipboardCheck },
   { label: "Kunder", href: "/kunder", icon: Contact },
   { label: "Användare", href: "/anvandare", icon: Users },
   { label: "Inställningar", href: "/installningar", icon: Settings },
@@ -73,62 +74,72 @@ export function BottomNav({ switcher }: { switcher: SwitcherData }) {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
   const moreActive = MORE_ROUTES.some((r) => pathname.startsWith(r));
 
+  const renderTab = (tab: Tab) => {
+    const active = isActive(tab.href);
+    const Icon = tab.icon;
+    return (
+      <Link
+        key={tab.href}
+        href={tab.href}
+        aria-current={active ? "page" : undefined}
+        className={cn(
+          "group flex flex-1 select-none flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[0.66rem] font-semibold transition-colors",
+          active ? "text-brand-600" : "text-muted-foreground active:bg-surface-muted",
+        )}
+      >
+        <Icon
+          className={cn("size-6 transition-transform", active && "scale-105")}
+          strokeWidth={active ? 2.4 : 2}
+        />
+        <span className="truncate">{tab.label}</span>
+      </Link>
+    );
+  };
+
   return (
     <>
-      {/* Mobilförst: flytande skanna-knapp för mekaniker. Bara på telefon –
-          iPad väntar vi med (sm:hidden döljer den från surfplatta uppåt).
-          Döljs på själva skanningsvyn. */}
-      {!pathname.startsWith("/scanna") ? (
-        <Link
-          href="/scanna"
-          aria-label="Skanna skylt"
-          className="fixed bottom-[calc(4.9rem+env(safe-area-inset-bottom))] left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-[0_10px_24px_-8px_rgb(26_100_189/0.8)] transition-colors active:bg-brand-700 sm:hidden"
-        >
-          <ScanLine className="size-5" />
-          Skanna skylt
-        </Link>
-      ) : null}
-
       <nav
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 pl-safe pr-safe pb-safe backdrop-blur-xl pointer-fine:lg:hidden"
         aria-label="Huvudnavigation"
       >
-        <div className="mx-auto flex max-w-2xl items-stretch justify-around">
-          {TABS.map((tab) => {
-            const active = isActive(tab.href);
-            const Icon = tab.icon;
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "group flex flex-1 select-none flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[0.66rem] font-semibold transition-colors",
-                  active ? "text-brand-600" : "text-muted-foreground active:bg-surface-muted",
-                )}
-              >
-                <Icon
-                  className={cn("size-6 transition-transform", active && "scale-105")}
-                  strokeWidth={active ? 2.4 : 2}
-                />
-                <span className="truncate">{tab.label}</span>
-              </Link>
-            );
-          })}
-          <button
-            type="button"
-            onClick={() => setMoreOpen(true)}
-            aria-haspopup="dialog"
-            className={cn(
-              "group flex flex-1 select-none flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[0.66rem] font-semibold transition-colors",
-              moreActive || moreOpen
-                ? "text-brand-600"
-                : "text-muted-foreground active:bg-surface-muted",
-            )}
+        {/* Två lika breda halvor (flex-1) med den upphöjda skanna-knappen
+            exakt i mitten. På sm+ (iPad) fälls halvorna ut till jämnt
+            fördelade flikar via `sm:contents` och FAB:en döljs. */}
+        <div className="relative mx-auto flex max-w-2xl items-stretch">
+          <div className="flex flex-1 items-stretch justify-around sm:contents">
+            {TABS.slice(0, 3).map(renderTab)}
+          </div>
+
+          {/* Upphöjd skanna-knapp – exakt i mitten. Endast telefon (iPad väntar
+              vi med, sm:hidden). Kort etikett "Scanna"; full lydelse i aria. */}
+          <Link
+            href="/scanna"
+            aria-label="Scanna reggplåt"
+            className="group flex shrink-0 select-none flex-col items-center justify-end gap-1 px-3 pb-1.5 sm:hidden"
           >
-            <Menu className="size-6" strokeWidth={moreActive || moreOpen ? 2.4 : 2} />
-            <span>Mer</span>
-          </button>
+            <span className="-mt-7 flex size-14 items-center justify-center rounded-full brand-fill shadow-[0_10px_22px_-6px_rgb(224_122_13/0.75)] ring-4 ring-surface transition active:brightness-95">
+              <ScanLine className="size-7" strokeWidth={2.2} />
+            </span>
+            <span className="text-[0.66rem] font-semibold text-brand-700">Scanna</span>
+          </Link>
+
+          <div className="flex flex-1 items-stretch justify-around sm:contents">
+            {TABS.slice(3).map(renderTab)}
+            <button
+              type="button"
+              onClick={() => setMoreOpen(true)}
+              aria-haspopup="dialog"
+              className={cn(
+                "group flex flex-1 select-none flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[0.66rem] font-semibold transition-colors",
+                moreActive || moreOpen
+                  ? "text-brand-600"
+                  : "text-muted-foreground active:bg-surface-muted",
+              )}
+            >
+              <Menu className="size-6" strokeWidth={moreActive || moreOpen ? 2.4 : 2} />
+              <span>Mer</span>
+            </button>
+          </div>
         </div>
       </nav>
 

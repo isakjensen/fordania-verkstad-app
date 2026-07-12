@@ -11,8 +11,8 @@ const options: { value: Theme; label: string; icon: LucideIcon }[] = [
 ];
 
 const palettes = {
-  light: { bg: "#e8eef6", surface: "#ffffff", bar: "#1a64bd", line: "#d7dfea" },
-  dark: { bg: "#0b121f", surface: "#1a2335", bar: "#3f86d8", line: "#2f3b54" },
+  light: { bg: "#f3ede4", surface: "#ffffff", bar: "#e07a0d", line: "#e4dccf" },
+  dark: { bg: "#0c0b0a", surface: "#161513", bar: "#eb7d12", line: "#2a2825" },
 };
 
 /** Liten mock av gränssnittet i respektive läge. */

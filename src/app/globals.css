@@ -6,23 +6,25 @@
 
 /* ------------------------------------------------------------------ *
  *  Fordania Verkstad – designsystem
- *  Ren, professionell SaaS-estetik i Fordania-anda: kobolt-blå
- *  primärfärg, svala neutraler, mjuka ytor och tydlig hierarki.
+ *  Ren, professionell estetik i Fordania-anda: varm brand-orange
+ *  (från loggan), svala neutraler, mjuka ytor och tydlig hierarki.
  * ------------------------------------------------------------------ */
 
 @theme {
-  /* Primär – Fordania-azure, ljusare i "Nordisk Precision"-riktningen */
-  --color-brand-50: #eef5fd;
-  --color-brand-100: #d9e9fb;
-  --color-brand-200: #b9d6f5;
-  --color-brand-300: #93c0ee;
-  --color-brand-400: #66a3e6;
-  --color-brand-500: #4f93e2; /* ljus azure-accent (tints, ringar) */
-  --color-brand-600: #3a86dd; /* primär (knappar, länkar) – ljusare azure */
-  --color-brand-700: #2b6cbb; /* mörkare azure för text/kontrast på vitt */
-  --color-brand-800: #21568f;
-  --color-brand-900: #1f4a78;
-  --color-brand-950: #16304f;
+  /* Primär – Fordania-orange, hämtad ur den nya loggans "VERKSTAD".
+   * 600/700 är fördjupade så vit text på knappar behåller kontrast,
+   * medan 500 bär den gyllene logga-tonen för ringar/accenter. */
+  --color-brand-50: #fff8ed;
+  --color-brand-100: #ffeed2;
+  --color-brand-200: #fcd9a6;
+  --color-brand-300: #f9bd6c;
+  --color-brand-400: #f6a238;
+  --color-brand-500: #f5901a; /* gyllene logga-orange (tints, ringar) */
+  --color-brand-600: #e07a0d; /* primär (knappar, länkar) – vit text OK */
+  --color-brand-700: #b85f0d; /* mörkare orange för text/kontrast på vitt */
+  --color-brand-800: #935013;
+  --color-brand-900: #773f13;
+  --color-brand-950: #431e06;
 
   /* Ytor & struktur – svalt nära-monokromt, hårfina linjer */
   --color-canvas: #f5f7fa; /* app-/sektionsbakgrund (nästan vit, sval) */
@@ -67,8 +69,9 @@
   --animate-card-drop-in: card-drop-in 0.3s var(--ease-out-soft) both;
   /* Skannlinjen som sveper upp och ner över skyltramen i skanningsvyn. */
   --animate-scan: scan 2.2s ease-in-out infinite;
-  /* Skannern glider upp som ett ark när den öppnas. */
-  --animate-sheet-up: sheet-up 0.36s var(--ease-out-soft) both;
+  /* Skannern/kameran reser sig upp när den öppnas: glider upp nedifrån med
+   * en mjuk fade och en lätt zoom som "sätter sig" med en subtil studs. */
+  --animate-sheet-up: sheet-up 0.5s cubic-bezier(0.34, 1.42, 0.5, 1) both;
 
   @keyframes fade-up {
     from {
@@ -104,10 +107,12 @@
 
   @keyframes sheet-up {
     from {
-      transform: translateY(100%);
+      opacity: 0;
+      transform: translateY(45%) scale(0.965);
     }
     to {
-      transform: translateY(0);
+      opacity: 1;
+      transform: translateY(0) scale(1);
     }
   }
 }
@@ -241,6 +246,26 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
+  /* ------------------------------------------------------------------ *
+   *  Varumärkes-fyllning för primärknappar/CTA:er. EXAKT loggans
+   *  "VERKSTAD"-gradient (vertikal: orange #fe7f2d upptill → guldgult
+   *  #ffb208 nedtill). Vit text/ikoner med en mjuk varm skugga så de
+   *  förblir läsbara även på det ljusa gulet nedtill. Färg + skugga
+   *  sätts här (currentColor styr lucide-ikoner), så elementen behöver
+   *  ingen egen text-färg. Samma i ljust/mörkt läge.
+   * ------------------------------------------------------------------ */
+  .brand-fill {
+    background-image: linear-gradient(180deg, #fe7f2d 0%, #fe961c 50%, #ffb208 100%);
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgb(122 52 0 / 0.5);
+  }
+  .brand-fill svg {
+    filter: drop-shadow(0 1px 1px rgb(122 52 0 / 0.45));
+  }
+  .brand-fill:hover {
+    filter: brightness(1.03);
+  }
 }
 
 /* Utskrift: dölj verktygsraden och skala bort marginaler/bakgrund så
@@ -304,10 +329,10 @@
   --card-foreground: #172230;
   --popover: #ffffff;
   --popover-foreground: #172230;
-  --primary: #3a86dd;
+  --primary: #e07a0d;
   --primary-foreground: #ffffff;
-  --secondary: #eef5fd;
-  --secondary-foreground: #2b6cbb;
+  --secondary: #fff8ed;
+  --secondary-foreground: #b85f0d;
   --muted: #f3f5f8;
   --muted-foreground: #697384;
   --accent: #f3f5f8;
@@ -315,55 +340,59 @@
   --destructive: #d6483f;
   --border: #e9ecf1;
   --input: #e9ecf1;
-  --ring: #4f93e2;
-  --chart-1: #4f93e2;
+  --ring: #f5901a;
+  --chart-1: #f5901a;
   --chart-2: #21a35b;
   --chart-3: #d9881f;
-  --chart-4: #8dbcec;
+  --chart-4: #f9bd6c;
   --chart-5: #172230;
   --sidebar: #ffffff;
   --sidebar-foreground: #172230;
-  --sidebar-primary: #3a86dd;
+  --sidebar-primary: #e07a0d;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f3f5f8;
   --sidebar-accent-foreground: #172230;
   --sidebar-border: #e9ecf1;
-  --sidebar-ring: #4f93e2;
+  --sidebar-ring: #f5901a;
 }
 
 /* ------------------------------------------------------------------ *
- *  Mörkt läge – sval, mörk navy-slate i Fordania-anda. Alla egna
- *  färgtokens mappas om så att hela appen (kort, text, knappar,
- *  formulär, tabeller, kalendrar) blir läsbar utan kontrastproblem.
+ *  Mörkt läge – neutral, varm svart/grå (INGEN blå ton). "Svart med
+ *  ljusare svart": nära-svart canvas, en aning ljusare ytor för kort,
+ *  varmvit text. Orange varumärke får lysa mot de neutrala mörka ytorna.
  * ------------------------------------------------------------------ */
 .dark {
   color-scheme: dark;
 
-  /* Ytor & struktur */
-  --color-canvas: #0b121f;
-  --color-surface: #151d2d;
-  --color-surface-muted: #1d2740;
-  --color-line: #2b3650;
-  --color-line-strong: #3b4866;
+  /* Ytor & struktur – mörk, nästan-svart neutral (bara en gnutta värme, R≥G≥B,
+   * aldrig blått). Mer åt det svarta hållet än förut. */
+  --color-canvas: #0c0b0a;
+  --color-surface: #161513;
+  --color-surface-muted: #201e1c;
+  --color-line: #2a2825;
+  --color-line-strong: #383531;
 
-  /* Text */
-  --color-ink: #eef2f8;
-  --color-ink-soft: #c4cedd;
-  --color-muted: #95a2b7;
-  --color-navy: #070c14;
+  /* Text – varmvit, dämpade varma grå */
+  --color-ink: #f3f1ee;
+  --color-ink-soft: #c8c5bf;
+  --color-muted: #97938d;
+  --color-navy: #070605;
 
-  /* Brand – ljusare för text/ikoner, mörka subtila ytor */
-  --color-brand-50: #16243d;
-  --color-brand-100: #1e3252;
-  --color-brand-200: #2d456b;
-  --color-brand-300: #5d9be1;
-  --color-brand-400: #4f93de;
-  --color-brand-500: #3f86d8;
-  --color-brand-600: #3f86d8; /* primär (knapp + brand-text) */
-  --color-brand-700: #74acea; /* ljus brand-text (aktiv meny m.m.) */
-  --color-brand-800: #9cc4f1;
-  --color-brand-900: #c6def9;
-  --color-brand-950: #e8f2fd;
+  /* Brand – ljusare orange för text/ikoner. OBS: 50/100 (de stora FYLLNADERNA
+   * bakom ikon-chips, valda rader, hovrar) hålls NEUTRALT mörka i mörkt läge,
+   * så innehållet blir cleant svart – orange bara som accent på text/ikoner,
+   * knappar och sidomenyn. 200+ förblir orange för ringar/text. */
+  --color-brand-50: #23201d;
+  --color-brand-100: #2e2925;
+  --color-brand-200: #5a3a1a;
+  --color-brand-300: #f8b869;
+  --color-brand-400: #f6a63f;
+  --color-brand-500: #f39a28;
+  --color-brand-600: #eb7d12; /* primär (knapp) – vit text OK */
+  --color-brand-700: #f8b869; /* ljus brand-text (aktiv meny m.m.) */
+  --color-brand-800: #fbd09a;
+  --color-brand-900: #fde3c4;
+  --color-brand-950: #fff4e6;
 
   /* Semantiska status */
   --color-success: #45c07e;
@@ -376,35 +405,35 @@
   --color-info-soft: #15294a;
 
   /* shadcn-tokens i synk med ovan */
-  --background: #0b121f;
-  --foreground: #eef2f8;
-  --card: #151d2d;
-  --card-foreground: #eef2f8;
-  --popover: #151d2d;
-  --popover-foreground: #eef2f8;
-  --primary: #3f86d8;
+  --background: #0c0b0a;
+  --foreground: #f3f1ee;
+  --card: #161513;
+  --card-foreground: #f3f1ee;
+  --popover: #161513;
+  --popover-foreground: #f3f1ee;
+  --primary: #eb7d12;
   --primary-foreground: #ffffff;
-  --secondary: #1e3252;
-  --secondary-foreground: #c6def9;
-  --muted: #1d2740;
-  --muted-foreground: #95a2b7;
-  --accent: #1d2740;
-  --accent-foreground: #eef2f8;
+  --secondary: #3a2410;
+  --secondary-foreground: #fde3c4;
+  --muted: #201e1c;
+  --muted-foreground: #97938d;
+  --accent: #201e1c;
+  --accent-foreground: #f3f1ee;
   --destructive: #f06a6a;
-  --border: #2b3650;
-  --input: #2b3650;
-  --ring: #4f93de;
-  --chart-1: #4f93de;
+  --border: #2a2825;
+  --input: #2a2825;
+  --ring: #f6a63f;
+  --chart-1: #f6a63f;
   --chart-2: #45c07e;
   --chart-3: #e3a948;
-  --chart-4: #5d9be1;
-  --chart-5: #c4cedd;
-  --sidebar: #151d2d;
-  --sidebar-foreground: #eef2f8;
-  --sidebar-primary: #3f86d8;
+  --chart-4: #f8b869;
+  --chart-5: #c8c5bf;
+  --sidebar: #161513;
+  --sidebar-foreground: #f3f1ee;
+  --sidebar-primary: #eb7d12;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1d2740;
-  --sidebar-accent-foreground: #eef2f8;
-  --sidebar-border: #2b3650;
-  --sidebar-ring: #4f93de;
+  --sidebar-accent: #201e1c;
+  --sidebar-accent-foreground: #f3f1ee;
+  --sidebar-border: #2a2825;
+  --sidebar-ring: #f6a63f;
 }

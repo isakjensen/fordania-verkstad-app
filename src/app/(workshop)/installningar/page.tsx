@@ -60,7 +60,7 @@ function Section({
   return (
     <section className="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
       <div className="flex items-start gap-3 border-b border-line px-5 py-4">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:text-ink-soft">
           <Icon className="size-[1.1rem]" />
         </span>
         <div className="min-w-0">

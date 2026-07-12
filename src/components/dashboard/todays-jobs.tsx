@@ -54,7 +54,7 @@ export function TodaysJobs({ jobs }: { jobs: DashboardData["todaysJobs"] }) {
         action={
           <Link
             href="/arbetsordrar"
-            className="inline-flex items-center gap-1 text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700 dark:text-ink-soft dark:hover:text-ink"
           >
             Visa alla
             <ArrowRight className="size-4" />
