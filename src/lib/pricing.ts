@@ -22,6 +22,34 @@ export function partTotals(part: PartLike): Totals {
   return { exclOre, vatOre, inclOre: exclOre + vatOre };
 }
 
+/** En mekanikers arbetskostnad på en order (timlön × timmar). */
+export interface LaborLike {
+  hours: number | null;
+  hourlyRateOreExcl: number | null;
+  vatRate: number;
+}
+
+/**
+ * Gör mekanikers timlön till prisrader (samma form som delar), så de kan
+ * summeras och visas med exakt samma logik. Rader utan både timpris och
+ * timmar hoppas över (ingen arbetskostnad angiven ännu).
+ */
+export function laborLines(mechanics: LaborLike[]): PartLike[] {
+  return mechanics
+    .filter(
+      (m) =>
+        m.hourlyRateOreExcl != null &&
+        m.hourlyRateOreExcl > 0 &&
+        m.hours != null &&
+        m.hours > 0,
+    )
+    .map((m) => ({
+      quantity: m.hours as number,
+      unitPriceExclOre: m.hourlyRateOreExcl as number,
+      vatRate: m.vatRate,
+    }));
+}
+
 /** Summerar flera rader till en total – i öre. */
 export function orderTotals(parts: PartLike[]): Totals {
   return parts.reduce<Totals>(

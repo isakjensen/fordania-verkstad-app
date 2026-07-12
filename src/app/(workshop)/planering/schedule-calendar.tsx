@@ -79,6 +79,9 @@ export function ScheduleCalendar({
                   jobId: job.id,
                   userId: toUserId,
                   createdAt: new Date(),
+                  hourlyRateOreExcl: null,
+                  hours: null,
+                  vatRate: 25,
                   user: { id: targetMech.id, name: targetMech.name },
                 },
               ]

@@ -1,4 +1,4 @@
-import { docModel } from "@/lib/documents";
+import { docModel, formatHours } from "@/lib/documents";
 import { partTotals, formatOre } from "@/lib/pricing";
 import { LicensePlate } from "@/components/ui/license-plate";
 import { FleetTag } from "@/components/ui/fleet-tag";
@@ -38,7 +38,8 @@ export function WorkOrderDocument({
   job: WOD;
   kind: "order" | "invoice";
 }) {
-  const { ref, primaryVehicle, customer, totals, mechanics } = docModel(job);
+  const { ref, primaryVehicle, customer, totals, mechanics, labor } =
+    docModel(job);
   const org = job.organization;
   const workshop = org?.name ?? "Verkstaden";
   const isInvoice = kind === "invoice";
@@ -197,28 +198,45 @@ export function WorkOrderDocument({
               </tr>
             </thead>
             <tbody>
-              {job.parts.length > 0 ? (
-                job.parts.map((p) => {
-                  const t = partTotals(p);
-                  return (
-                    <tr key={p.id} className="border-b border-line/70">
-                      <td className="py-2.5 pr-2 text-ink">{p.title}</td>
-                      <td className="py-2.5 px-2 text-right tabular-nums text-ink-soft">
-                        {p.quantity}
-                      </td>
-                      <td className="py-2.5 px-2 text-right tabular-nums text-ink-soft">
-                        {formatOre(p.unitPriceExclOre)}
-                      </td>
-                      <td className="py-2.5 px-2 text-right tabular-nums text-ink-soft">
-                        {p.vatRate}%
-                      </td>
-                      <td className="py-2.5 pl-2 text-right font-semibold tabular-nums text-ink">
-                        {formatOre(t.inclOre)}
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
+              {job.parts.map((p) => {
+                const t = partTotals(p);
+                return (
+                  <tr key={p.id} className="border-b border-line/70">
+                    <td className="py-2.5 pr-2 text-ink">{p.title}</td>
+                    <td className="py-2.5 px-2 text-right tabular-nums text-ink-soft">
+                      {p.quantity}
+                    </td>
+                    <td className="py-2.5 px-2 text-right tabular-nums text-ink-soft">
+                      {formatOre(p.unitPriceExclOre)}
+                    </td>
+                    <td className="py-2.5 px-2 text-right tabular-nums text-ink-soft">
+                      {p.vatRate}%
+                    </td>
+                    <td className="py-2.5 pl-2 text-right font-semibold tabular-nums text-ink">
+                      {formatOre(t.inclOre)}
+                    </td>
+                  </tr>
+                );
+              })}
+              {/* Arbetsrader – mekanikers timlön × timmar */}
+              {labor.map((l, i) => (
+                <tr key={`labor-${i}`} className="border-b border-line/70">
+                  <td className="py-2.5 pr-2 text-ink">Arbete – {l.name}</td>
+                  <td className="py-2.5 px-2 text-right tabular-nums text-ink-soft">
+                    {formatHours(l.hours)} tim
+                  </td>
+                  <td className="py-2.5 px-2 text-right tabular-nums text-ink-soft">
+                    {formatOre(l.rateOre)}
+                  </td>
+                  <td className="py-2.5 px-2 text-right tabular-nums text-ink-soft">
+                    {l.vatRate}%
+                  </td>
+                  <td className="py-2.5 pl-2 text-right font-semibold tabular-nums text-ink">
+                    {formatOre(l.inclOre)}
+                  </td>
+                </tr>
+              ))}
+              {job.parts.length === 0 && labor.length === 0 ? (
                 <tr>
                   <td
                     colSpan={5}
@@ -227,7 +245,7 @@ export function WorkOrderDocument({
                     Inga rader angivna ännu.
                   </td>
                 </tr>
-              )}
+              ) : null}
             </tbody>
           </table>
 

@@ -1,16 +1,71 @@
-import { orderTotals, partTotals, formatOre } from "@/lib/pricing";
+import {
+  orderTotals,
+  partTotals,
+  laborLines,
+  formatOre,
+} from "@/lib/pricing";
 import type { WorkOrderDocument } from "@/lib/data/work-orders";
+
+/** En arbetsrad (mekanikers timlön) för faktura/utskrift. */
+export interface LaborRow {
+  name: string;
+  hours: number;
+  rateOre: number;
+  vatRate: number;
+  exclOre: number;
+  vatOre: number;
+  inclOre: number;
+}
+
+/** Bygger arbetsrader ur orderns mekaniker (bara de med timpris + timmar). */
+export function laborRowsOf(job: WorkOrderDocument): LaborRow[] {
+  return job.mechanics
+    .filter(
+      (m) =>
+        m.hourlyRateOreExcl != null &&
+        m.hourlyRateOreExcl > 0 &&
+        m.hours != null &&
+        m.hours > 0,
+    )
+    .map((m) => {
+      const hours = m.hours as number;
+      const rateOre = m.hourlyRateOreExcl as number;
+      const t = partTotals({
+        quantity: hours,
+        unitPriceExclOre: rateOre,
+        vatRate: m.vatRate,
+      });
+      return {
+        name: m.user.name ?? "Mekaniker",
+        hours,
+        rateOre,
+        vatRate: m.vatRate,
+        ...t,
+      };
+    });
+}
 
 /** Härledda uppgifter som både utskrifts-vyn och e-postfakturan behöver. */
 export function docModel(job: WorkOrderDocument) {
   const ref = job.id.slice(-6).toUpperCase();
   const primaryVehicle = job.vehicles[0]?.vehicle ?? null;
   const customer = primaryVehicle?.customers?.[0]?.customer ?? null;
-  const totals = orderTotals(job.parts);
+  const labor = laborRowsOf(job);
+  // Totalen räknar in både delar och arbetskostnad.
+  const totals = orderTotals([
+    ...job.parts,
+    ...laborLines(
+      job.mechanics.map((m) => ({
+        hours: m.hours,
+        hourlyRateOreExcl: m.hourlyRateOreExcl,
+        vatRate: m.vatRate,
+      })),
+    ),
+  ]);
   const mechanics = job.mechanics
     .map((m) => m.user.name)
     .filter((n): n is string => Boolean(n));
-  return { ref, primaryVehicle, customer, totals, mechanics };
+  return { ref, primaryVehicle, customer, totals, mechanics, labor };
 }
 
 const dateFmt = new Intl.DateTimeFormat("sv-SE", {
@@ -28,7 +83,7 @@ export function invoiceEmailHtml(
   job: WorkOrderDocument,
   today: Date,
 ): string {
-  const { ref, primaryVehicle, customer, totals } = docModel(job);
+  const { ref, primaryVehicle, customer, totals, labor } = docModel(job);
   const org = job.organization;
   const workshop = org?.name ?? "Verkstaden";
   const termsDays = org?.paymentTermsDays ?? 30;
@@ -50,20 +105,30 @@ export function invoiceEmailHtml(
       }`
     : "—";
 
-  const rows =
-    job.parts.length > 0
-      ? job.parts
-          .map((p) => {
-            const t = partTotals(p);
-            return `<tr>
+  const partRows = job.parts.map((p) => {
+    const t = partTotals(p);
+    return `<tr>
               <td style="padding:8px 6px;border-bottom:1px solid #e9ecf1">${escapeHtml(p.title)}</td>
               <td style="padding:8px 6px;border-bottom:1px solid #e9ecf1;text-align:right">${p.quantity}</td>
               <td style="padding:8px 6px;border-bottom:1px solid #e9ecf1;text-align:right">${formatOre(p.unitPriceExclOre)}</td>
               <td style="padding:8px 6px;border-bottom:1px solid #e9ecf1;text-align:right">${p.vatRate}%</td>
               <td style="padding:8px 6px;border-bottom:1px solid #e9ecf1;text-align:right">${formatOre(t.inclOre)}</td>
             </tr>`;
-          })
-          .join("")
+  });
+  // Arbetsrader (mekanikers timlön) – en rad per mekaniker med timpris + timmar.
+  const laborHtml = labor.map((l) => {
+    return `<tr>
+              <td style="padding:8px 6px;border-bottom:1px solid #e9ecf1">Arbete – ${escapeHtml(l.name)}</td>
+              <td style="padding:8px 6px;border-bottom:1px solid #e9ecf1;text-align:right">${formatHours(l.hours)} tim</td>
+              <td style="padding:8px 6px;border-bottom:1px solid #e9ecf1;text-align:right">${formatOre(l.rateOre)}</td>
+              <td style="padding:8px 6px;border-bottom:1px solid #e9ecf1;text-align:right">${l.vatRate}%</td>
+              <td style="padding:8px 6px;border-bottom:1px solid #e9ecf1;text-align:right">${formatOre(l.inclOre)}</td>
+            </tr>`;
+  });
+  const allRows = [...partRows, ...laborHtml];
+  const rows =
+    allRows.length > 0
+      ? allRows.join("")
       : `<tr><td colspan="5" style="padding:14px 6px;color:#697384;text-align:center">Inga fakturarader angivna.</td></tr>`;
 
   return `<!doctype html><html><body style="margin:0;background:#f5f7fa;font-family:Segoe UI,Roboto,Arial,sans-serif;color:#172230">
@@ -123,6 +188,11 @@ export function invoiceEmailHtml(
     </div>
   </div>
 </body></html>`;
+}
+
+/** Timmar utan onödiga decimaler: 2 → "2", 2.5 → "2,5". */
+export function formatHours(hours: number): string {
+  return (Number.isInteger(hours) ? String(hours) : hours.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")).replace(".", ",");
 }
 
 function escapeHtml(s: string): string {

@@ -282,14 +282,22 @@ model Job {
   @@map("jobs")
 }
 
-/// Kopplingstabell arbetsorder ↔ mekaniker (= användare).
+/// Kopplingstabell arbetsorder ↔ mekaniker (= användare). Bär även
+/// arbetskostnaden: varje mekaniker har en egen timlön (exkl. moms, i öre)
+/// och ett antal fakturerade timmar på ordern. Summan räknas i koden.
 model JobMechanic {
-  id        String   @id @default(cuid())
-  jobId     String
-  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  id                String   @id @default(cuid())
+  jobId             String
+  job               Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Timlön exkl. moms i öre (per mekaniker på just den här ordern).
+  hourlyRateOreExcl Int?
+  /// Antal fakturerade timmar för mekanikern på ordern.
+  hours             Float?
+  /// Momssats för arbetskostnaden (arbete är normalt 25 %).
+  vatRate           Int      @default(25)
+  createdAt         DateTime @default(now())
 
   @@unique([jobId, userId])
   @@index([jobId])

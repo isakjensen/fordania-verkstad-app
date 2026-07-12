@@ -57,6 +57,8 @@ export default async function WorkOrderDetailPage({
   const linkedMechanics = job.mechanics.map((m) => ({
     id: m.user.id,
     name: m.user.name,
+    rateOre: m.hourlyRateOreExcl,
+    hours: m.hours,
   }));
   const linkedVehicles = job.vehicles.map((v) => ({
     id: v.vehicle.id,

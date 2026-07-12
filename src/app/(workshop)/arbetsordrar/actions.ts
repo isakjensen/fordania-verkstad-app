@@ -300,6 +300,50 @@ export async function unlinkMechanic(jobId: string, userId: string): Promise<Act
   return { success: true };
 }
 
+/**
+ * Sätter en mekanikers arbetskostnad på ordern: timlön (kr, konverteras till
+ * öre) och antal timmar. Tomt fält nollställs. Momssatsen ligger fast på 25 %
+ * (arbete). Uppdaterar den befintliga JobMechanic-raden.
+ */
+export async function setMechanicLabor(
+  jobId: string,
+  userId: string,
+  rateKr: string,
+  hoursRaw: string,
+): Promise<ActionResult> {
+  const guard = await requireOrg();
+  if ("error" in guard) return guard;
+  const job = await jobInOrg(jobId, guard.organizationId);
+  if (!job) return { error: "Arbetsordern hittades inte." };
+
+  // Timpris: tomt → null (ingen kostnad), annars öre. Ogiltigt → fel.
+  const rateTrim = rateKr.trim();
+  let hourlyRateOreExcl: number | null = null;
+  if (rateTrim.length) {
+    const ore = krToOre(rateTrim);
+    if (ore === null) return { error: "Ange ett giltigt timpris." };
+    hourlyRateOreExcl = ore;
+  }
+
+  // Timmar: tomt → null, annars ett icke-negativt tal (decimaler tillåtna).
+  const hoursTrim = hoursRaw.trim().replace(",", ".");
+  let hours: number | null = null;
+  if (hoursTrim.length) {
+    const n = Number.parseFloat(hoursTrim);
+    if (!Number.isFinite(n) || n < 0) return { error: "Ange ett giltigt antal timmar." };
+    hours = n;
+  }
+
+  const updated = await db.jobMechanic.updateMany({
+    where: { jobId, userId },
+    data: { hourlyRateOreExcl, hours },
+  });
+  if (updated.count === 0) return { error: "Mekanikern är inte kopplad till ordern." };
+
+  revalidatePath(`/arbetsordrar/${jobId}`);
+  return { success: true };
+}
+
 export async function linkVehicle(jobId: string, vehicleId: string): Promise<ActionResult> {
   const guard = await requireOrg();
   if ("error" in guard) return guard;
