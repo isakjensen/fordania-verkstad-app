@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
@@ -18,6 +19,14 @@ export function AppShell({
   switcher: SwitcherData;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const pathname = usePathname();
+
+  // Skanningsvyn tar hela skärmen: inget skal (topbar, sidomeny, flikfält)
+  // så kameran fyller hela ytan som en riktig app. Gäller bara själva
+  // skannern (/scanna), inte fordonsvyn efter en träff (/scanna/[id]).
+  if (pathname === "/scanna") {
+    return <div className="h-[100svh] w-full overflow-hidden bg-ink">{children}</div>;
+  }
 
   // Läs in sparat kollaps-läge efter mount (undviker hydration-mismatch)
   useEffect(() => {
