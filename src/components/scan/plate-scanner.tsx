@@ -10,12 +10,12 @@ import {
   ChevronRight,
   Search,
   ScanLine,
+  RotateCcw,
   TriangleAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LicensePlate } from "@/components/ui/license-plate";
 import {
-  extractPlateCandidates,
   matchPlate,
   normalizePlate,
   isSwedishPlate,
@@ -26,31 +26,76 @@ import { scanFrame, warmUpPlateReader } from "@/lib/plate-alpr";
 
 type Mode = "scanning" | "manual";
 
-/** Avstånd upp till detta räknas som en säker flottaträff (av 6 tecken). */
-const CONFIDENT = 1;
-/** Så många bildrutor i rad måste peka på samma bil innan vi öppnar den. */
-const STABLE_HITS = 2;
+/** Så många gånger samma skylt måste läsas innan vi litar på avläsningen. */
+const REQUIRED_VOTES = 3;
+/** Hur många av de senaste avläsningarna vi räknar röster bland. */
+const VOTE_WINDOW = 5;
 /** Minsta teckensäkerhet från OCR för att en avläsning ska räknas. */
-const MIN_CHAR_SCORE = 0.5;
+const MIN_CHAR_SCORE = 0.55;
 /** Paus mellan skanningar (ms) – inferensen tar tid ändå. */
-const SCAN_GAP = 250;
+const SCAN_GAP = 200;
+
+/** Det bekräftade resultatet efter röstning. */
+interface ScanResult {
+  plate: string;
+  matches: PlateMatch[];
+  /** Exakt träff i registret (avstånd 0) – då öppnar vi bilen direkt. */
+  exact: PlateMatch | null;
+}
+
+/**
+ * Räknar ut vilken del av KÄLLBILDEN som motsvarar rutan användaren siktar
+ * med. Videon visas med `object-cover` i en 4:3-ruta, så bara mitten av
+ * kamerabilden syns – och vi vill BARA läsa av det som ligger i den synliga
+ * ramen, annars fångar detektorn bakgrundsbilar och läser fel skylt.
+ */
+function guideRegion(vw: number, vh: number) {
+  const containerAR = 4 / 3;
+  const sourceAR = vw / vh;
+  let visW: number, visH: number, visX: number, visY: number;
+  if (sourceAR > containerAR) {
+    // Bredare källa: hela höjden syns, sidorna beskärs.
+    visH = vh;
+    visW = vh * containerAR;
+    visX = (vw - visW) / 2;
+    visY = 0;
+  } else {
+    // Högre källa: hela bredden syns, topp/botten beskärs.
+    visW = vw;
+    visH = vw / containerAR;
+    visX = 0;
+    visY = (vh - visH) / 2;
+  }
+  // Något generösare än den synliga ramen (0.86 × 0.26) så en skylt som inte
+  // är perfekt centrerad ändå fångas – men fortfarande bara mittområdet.
+  const wFrac = 0.9;
+  const hFrac = 0.42;
+  const w = visW * wFrac;
+  const h = visH * hFrac;
+  return {
+    x: visX + (visW - w) / 2,
+    y: visY + (visH - h) / 2,
+    w,
+    h,
+  };
+}
 
 export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("scanning");
   const [modelsReady, setModelsReady] = useState(false);
   const [reading, setReading] = useState<string | null>(null);
-  const [suggestions, setSuggestions] = useState<PlateMatch[]>([]);
-  const [locked, setLocked] = useState<PlateMatch | null>(null);
+  const [voteCount, setVoteCount] = useState(0);
+  const [result, setResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const roiCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanningRef = useRef(false);
-  // Rullande röstning: senaste bilars id för att kräva stabilitet.
-  const lastVehicleRef = useRef<string | null>(null);
-  const hitCountRef = useRef(0);
+  // Rullande röstning på de senaste avlästa skyltarna.
+  const votesRef = useRef<string[]>([]);
 
   const stopCamera = useCallback(() => {
     scanningRef.current = false;
@@ -67,50 +112,78 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
     [router, stopCamera],
   );
 
+  // Beskär videobilden till siktrutan och returnerar en canvas för avläsning.
+  const roiCanvas = useCallback((): HTMLCanvasElement | null => {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return null;
+    const { x, y, w, h } = guideRegion(video.videoWidth, video.videoHeight);
+    if (!roiCanvasRef.current) {
+      roiCanvasRef.current = document.createElement("canvas");
+    }
+    const canvas = roiCanvasRef.current;
+    canvas.width = Math.round(w);
+    canvas.height = Math.round(h);
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return null;
+    ctx.drawImage(video, x, y, w, h, 0, 0, canvas.width, canvas.height);
+    return canvas;
+  }, []);
+
   // En skanning av aktuell videobild.
   const scanOnce = useCallback(async () => {
-    const video = videoRef.current;
-    if (!video || !video.videoWidth) return;
+    const canvas = roiCanvas();
+    if (!canvas) return;
 
     let reading_;
     try {
-      reading_ = await scanFrame(video, { minDetectionScore: 0.5 });
+      reading_ = await scanFrame(canvas, { minDetectionScore: 0.5 });
     } catch {
       return;
     }
     if (!scanningRef.current) return;
     if (!reading_ || reading_.score < MIN_CHAR_SCORE) return;
 
-    // Bara svenska skyltformat får agera – utländska ignoreras helt.
-    const candidates = extractPlateCandidates(reading_.text).filter(
-      isSwedishPlate,
-    );
-    if (candidates.length === 0) return;
+    // Bara giltiga svenska skyltformat får rösta – allt annat ignoreras.
+    const plate = normalizePlate(reading_.text);
+    if (!isSwedishPlate(plate)) return;
 
-    setReading(candidates[0]);
+    // Lägg rösten i det rullande fönstret.
+    const votes = votesRef.current;
+    votes.push(plate);
+    if (votes.length > VOTE_WINDOW) votes.shift();
 
-    const ranked = matchPlate(candidates, fleet).slice(0, 4);
-    setSuggestions(ranked);
-
-    const best = ranked[0];
-    if (best && best.distance <= CONFIDENT) {
-      // Kräv att samma bil dyker upp i flera bildrutor i rad.
-      if (lastVehicleRef.current === best.vehicle.id) {
-        hitCountRef.current += 1;
-      } else {
-        lastVehicleRef.current = best.vehicle.id;
-        hitCountRef.current = 1;
+    // Räkna vilken skylt som leder.
+    const counts = new Map<string, number>();
+    for (const v of votes) counts.set(v, (counts.get(v) ?? 0) + 1);
+    let leader = plate;
+    let leaderCount = 0;
+    for (const [p, c] of counts) {
+      if (c > leaderCount) {
+        leader = p;
+        leaderCount = c;
       }
-      if (hitCountRef.current >= STABLE_HITS) {
-        setLocked(best);
-        open(best.vehicle.id);
-      }
-    } else {
-      // Ingen säker träff – nollställ räknaren.
-      lastVehicleRef.current = null;
-      hitCountRef.current = 0;
     }
-  }, [fleet, open]);
+    setReading(leader);
+    setVoteCount(leaderCount);
+
+    // Inte tillräckligt säkra ännu – fortsätt läsa.
+    if (leaderCount < REQUIRED_VOTES) return;
+
+    // Bekräftad avläsning. Matcha mot registret.
+    const matches = matchPlate([leader], fleet);
+    const exact = matches[0] && matches[0].distance === 0 ? matches[0] : null;
+
+    if (exact) {
+      // Exakt träff → öppna bilen direkt.
+      open(exact.vehicle.id);
+      return;
+    }
+
+    // Läste en giltig skylt men ingen exakt träff i registret. Stanna och
+    // visa avläsningen + närmaste fordon i stället för att gissa fel bil.
+    scanningRef.current = false;
+    setResult({ plate: leader, matches: matches.slice(0, 4), exact: null });
+  }, [fleet, open, roiCanvas]);
 
   // Skanningsloop – körs så länge kameran är igång.
   const runLoop = useCallback(async () => {
@@ -124,10 +197,9 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
   const startCamera = useCallback(async () => {
     setError(null);
     setReading(null);
-    setSuggestions([]);
-    setLocked(null);
-    lastVehicleRef.current = null;
-    hitCountRef.current = 0;
+    setVoteCount(0);
+    setResult(null);
+    votesRef.current = [];
     setMode("scanning");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -178,6 +250,16 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
     setMode("manual");
   }, [stopCamera]);
 
+  // Starta om skanningen (efter ett resultat utan träff).
+  const rescan = useCallback(() => {
+    votesRef.current = [];
+    setReading(null);
+    setVoteCount(0);
+    setResult(null);
+    scanningRef.current = true;
+    void runLoop();
+  }, [runLoop]);
+
   return (
     <div className="mx-auto flex min-h-full w-full max-w-md flex-col px-4 pt-4">
       {/* Rubrik */}
@@ -210,13 +292,13 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
               <div
                 className={cn(
                   "relative h-[26%] w-[86%] overflow-hidden rounded-lg ring-2 shadow-[0_0_0_1000px_rgb(9_16_28/0.45)] transition-colors",
-                  locked ? "ring-success" : "ring-white/90",
+                  result ? "ring-success" : "ring-white/90",
                 )}
               >
                 <span className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/90 px-3 py-1 text-[0.7rem] font-semibold text-ink">
-                  {locked ? "Bil hittad!" : "Håll skylten inom ramen"}
+                  Håll skylten inom ramen
                 </span>
-                {!locked && (
+                {!result && (
                   <span className="absolute inset-x-0 top-0 h-0.5 animate-scan bg-brand-400/90" />
                 )}
               </div>
@@ -224,12 +306,7 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
 
             {/* Status uppe till vänster */}
             <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-ink/50 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
-              {locked ? (
-                <>
-                  <Check className="size-3.5 text-success" />
-                  Öppnar…
-                </>
-              ) : !modelsReady ? (
+              {!modelsReady ? (
                 <>
                   <Loader2 className="size-3.5 animate-spin" />
                   Laddar skannern…
@@ -238,6 +315,9 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
                 <>
                   <ScanLine className="size-3.5 text-brand-300" />
                   {reading}
+                  <span className="ml-0.5 tabular-nums text-white/70">
+                    {Math.min(voteCount, REQUIRED_VOTES)}/{REQUIRED_VOTES}
+                  </span>
                 </>
               ) : (
                 <>
@@ -247,7 +327,7 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
               )}
             </div>
 
-            {/* Stäng/byt till manuell */}
+            {/* Byt till manuell */}
             <button
               type="button"
               onClick={switchToManual}
@@ -258,52 +338,81 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
             </button>
           </div>
 
-          {/* Närmaste träffar – dyker upp direkt, tryckbara om man vill välja själv */}
-          {suggestions.length > 0 && !locked ? (
+          {/* Resultat: läste en giltig skylt men ingen exakt träff i registret */}
+          {result ? (
             <div className="mt-4">
-              <p className="mb-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Närmaste fordon
-              </p>
-              <div className="flex flex-col gap-2">
-                {suggestions.map((m) => (
-                  <button
-                    key={m.vehicle.id}
-                    type="button"
-                    onClick={() => open(m.vehicle.id)}
-                    className={cn(
-                      "flex items-center gap-3 rounded-xl border p-3 text-left transition-colors",
-                      m.distance <= CONFIDENT
-                        ? "border-brand-200 bg-brand-50 active:bg-brand-100"
-                        : "border-line bg-surface active:bg-surface-muted",
-                    )}
-                  >
-                    <LicensePlate value={m.vehicle.regNo} size="sm" />
-                    <span className="min-w-0 flex-1 truncate text-sm text-ink">
-                      {[m.vehicle.brand, m.vehicle.model]
-                        .filter(Boolean)
-                        .join(" ") || "—"}
-                    </span>
-                    <ChevronRight className="size-4.5 shrink-0 text-muted-foreground" />
-                  </button>
-                ))}
+              <div className="flex items-center gap-2 rounded-xl border border-warning/40 bg-warning-soft px-3 py-2.5 text-sm text-ink-soft">
+                <TriangleAlert className="size-4.5 shrink-0 text-warning" />
+                <span>
+                  Läste{" "}
+                  <span className="font-bold text-ink">{result.plate}</span> –
+                  finns inte i registret. Välj rätt fordon nedan eller skanna
+                  igen.
+                </span>
+              </div>
+
+              {result.matches.length > 0 ? (
+                <>
+                  <p className="mb-1.5 mt-4 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Närmaste fordon
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {result.matches.map((m) => (
+                      <button
+                        key={m.vehicle.id}
+                        type="button"
+                        onClick={() => open(m.vehicle.id)}
+                        className="flex items-center gap-3 rounded-xl border border-line bg-surface p-3 text-left transition-colors active:bg-surface-muted"
+                      >
+                        <LicensePlate value={m.vehicle.regNo} size="sm" />
+                        <span className="min-w-0 flex-1 truncate text-sm text-ink">
+                          {[m.vehicle.brand, m.vehicle.model]
+                            .filter(Boolean)
+                            .join(" ") || "—"}
+                        </span>
+                        <ChevronRight className="size-4.5 shrink-0 text-muted-foreground" />
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : null}
+
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={rescan}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-surface py-3 text-sm font-semibold text-ink-soft active:bg-surface-muted"
+                >
+                  <RotateCcw className="size-4.5" />
+                  Skanna igen
+                </button>
+                <button
+                  type="button"
+                  onClick={switchToManual}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-surface py-3 text-sm font-semibold text-ink-soft active:bg-surface-muted"
+                >
+                  <Keyboard className="size-4.5" />
+                  Skriv in
+                </button>
               </div>
             </div>
           ) : (
-            <p className="mt-4 text-center text-sm text-muted-foreground">
-              {modelsReady
-                ? "Rikta kameran mot skylten så läser appen den automatiskt."
-                : "Förbereder skannern första gången…"}
-            </p>
+            <>
+              <p className="mt-4 text-center text-sm text-muted-foreground">
+                {modelsReady
+                  ? "Rikta kameran mot skylten så läser appen den automatiskt."
+                  : "Förbereder skannern första gången…"}
+              </p>
+              <button
+                type="button"
+                onClick={switchToManual}
+                className="mt-5 flex items-center justify-center gap-2 rounded-xl border border-line bg-surface py-3.5 text-sm font-semibold text-ink-soft transition-colors active:bg-surface-muted"
+              >
+                <Keyboard className="size-4.5" />
+                Skriv in reg.nr i stället
+              </button>
+            </>
           )}
-
-          <button
-            type="button"
-            onClick={switchToManual}
-            className="mt-5 flex items-center justify-center gap-2 rounded-xl border border-line bg-surface py-3.5 text-sm font-semibold text-ink-soft transition-colors active:bg-surface-muted"
-          >
-            <Keyboard className="size-4.5" />
-            Skriv in reg.nr i stället
-          </button>
         </div>
       )}
 
