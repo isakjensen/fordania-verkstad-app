@@ -67,6 +67,8 @@
   --animate-card-drop-in: card-drop-in 0.3s var(--ease-out-soft) both;
   /* Skannlinjen som sveper upp och ner över skyltramen i skanningsvyn. */
   --animate-scan: scan 2.2s ease-in-out infinite;
+  /* Skannern glider upp som ett ark när den öppnas. */
+  --animate-sheet-up: sheet-up 0.36s var(--ease-out-soft) both;
 
   @keyframes fade-up {
     from {
@@ -97,6 +99,15 @@
     }
     50% {
       top: calc(100% - 2px);
+    }
+  }
+
+  @keyframes sheet-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
     }
   }
 }

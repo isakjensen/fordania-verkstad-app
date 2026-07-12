@@ -117,9 +117,13 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
     (id: string) => {
       scanningRef.current = false;
       stopCamera();
-      router.push(`/scanna/${id}`);
+      // Full sidladdning i stället för klient-navigering: skannern lever i ett
+      // eget helskärmsskal, och en mjuk RSC-navigering därifrån till
+      // fordonsvyn kunde landa på "sidan hittades inte" tills man laddade om.
+      // En riktig navigering laddar fordonsvyn rent varje gång.
+      window.location.assign(`/scanna/${id}`);
     },
-    [router, stopCamera],
+    [stopCamera],
   );
 
   // Beskär videobilden till siktrutan och returnerar en canvas för avläsning.
@@ -285,7 +289,7 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
   // ---------- MANUELL (fullskärm, ljust) ----------
   if (mode === "manual") {
     return (
-      <div className="flex h-full flex-col bg-canvas px-4 pt-safe pb-safe">
+      <div className="flex h-full flex-col bg-canvas px-4 pt-safe pb-safe animate-sheet-up">
         <div className="flex items-center justify-between py-3">
           <h1 className="text-lg font-bold tracking-[-0.01em] text-ink">
             Sök fordon
@@ -359,7 +363,7 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
 
   // ---------- SKANNING (fullskärm kamera) ----------
   return (
-    <div className="relative h-full w-full overflow-hidden bg-ink text-white select-none">
+    <div className="relative h-full w-full overflow-hidden bg-ink text-white select-none animate-sheet-up">
       <video
         ref={videoRef}
         playsInline
@@ -421,7 +425,7 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
       {/* Botten: resultat-kort eller enbart skriv-in-knappen */}
       <div className="absolute inset-x-0 bottom-0 px-4 pb-safe">
         {result ? (
-          <div className="mb-4 rounded-2xl bg-surface p-4 text-ink shadow-lift">
+          <div className="mb-4 rounded-2xl bg-surface p-4 text-ink shadow-lift animate-fade-up">
             <div className="flex items-center gap-2 text-sm">
               <span className="text-muted-foreground">Avläst:</span>
               <LicensePlate value={result.plate} size="sm" />
