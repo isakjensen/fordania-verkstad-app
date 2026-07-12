@@ -1,8 +1,8 @@
 /**
- * Igenkänning och matchning av svenska registreringsskyltar – körs helt i
- * webbläsaren. Tesseract laddas dynamiskt först när en skanning görs så
- * sidan förblir lätt. Matchningen sker mot verkstadens KÄNDA flotta, vilket
- * gör den robust: även en halvbra avläsning kan landa rätt fordon.
+ * Matchning av svenska registreringsskyltar mot verkstadens KÄNDA flotta.
+ * Själva avläsningen görs av ALPR-motorn i `plate-alpr.ts`; den här modulen
+ * städar och matchar resultatet. Matchningen mot flottan gör flödet robust:
+ * även en halvbra avläsning kan landa rätt fordon.
  */
 
 export interface ScanFleetVehicle {
@@ -35,6 +35,16 @@ export function normalizePlate(input: string): string {
     .replace(/[ÅÄ]/g, "A")
     .replace(/Ö/g, "O")
     .replace(/[^A-Z0-9]/g, "");
+}
+
+/**
+ * Sant om texten är en giltig svensk personbilsskylt: tre bokstäver följt av
+ * två siffror och ett sista tecken som är antingen en siffra (ABC123) eller
+ * en bokstav (ABC12A, formatet sedan 2019). Skannern agerar BARA på skyltar
+ * som klarar detta – utländska skyltar ignoreras.
+ */
+export function isSwedishPlate(input: string): boolean {
+  return /^[A-Z]{3}[0-9]{2}[0-9A-Z]$/.test(normalizePlate(input));
 }
 
 /**
@@ -123,26 +133,4 @@ export function matchPlate(
   });
   scored.sort((a, b) => a.distance - b.distance);
   return scored;
-}
-
-/**
- * Läser text från en bild (canvas) med Tesseract. Begränsad till
- * skylt-tecken och enkelrads-läge för bättre träff. Tesseract laddas
- * dynamiskt så biblioteket bara hämtas när en mekaniker faktiskt skannar.
- */
-export async function recognizePlate(
-  image: HTMLCanvasElement,
-): Promise<string> {
-  const { createWorker, PSM } = await import("tesseract.js");
-  const worker = await createWorker("eng");
-  try {
-    await worker.setParameters({
-      tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-      tessedit_pageseg_mode: PSM.SINGLE_LINE,
-    });
-    const { data } = await worker.recognize(image);
-    return data.text ?? "";
-  } finally {
-    await worker.terminate();
-  }
 }

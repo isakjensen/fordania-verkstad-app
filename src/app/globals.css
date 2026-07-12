@@ -65,6 +65,8 @@
   /* Kalenderkort som just släppts på en ny plats glider in i stället för att
    * hoppa till (används vid drag-och-släpp av arbetsordrar). */
   --animate-card-drop-in: card-drop-in 0.3s var(--ease-out-soft) both;
+  /* Skannlinjen som sveper upp och ner över skyltramen i skanningsvyn. */
+  --animate-scan: scan 2.2s ease-in-out infinite;
 
   @keyframes fade-up {
     from {
@@ -85,6 +87,16 @@
     to {
       opacity: 1;
       transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes scan {
+    0%,
+    100% {
+      top: 0;
+    }
+    50% {
+      top: calc(100% - 2px);
     }
   }
 }

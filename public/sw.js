@@ -78,9 +78,14 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/api")) return;
 
   // Statiska, oföränderliga (hashade) resurser → cache-first, ingen utgång.
+  // ALPR-modellerna (.onnx) och WASM-körtiden (.wasm) är stora och ändras
+  // sällan – de laddas EN gång och lever sedan offline i PWA:n (annars
+  // skulle skannern hämta tiotals MB varje gång man är online).
   if (
     url.pathname.startsWith("/_next/static") ||
-    /\.(?:js|css|woff2?|png|jpe?g|svg|webp|ico|gif)$/.test(url.pathname)
+    /\.(?:js|css|woff2?|png|jpe?g|svg|webp|ico|gif|onnx|wasm)$/.test(
+      url.pathname,
+    )
   ) {
     event.respondWith(cacheFirst(request));
     return;

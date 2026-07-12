@@ -3,13 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Camera,
   Keyboard,
   X,
   Loader2,
   Check,
   ChevronRight,
-  RotateCcw,
   Search,
   ScanLine,
   TriangleAlert,
@@ -17,39 +15,120 @@ import {
 import { cn } from "@/lib/utils";
 import { LicensePlate } from "@/components/ui/license-plate";
 import {
-  recognizePlate,
   extractPlateCandidates,
   matchPlate,
   normalizePlate,
+  isSwedishPlate,
   type ScanFleetVehicle,
   type PlateMatch,
 } from "@/lib/plate-ocr";
+import { scanFrame, warmUpPlateReader } from "@/lib/plate-alpr";
 
-type Mode = "intro" | "camera" | "processing" | "review" | "manual";
+type Mode = "scanning" | "manual";
 
-/** Avstånd upp till detta räknas som en säker träff (av 6 tecken). */
+/** Avstånd upp till detta räknas som en säker flottaträff (av 6 tecken). */
 const CONFIDENT = 1;
+/** Så många bildrutor i rad måste peka på samma bil innan vi öppnar den. */
+const STABLE_HITS = 2;
+/** Minsta teckensäkerhet från OCR för att en avläsning ska räknas. */
+const MIN_CHAR_SCORE = 0.5;
+/** Paus mellan skanningar (ms) – inferensen tar tid ändå. */
+const SCAN_GAP = 250;
 
 export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("intro");
-  const [matches, setMatches] = useState<PlateMatch[]>([]);
+  const [mode, setMode] = useState<Mode>("scanning");
+  const [modelsReady, setModelsReady] = useState(false);
   const [reading, setReading] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<PlateMatch[]>([]);
+  const [locked, setLocked] = useState<PlateMatch | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const scanningRef = useRef(false);
+  // Rullande röstning: senaste bilars id för att kräva stabilitet.
+  const lastVehicleRef = useRef<string | null>(null);
+  const hitCountRef = useRef(0);
 
   const stopCamera = useCallback(() => {
+    scanningRef.current = false;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
   }, []);
 
+  const open = useCallback(
+    (id: string) => {
+      scanningRef.current = false;
+      stopCamera();
+      router.push(`/scanna/${id}`);
+    },
+    [router, stopCamera],
+  );
+
+  // En skanning av aktuell videobild.
+  const scanOnce = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return;
+
+    let reading_;
+    try {
+      reading_ = await scanFrame(video, { minDetectionScore: 0.5 });
+    } catch {
+      return;
+    }
+    if (!scanningRef.current) return;
+    if (!reading_ || reading_.score < MIN_CHAR_SCORE) return;
+
+    // Bara svenska skyltformat får agera – utländska ignoreras helt.
+    const candidates = extractPlateCandidates(reading_.text).filter(
+      isSwedishPlate,
+    );
+    if (candidates.length === 0) return;
+
+    setReading(candidates[0]);
+
+    const ranked = matchPlate(candidates, fleet).slice(0, 4);
+    setSuggestions(ranked);
+
+    const best = ranked[0];
+    if (best && best.distance <= CONFIDENT) {
+      // Kräv att samma bil dyker upp i flera bildrutor i rad.
+      if (lastVehicleRef.current === best.vehicle.id) {
+        hitCountRef.current += 1;
+      } else {
+        lastVehicleRef.current = best.vehicle.id;
+        hitCountRef.current = 1;
+      }
+      if (hitCountRef.current >= STABLE_HITS) {
+        setLocked(best);
+        open(best.vehicle.id);
+      }
+    } else {
+      // Ingen säker träff – nollställ räknaren.
+      lastVehicleRef.current = null;
+      hitCountRef.current = 0;
+    }
+  }, [fleet, open]);
+
+  // Skanningsloop – körs så länge kameran är igång.
+  const runLoop = useCallback(async () => {
+    while (scanningRef.current) {
+      await scanOnce();
+      if (!scanningRef.current) break;
+      await new Promise((r) => setTimeout(r, SCAN_GAP));
+    }
+  }, [scanOnce]);
+
   const startCamera = useCallback(async () => {
     setError(null);
-    setMode("camera");
+    setReading(null);
+    setSuggestions([]);
+    setLocked(null);
+    lastVehicleRef.current = null;
+    hitCountRef.current = 0;
+    setMode("scanning");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
@@ -60,6 +139,8 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play().catch(() => {});
       }
+      scanningRef.current = true;
+      void runLoop();
     } catch (err) {
       stopCamera();
       const name = err instanceof DOMException ? err.name : "";
@@ -72,47 +153,17 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
       );
       setMode("manual");
     }
-  }, [stopCamera]);
+  }, [runLoop, stopCamera]);
 
-  // Städa alltid upp kameran när komponenten lämnas.
-  useEffect(() => stopCamera, [stopCamera]);
-
-  const capture = useCallback(async () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || !video.videoWidth) return;
-
-    // Beskär till mittbandet där skylten ligger (samma yta som guiden) –
-    // ger Tesseract mycket bättre träff än hela bilden.
-    const vw = video.videoWidth;
-    const vh = video.videoHeight;
-    const cw = vw * 0.86;
-    const ch = vh * 0.26;
-    canvas.width = cw;
-    canvas.height = ch;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.drawImage(video, (vw - cw) / 2, (vh - ch) / 2, cw, ch, 0, 0, cw, ch);
-
-    stopCamera();
-    setMode("processing");
-    try {
-      const text = await recognizePlate(canvas);
-      const candidates = extractPlateCandidates(text);
-      setReading(candidates[0] ?? normalizePlate(text).slice(0, 7) ?? null);
-      const ranked = matchPlate(candidates, fleet).slice(0, 5);
-      setMatches(ranked);
-      setMode("review");
-    } catch {
-      setError("Kunde inte läsa skylten. Försök igen eller skriv in reg.nr.");
-      setMode("manual");
-    }
-  }, [fleet, stopCamera]);
-
-  const open = useCallback(
-    (id: string) => router.push(`/scanna/${id}`),
-    [router],
-  );
+  // Öppna kameran direkt när sidan visas + värm upp modellerna parallellt.
+  useEffect(() => {
+    warmUpPlateReader()
+      .then(() => setModelsReady(true))
+      .catch(() => setModelsReady(true)); // modellerna laddas ändå vid första skanningen
+    void startCamera();
+    return stopCamera;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered = useMemo(() => {
     const q = normalizePlate(query);
@@ -122,8 +173,10 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
     return list.slice(0, 30);
   }, [fleet, query]);
 
-  const best = matches[0];
-  const confident = best && best.distance <= CONFIDENT;
+  const switchToManual = useCallback(() => {
+    stopCamera();
+    setMode("manual");
+  }, [stopCamera]);
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-md flex-col px-4 pt-4">
@@ -136,41 +189,13 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
           Skanna skylt
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Rikta kameran mot registreringsskylten så hämtas bilen och dess
-          arbetsordrar.
+          Håll mobilen mot registreringsskylten inom ramen – bilen hämtas
+          automatiskt.
         </p>
       </div>
 
-      {/* ---------- INTRO ---------- */}
-      {mode === "intro" && (
-        <div className="flex flex-1 flex-col">
-          <button
-            type="button"
-            onClick={startCamera}
-            className="group relative flex aspect-4/3 w-full flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border border-line bg-linear-to-b from-[#dcebfb] to-white text-brand-700 transition-colors active:from-[#cfe3f8]"
-          >
-            <span className="flex size-16 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-[0_8px_20px_-6px_rgb(26_100_189/0.6)]">
-              <Camera className="size-8" strokeWidth={1.75} />
-            </span>
-            <span className="text-base font-bold">Öppna kameran</span>
-            <span className="text-xs text-muted-foreground">
-              {fleet.length} fordon i registret
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setMode("manual")}
-            className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-line bg-surface py-3.5 text-sm font-semibold text-ink-soft transition-colors active:bg-surface-muted"
-          >
-            <Keyboard className="size-4.5" />
-            Skriv in reg.nr i stället
-          </button>
-        </div>
-      )}
-
-      {/* ---------- KAMERA ---------- */}
-      {mode === "camera" && (
+      {/* ---------- SKANNING ---------- */}
+      {mode === "scanning" && (
         <div className="flex flex-1 flex-col">
           <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl bg-ink">
             <video
@@ -179,139 +204,106 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
               muted
               className="size-full object-cover"
             />
-            {/* Skyltguide */}
+
+            {/* Skyltguide + skannlinje */}
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="relative h-[26%] w-[86%] rounded-lg ring-2 ring-white/90 shadow-[0_0_0_1000px_rgb(9_16_28/0.45)]">
+              <div
+                className={cn(
+                  "relative h-[26%] w-[86%] overflow-hidden rounded-lg ring-2 shadow-[0_0_0_1000px_rgb(9_16_28/0.45)] transition-colors",
+                  locked ? "ring-success" : "ring-white/90",
+                )}
+              >
                 <span className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/90 px-3 py-1 text-[0.7rem] font-semibold text-ink">
-                  Håll skylten inom ramen
+                  {locked ? "Bil hittad!" : "Håll skylten inom ramen"}
                 </span>
+                {!locked && (
+                  <span className="absolute inset-x-0 top-0 h-0.5 animate-scan bg-brand-400/90" />
+                )}
               </div>
             </div>
+
+            {/* Status uppe till vänster */}
+            <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-ink/50 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
+              {locked ? (
+                <>
+                  <Check className="size-3.5 text-success" />
+                  Öppnar…
+                </>
+              ) : !modelsReady ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin" />
+                  Laddar skannern…
+                </>
+              ) : reading ? (
+                <>
+                  <ScanLine className="size-3.5 text-brand-300" />
+                  {reading}
+                </>
+              ) : (
+                <>
+                  <ScanLine className="size-3.5 animate-pulse text-brand-300" />
+                  Letar efter skylt…
+                </>
+              )}
+            </div>
+
+            {/* Stäng/byt till manuell */}
             <button
               type="button"
-              onClick={() => {
-                stopCamera();
-                setMode("intro");
-              }}
+              onClick={switchToManual}
               className="absolute right-3 top-3 flex size-10 items-center justify-center rounded-full bg-ink/50 text-white backdrop-blur-sm active:bg-ink/70"
-              aria-label="Stäng kameran"
+              aria-label="Skriv in reg.nr i stället"
             >
               <X className="size-5" />
             </button>
           </div>
 
-          <button
-            type="button"
-            onClick={capture}
-            className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-brand-600 py-4 text-base font-bold text-white shadow-[0_8px_20px_-8px_rgb(26_100_189/0.7)] active:bg-brand-700"
-          >
-            <ScanLine className="size-5" />
-            Läs skylten
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              stopCamera();
-              setMode("manual");
-            }}
-            className="mt-2 py-2 text-center text-sm font-semibold text-muted-foreground active:text-ink"
-          >
-            Skriv in reg.nr i stället
-          </button>
-        </div>
-      )}
-
-      {/* ---------- BEARBETAR ---------- */}
-      {mode === "processing" && (
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16 text-center">
-          <Loader2 className="size-9 animate-spin text-brand-600" />
-          <div>
-            <p className="text-base font-bold text-ink">Läser skylten…</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Känner igen registreringsnumret
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* ---------- RESULTAT / VÄLJ ---------- */}
-      {mode === "review" && (
-        <div className="flex flex-1 flex-col">
-          {reading ? (
-            <p className="mb-3 text-sm text-muted-foreground">
-              Avläst:{" "}
-              <span className="font-semibold text-ink">{reading}</span>
-            </p>
-          ) : null}
-
-          {confident ? (
-            <button
-              type="button"
-              onClick={() => open(best.vehicle.id)}
-              className="flex items-center gap-3 rounded-2xl border border-brand-200 bg-brand-50 p-4 text-left transition-colors active:bg-brand-100"
-            >
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-success text-white">
-                <Check className="size-6" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <LicensePlate value={best.vehicle.regNo} size="md" />
-                <span className="mt-1.5 block truncate text-sm font-semibold text-ink">
-                  {[best.vehicle.brand, best.vehicle.model]
-                    .filter(Boolean)
-                    .join(" ") || "Okänt fordon"}
-                </span>
-                <span className="text-xs text-brand-700">Öppna bilen</span>
-              </span>
-              <ChevronRight className="size-5 shrink-0 text-brand-600" />
-            </button>
-          ) : (
-            <div className="flex items-center gap-2 rounded-xl border border-warning/40 bg-warning-soft px-3 py-2.5 text-sm text-ink-soft">
-              <TriangleAlert className="size-4.5 shrink-0 text-warning" />
-              Osäker träff – välj rätt bil nedan.
+          {/* Närmaste träffar – dyker upp direkt, tryckbara om man vill välja själv */}
+          {suggestions.length > 0 && !locked ? (
+            <div className="mt-4">
+              <p className="mb-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Närmaste fordon
+              </p>
+              <div className="flex flex-col gap-2">
+                {suggestions.map((m) => (
+                  <button
+                    key={m.vehicle.id}
+                    type="button"
+                    onClick={() => open(m.vehicle.id)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-xl border p-3 text-left transition-colors",
+                      m.distance <= CONFIDENT
+                        ? "border-brand-200 bg-brand-50 active:bg-brand-100"
+                        : "border-line bg-surface active:bg-surface-muted",
+                    )}
+                  >
+                    <LicensePlate value={m.vehicle.regNo} size="sm" />
+                    <span className="min-w-0 flex-1 truncate text-sm text-ink">
+                      {[m.vehicle.brand, m.vehicle.model]
+                        .filter(Boolean)
+                        .join(" ") || "—"}
+                    </span>
+                    <ChevronRight className="size-4.5 shrink-0 text-muted-foreground" />
+                  </button>
+                ))}
+              </div>
             </div>
+          ) : (
+            <p className="mt-4 text-center text-sm text-muted-foreground">
+              {modelsReady
+                ? "Rikta kameran mot skylten så läser appen den automatiskt."
+                : "Förbereder skannern första gången…"}
+            </p>
           )}
 
-          {/* Alternativ / närmaste träffar */}
-          <p className="mb-1.5 mt-5 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            {confident ? "Inte rätt? Närmaste andra" : "Närmaste fordon"}
-          </p>
-          <div className="flex flex-col gap-2">
-            {matches.slice(confident ? 1 : 0, 4).map((m) => (
-              <button
-                key={m.vehicle.id}
-                type="button"
-                onClick={() => open(m.vehicle.id)}
-                className="flex items-center gap-3 rounded-xl border border-line bg-surface p-3 text-left transition-colors active:bg-surface-muted"
-              >
-                <LicensePlate value={m.vehicle.regNo} size="sm" />
-                <span className="min-w-0 flex-1 truncate text-sm text-ink">
-                  {[m.vehicle.brand, m.vehicle.model]
-                    .filter(Boolean)
-                    .join(" ") || "—"}
-                </span>
-                <ChevronRight className="size-4.5 shrink-0 text-muted-foreground" />
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-5 flex gap-2">
-            <button
-              type="button"
-              onClick={startCamera}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-surface py-3 text-sm font-semibold text-ink-soft active:bg-surface-muted"
-            >
-              <RotateCcw className="size-4.5" />
-              Skanna igen
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("manual")}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-surface py-3 text-sm font-semibold text-ink-soft active:bg-surface-muted"
-            >
-              <Keyboard className="size-4.5" />
-              Skriv in
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={switchToManual}
+            className="mt-5 flex items-center justify-center gap-2 rounded-xl border border-line bg-surface py-3.5 text-sm font-semibold text-ink-soft transition-colors active:bg-surface-muted"
+          >
+            <Keyboard className="size-4.5" />
+            Skriv in reg.nr i stället
+          </button>
         </div>
       )}
 
@@ -363,17 +355,16 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
             type="button"
             onClick={() => {
               setError(null);
-              setMode("intro");
+              setQuery("");
+              void startCamera();
             }}
-            className="mt-4 py-2 text-center text-sm font-semibold text-muted-foreground active:text-ink"
+            className="mt-4 flex items-center justify-center gap-2 py-2 text-center text-sm font-semibold text-brand-700 active:text-brand-800"
           >
-            ← Tillbaka
+            <ScanLine className="size-4.5" />
+            Skanna med kameran i stället
           </button>
         </div>
       )}
-
-      {/* Dold canvas för bildinfångning */}
-      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 }
