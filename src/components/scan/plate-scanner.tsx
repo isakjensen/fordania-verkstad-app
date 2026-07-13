@@ -380,7 +380,7 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
           )}
           style={{ width: `${GUIDE_W * 100}%`, height: `${GUIDE_H * 100}%` }}
         >
-          <span className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/90 px-3 py-1 text-[0.7rem] font-semibold text-ink">
+          <span className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/90 px-3 py-1 text-[0.7rem] font-semibold text-[#172230]">
             {result ? "Skylt avläst" : "Håll skylten inom ramen"}
           </span>
           {!result && (
@@ -503,7 +503,7 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
           <button
             type="button"
             onClick={switchToManual}
-            className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-white/95 py-3.5 text-sm font-bold text-ink shadow-lift active:bg-white"
+            className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-white/95 py-3.5 text-sm font-bold text-[#172230] shadow-lift active:bg-white"
           >
             <Keyboard className="size-4.5" />
             Skriv in reg.nr istället
