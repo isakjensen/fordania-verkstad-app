@@ -83,12 +83,12 @@ export function BottomNav({ switcher }: { switcher: SwitcherData }) {
         href={tab.href}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "group flex flex-1 select-none flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[0.66rem] font-semibold transition-colors",
+          "group flex flex-1 select-none flex-col items-center justify-center gap-1 rounded-xl px-1 py-2.5 text-[0.7rem] font-semibold transition-colors",
           active ? "text-brand-600" : "text-muted-foreground active:bg-surface-muted",
         )}
       >
         <Icon
-          className={cn("size-6 transition-transform", active && "scale-105")}
+          className={cn("size-7 transition-transform", active && "scale-105")}
           strokeWidth={active ? 2.4 : 2}
         />
         <span className="truncate">{tab.label}</span>
@@ -99,7 +99,7 @@ export function BottomNav({ switcher }: { switcher: SwitcherData }) {
   return (
     <>
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 pl-safe pr-safe pb-safe backdrop-blur-xl pointer-fine:lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 pl-safe pr-safe pb-safe-nav backdrop-blur-xl pointer-fine:lg:hidden"
         aria-label="Huvudnavigation"
       >
         {/* Två lika breda halvor (flex-1) med den upphöjda skanna-knappen
@@ -130,13 +130,13 @@ export function BottomNav({ switcher }: { switcher: SwitcherData }) {
               onClick={() => setMoreOpen(true)}
               aria-haspopup="dialog"
               className={cn(
-                "group flex flex-1 select-none flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[0.66rem] font-semibold transition-colors",
+                "group flex flex-1 select-none flex-col items-center justify-center gap-1 rounded-xl px-1 py-2.5 text-[0.7rem] font-semibold transition-colors",
                 moreActive || moreOpen
                   ? "text-brand-600"
                   : "text-muted-foreground active:bg-surface-muted",
               )}
             >
-              <Menu className="size-6" strokeWidth={moreActive || moreOpen ? 2.4 : 2} />
+              <Menu className="size-7" strokeWidth={moreActive || moreOpen ? 2.4 : 2} />
               <span>Mer</span>
             </button>
           </div>
