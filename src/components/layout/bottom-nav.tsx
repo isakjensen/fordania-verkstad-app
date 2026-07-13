@@ -99,7 +99,7 @@ export function BottomNav({ switcher }: { switcher: SwitcherData }) {
   return (
     <>
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 pl-safe pr-safe pb-safe-nav backdrop-blur-xl pointer-fine:lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 pl-safe pr-safe pb-safe backdrop-blur-xl pointer-fine:lg:hidden"
         aria-label="Huvudnavigation"
       >
         {/* Två lika breda halvor (flex-1) med den upphöjda skanna-knappen
