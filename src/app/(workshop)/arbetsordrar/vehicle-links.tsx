@@ -7,6 +7,7 @@ import { Car, Plus, X, Loader2 } from "lucide-react";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LicensePlate } from "@/components/ui/license-plate";
+import { formatPlate } from "@/lib/plate-ocr";
 import { FieldSelect } from "@/components/ui/field-select";
 import {
   Dialog,
@@ -125,8 +126,8 @@ export function VehicleLinks({
               options={available.map((o) => ({
                 value: o.id,
                 label: o.chassisNumber
-                  ? `${o.regNo} · ${o.chassisNumber}`
-                  : o.regNo,
+                  ? `${formatPlate(o.regNo)} · ${o.chassisNumber}`
+                  : formatPlate(o.regNo),
               }))}
             />
             <Button type="button" size="sm" onClick={add} disabled={pending || !selected}>
@@ -157,7 +158,7 @@ export function VehicleLinks({
           <DialogHeader>
             <DialogTitle>Ta bort fordon</DialogTitle>
             <DialogDescription>
-              Vill du ta bort {confirm?.regNo} från arbetsordern?
+              Vill du ta bort {formatPlate(confirm?.regNo)} från arbetsordern?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

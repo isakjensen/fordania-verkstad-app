@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { formatPlate } from "@/lib/plate-ocr";
 
 /**
  * Svensk registreringsskylt – vit platta med svart text, mörk ram och det
@@ -25,20 +26,6 @@ const euStars = Array.from({ length: 12 }).map((_, i) => {
   const a = (i / 12) * 2 * Math.PI - Math.PI / 2;
   return star(11 + 5.4 * Math.cos(a), 7 + 5.4 * Math.sin(a), 1.5, 0.62);
 });
-
-/**
- * Formaterar en svensk skylt för visning: "ABC 123" / "ABC 12A" med mellanslag
- * mellan bokstavsdelen och den avslutande delen. Skannern och databasen lagrar
- * skylten kompakt (ABC123), så vi lägger tillbaka mellanslaget här vid visning.
- * Okända/utländska format lämnas oförändrade.
- */
-function formatPlate(value: string): string {
-  const compact = value.replace(/[\s-]/g, "").toUpperCase();
-  if (/^[A-Z]{3}[0-9]{2}[0-9A-Z]$/.test(compact)) {
-    return `${compact.slice(0, 3)} ${compact.slice(3)}`;
-  }
-  return value;
-}
 
 type PlateSize = "sm" | "md" | "lg";
 

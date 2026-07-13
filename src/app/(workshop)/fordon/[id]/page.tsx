@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { LicensePlate } from "@/components/ui/license-plate";
+import { formatPlate } from "@/lib/plate-ocr";
 import { BackButton } from "@/components/ui/back-button";
 import { getActiveOrganizationId } from "@/lib/session";
 import { getVehicle, getFieldDefinitions } from "@/lib/data/vehicles";
@@ -58,7 +59,7 @@ export default async function VehicleDetailPage({
           <LicensePlate value={vehicle.regNo} size="lg" />
           <div>
             <h1 className="text-xl font-extrabold tracking-tight text-ink">
-              {vehicle.regNo}
+              {formatPlate(vehicle.regNo)}
             </h1>
             <p className="mt-0.5 text-sm text-muted-foreground">
               {[vehicle.brand, vehicle.model].filter(Boolean).join(" ") ||
@@ -86,7 +87,7 @@ export default async function VehicleDetailPage({
         <Card className="lg:col-span-2">
           <CardHeader tone="brand" title="Uppgifter" />
           <CardBody className="divide-y divide-line py-0">
-            <Row label="Registreringsnummer" value={vehicle.regNo} />
+            <Row label="Registreringsnummer" value={formatPlate(vehicle.regNo)} />
             <Row label="Märke" value={vehicle.brand ?? "—"} />
             <Row label="Modell" value={vehicle.model ?? "—"} />
             <Row label="Chassinummer" value={vehicle.chassisNumber ?? "—"} />

@@ -7,6 +7,7 @@ import { Car, Plus, X, Loader2, Gauge } from "lucide-react";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LicensePlate } from "@/components/ui/license-plate";
+import { formatPlate } from "@/lib/plate-ocr";
 import { FieldSelect } from "@/components/ui/field-select";
 import { linkVehicle, unlinkVehicle } from "./actions";
 
@@ -88,7 +89,7 @@ export function VehicleLinks({
                   className="min-w-0 flex-1 hover:text-brand-600"
                 >
                   <span className="block truncate text-sm font-medium text-ink">
-                    {[v.brand, v.model].filter(Boolean).join(" ") || v.regNo}
+                    {[v.brand, v.model].filter(Boolean).join(" ") || formatPlate(v.regNo)}
                   </span>
                   {v.odo !== null ? (
                     <span className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
@@ -132,8 +133,8 @@ export function VehicleLinks({
               options={available.map((o) => ({
                 value: o.id,
                 label: o.chassisNumber
-                  ? `${o.regNo} · ${o.chassisNumber}`
-                  : o.regNo,
+                  ? `${formatPlate(o.regNo)} · ${o.chassisNumber}`
+                  : formatPlate(o.regNo),
               }))}
             />
             <Button type="button" size="sm" onClick={add} disabled={pending || !selected}>

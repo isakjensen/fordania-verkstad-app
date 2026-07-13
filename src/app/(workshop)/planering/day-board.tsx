@@ -16,6 +16,7 @@ import {
 } from "@dnd-kit/core";
 import { Car, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatPlate } from "@/lib/plate-ocr";
 import type { Mechanic, ScheduleJob } from "@/lib/data/schedule";
 import { statusLabels } from "./calendar-meta";
 import { cardStyleFor } from "./card-style";
@@ -378,7 +379,7 @@ const VehicleRow = memo(function VehicleRow({
         {vehicle ? (
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-extrabold uppercase leading-tight tracking-wide text-ink">
-              {vehicle.regNo}
+              {formatPlate(vehicle.regNo)}
             </p>
             {vehicleName ? (
               <p className="truncate text-[0.7rem] font-medium leading-tight text-ink-soft">

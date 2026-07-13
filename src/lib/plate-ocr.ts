@@ -38,6 +38,21 @@ export function normalizePlate(input: string): string {
 }
 
 /**
+ * Formaterar en svensk skylt för VISNING: "ABC 123" / "ABC 12A" med mellanslag
+ * mellan bokstavsdelen och den avslutande delen. Databasen lagrar skylten
+ * kompakt (ABC123); mellanslaget läggs bara till vid visning. Okända/utländska
+ * format lämnas oförändrade (bara trimmade).
+ */
+export function formatPlate(value: string | null | undefined): string {
+  if (!value) return "";
+  const compact = value.replace(/[\s-]/g, "").toUpperCase();
+  if (/^[A-Z]{3}[0-9]{2}[0-9A-Z]$/.test(compact)) {
+    return `${compact.slice(0, 3)} ${compact.slice(3)}`;
+  }
+  return value.trim();
+}
+
+/**
  * Sant om texten är en giltig svensk personbilsskylt: tre bokstäver följt av
  * två siffror och ett sista tecken som är antingen en siffra (ABC123) eller
  * en bokstav (ABC12A, formatet sedan 2019). Skannern agerar BARA på skyltar

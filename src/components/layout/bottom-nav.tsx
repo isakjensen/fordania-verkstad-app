@@ -83,12 +83,12 @@ export function BottomNav({ switcher }: { switcher: SwitcherData }) {
         href={tab.href}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "group flex flex-1 select-none flex-col items-center justify-center gap-1 rounded-xl px-1 py-3 text-[0.72rem] font-semibold transition-colors",
+          "group flex flex-1 select-none flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[0.66rem] font-semibold transition-colors",
           active ? "text-brand-600" : "text-muted-foreground active:bg-surface-muted",
         )}
       >
         <Icon
-          className={cn("size-8 transition-transform", active && "scale-105")}
+          className={cn("size-6 transition-transform", active && "scale-105")}
           strokeWidth={active ? 2.4 : 2}
         />
         <span className="truncate">{tab.label}</span>
@@ -130,13 +130,13 @@ export function BottomNav({ switcher }: { switcher: SwitcherData }) {
               onClick={() => setMoreOpen(true)}
               aria-haspopup="dialog"
               className={cn(
-                "group flex flex-1 select-none flex-col items-center justify-center gap-1 rounded-xl px-1 py-3 text-[0.72rem] font-semibold transition-colors",
+                "group flex flex-1 select-none flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[0.66rem] font-semibold transition-colors",
                 moreActive || moreOpen
                   ? "text-brand-600"
                   : "text-muted-foreground active:bg-surface-muted",
               )}
             >
-              <Menu className="size-8" strokeWidth={moreActive || moreOpen ? 2.4 : 2} />
+              <Menu className="size-6" strokeWidth={moreActive || moreOpen ? 2.4 : 2} />
               <span>Mer</span>
             </button>
           </div>
@@ -212,7 +212,7 @@ function MoreSheet({
           </div>
 
           <div
-            className="overflow-y-auto pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))] pb-[max(1rem,calc(env(safe-area-inset-bottom)-0.75rem))]"
+            className="overflow-y-auto pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))] pb-4"
           >
             <DialogPrimitive.Title className="sr-only">Meny</DialogPrimitive.Title>
 

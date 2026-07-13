@@ -4,6 +4,7 @@ import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatPlate } from "@/lib/plate-ocr";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldSelect } from "@/components/ui/field-select";
@@ -152,7 +153,7 @@ export function CreateWorkOrderButton({
                 id="wo-veh"
                 name="vehicleId"
                 placeholder="Välj fordon…"
-                options={vehicles.map((v) => ({ value: v.id, label: v.regNo }))}
+                options={vehicles.map((v) => ({ value: v.id, label: formatPlate(v.regNo) }))}
               />
             </div>
           </div>

@@ -11,6 +11,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatPlate } from "@/lib/plate-ocr";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -64,7 +65,7 @@ export function RemovedWorkOrdersButton({
     () =>
       removed.map((o) => ({
         ...o,
-        regNos: o.vehicles.map((v) => v.vehicle.regNo).join(", "),
+        regNos: o.vehicles.map((v) => formatPlate(v.vehicle.regNo)).join(", "),
       })),
     [removed],
   );

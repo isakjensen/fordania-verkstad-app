@@ -63,7 +63,10 @@ export async function createVehicle(formData: FormData): Promise<ActionResult> {
   const organizationId = await getActiveOrganizationId();
   if (!organizationId) return { error: NO_ORG };
 
-  const regNo = String(formData.get("regNo") ?? "").trim().toUpperCase();
+  const regNo = String(formData.get("regNo") ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
   if (!regNo) return { error: "Registreringsnummer krävs." };
 
   const fields = await readFieldValues(organizationId, formData);
@@ -107,7 +110,10 @@ export async function updateVehicle(formData: FormData): Promise<ActionResult> {
   if (!organizationId) return { error: NO_ORG };
 
   const id = String(formData.get("id") ?? "");
-  const regNo = String(formData.get("regNo") ?? "").trim().toUpperCase();
+  const regNo = String(formData.get("regNo") ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
   if (!id) return { error: "Fordons-id saknas." };
   if (!regNo) return { error: "Registreringsnummer krävs." };
 

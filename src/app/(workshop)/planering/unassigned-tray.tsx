@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatPlate } from "@/lib/plate-ocr";
 import type { ScheduleJob } from "@/lib/data/schedule";
 import { toParam, hm } from "./calendar-utils";
 import { statusLabels } from "./calendar-meta";
@@ -122,7 +123,7 @@ function TrayCard({
         ) : null}
         {regNo ? (
           <span className="min-w-0 truncate border-l border-line pl-1.5 text-[0.66rem] font-bold uppercase tracking-wide text-ink-soft">
-            {regNo}
+            {formatPlate(regNo)}
           </span>
         ) : null}
       </span>

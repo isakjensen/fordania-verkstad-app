@@ -17,6 +17,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { updateVehicle, deleteVehicle } from "./actions";
+import { formatPlate } from "@/lib/plate-ocr";
 
 interface Field {
   id: string;
@@ -107,7 +108,7 @@ export function VehicleActions({
                   id="ev-reg"
                   name="regNo"
                   required
-                  defaultValue={vehicle.regNo}
+                  defaultValue={formatPlate(vehicle.regNo)}
                 />
               </div>
               <div className="space-y-1.5">
@@ -204,7 +205,7 @@ export function VehicleActions({
           <DialogHeader>
             <DialogTitle>Ta bort fordon?</DialogTitle>
             <DialogDescription>
-              {vehicle.regNo} döljs från registret men raderas inte helt. Du kan
+              {formatPlate(vehicle.regNo)} döljs från registret men raderas inte helt. Du kan
               återställa det när som helst under &quot;Borttagna&quot; på
               fordonssidan.
             </DialogDescription>

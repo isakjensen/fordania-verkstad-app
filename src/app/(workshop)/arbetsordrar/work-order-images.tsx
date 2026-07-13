@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { formatPlate } from "@/lib/plate-ocr";
 import {
   AttachmentGallery,
   type AttachmentImage,
@@ -190,7 +191,7 @@ export function WorkOrderImages({
                           : "border-line bg-surface text-ink-soft hover:bg-surface-muted",
                       )}
                     >
-                      <span className="font-mono font-semibold">{v.regNo}</span>
+                      <span className="font-mono font-semibold">{formatPlate(v.regNo)}</span>
                       {v.brand || v.model ? (
                         <span className="ml-1.5 text-muted-foreground">
                           {[v.brand, v.model].filter(Boolean).join(" ")}

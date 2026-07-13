@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { formatPlate } from "@/lib/plate-ocr";
 import { orderTotals, formatOre } from "@/lib/pricing";
 import type { WorkOrderListItem } from "@/lib/data/work-orders";
 import { statusMeta, statusLabels } from "./meta";
@@ -95,7 +96,7 @@ export function OrderRows({
         {orders.map((o) => {
           const meta = statusMeta[o.status];
           const totals = orderTotals(o.parts);
-          const regNos = o.vehicles.map((v) => v.vehicle.regNo);
+          const regNos = o.vehicles.map((v) => formatPlate(v.vehicle.regNo));
           const mechs = o.mechanics.map((m) => m.user.name);
           const sel = isSel(o.id);
           return (
@@ -171,7 +172,7 @@ export function OrderRows({
           {orders.map((o) => {
             const meta = statusMeta[o.status];
             const totals = orderTotals(o.parts);
-            const regNos = o.vehicles.map((v) => v.vehicle.regNo);
+            const regNos = o.vehicles.map((v) => formatPlate(v.vehicle.regNo));
             const mechs = o.mechanics.map((m) => m.user.name);
             const sel = isSel(o.id);
             return (

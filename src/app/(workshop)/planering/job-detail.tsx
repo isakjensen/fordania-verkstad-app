@@ -843,7 +843,7 @@ export function JobDetail({
 
             {/* Tydlig stäng-knapp fastnaglad längst ner – funkar för alla vyer
                 (touch och mus). Utöver den stänger man genom att klicka utanför. */}
-            <div className="sticky bottom-0 z-10 mt-auto border-t border-line bg-surface/95 px-5 pt-3 pb-[max(0.75rem,calc(env(safe-area-inset-bottom)-0.75rem))] backdrop-blur-sm">
+            <div className="sticky bottom-0 z-10 mt-auto border-t border-line bg-surface/95 px-5 pt-3 pb-3 backdrop-blur-sm">
               <SheetClose className="flex h-12 w-full items-center justify-center rounded-xl bg-surface-muted text-sm font-semibold text-ink transition-colors hover:bg-line-strong active:bg-line-strong">
                 Stäng
               </SheetClose>
