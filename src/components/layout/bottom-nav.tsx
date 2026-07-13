@@ -212,7 +212,7 @@ function MoreSheet({
           </div>
 
           <div
-            className="overflow-y-auto pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))] pb-4"
+            className="overflow-y-auto pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))] pb-[max(1rem,calc(env(safe-area-inset-bottom)-0.5rem))]"
           >
             <DialogPrimitive.Title className="sr-only">Meny</DialogPrimitive.Title>
 
