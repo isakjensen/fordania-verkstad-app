@@ -31,7 +31,9 @@ function DialogOverlay({
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        // CSS-transition (inte keyframe) så backdroppen hålls i stängt läge till
+        // avmontering och inte reverterar till fullt blur en bildruta → blink.
+        "fixed inset-0 isolate z-50 bg-black/10 supports-backdrop-filter:backdrop-blur-xs transition-opacity duration-200 ease-out data-starting-style:opacity-0 data-closed:opacity-0",
         className
       )}
       {...props}

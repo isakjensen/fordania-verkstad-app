@@ -29,8 +29,13 @@ function SheetContent({
 }: DialogPrimitive.Popup.Props & { showCloseButton?: boolean }) {
   return (
     <DialogPrimitive.Portal>
+      {/* CSS-transition (inte keyframe-animation) så backdroppen hålls kvar i
+          sitt stängda läge tills Base UI avmonterar den. Keyframe-varianten
+          reverterade till fullt blur de sista bildrutorna innan avmontering
+          (popupen glider 300ms, backdroppen animerade bara 200ms) → ett blink.
+          Nu fade:as opacitet i takt med popupen utan revert. */}
       <DialogPrimitive.Backdrop
-        className="fixed inset-0 z-50 bg-black/25 duration-200 supports-backdrop-filter:backdrop-blur-[1px] data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
+        className="fixed inset-0 z-50 bg-black/25 supports-backdrop-filter:backdrop-blur-[1px] transition-opacity duration-300 ease-out data-starting-style:opacity-0 data-closed:opacity-0"
       />
       <DialogPrimitive.Popup
         data-slot="sheet-content"
