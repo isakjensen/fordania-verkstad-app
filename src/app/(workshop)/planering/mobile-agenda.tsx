@@ -1,15 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Layers,
-  Clock,
-  CalendarRange,
-  Wrench,
-} from "lucide-react";
+import { Layers, Clock, CalendarRange, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { LicensePlate } from "@/components/ui/license-plate";
@@ -69,12 +62,10 @@ export function MobileAgenda({
     return d;
   }, []);
 
-  // Veckoremsan visar måndag–söndag för den valda dagens vecka.
+  // Veckoremsan visar måndag–söndag för den valda dagens vecka. Karusellen
+  // renderar även föregående och nästa vecka så de kan tittas fram vid drag.
   const weekStart = useMemo(() => startOfWeek(selected), [selected]);
-  const weekDays = useMemo(
-    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
-    [weekStart],
-  );
+  const selDow = isoDow(selected); // markerad veckodag – behålls vid veckobyte
 
   const inLoadedRange = (d: Date) =>
     d.getTime() >= from.getTime() && d.getTime() < to.getTime();
@@ -94,6 +85,76 @@ export function MobileAgenda({
   function goToday() {
     if (inLoadedRange(today)) setSelected(today);
     else router.push(`/planering?view=week&date=${toParam(today)}`);
+  }
+
+  /* ---- Veckoremsan som karusell ----------------------------------------- *
+   * Tre paneler ligger sida vid sida (föregående | nuvarande | nästa) i ett
+   * spår som fingret drar. När man drar tittar grannveckan fram med rätt datum,
+   * och släpper man förbi tröskeln glider spåret hela vägen och veckan byts.
+   * Spåret lämnas kvar på grannpanelen tills nya veckan laddats och renderas
+   * centrerad – därför inget hopp eller tomrum. */
+  const stripRef = useRef<HTMLDivElement>(null);
+  const gesture = useRef<{ startX: number; startY: number; id: number; width: number } | null>(null);
+  const pendingDelta = useRef(0); // veckobyte att utföra när utglidningen är klar
+  const [dragX, setDragX] = useState(0);
+  const [gliding, setGliding] = useState(false); // slår på transition (glid/fjädra)
+
+  function onStripPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    if (pendingDelta.current) return; // mitt i ett veckobyte – ignorera
+    gesture.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      id: e.pointerId,
+      width: stripRef.current?.offsetWidth ?? window.innerWidth,
+    };
+    setGliding(false);
+  }
+
+  function onStripPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const g = gesture.current;
+    if (!g || e.pointerId !== g.id) return;
+    const dx = e.clientX - g.startX;
+    const dy = e.clientY - g.startY;
+    // Fånga inte gesten förrän den tydligt är horisontell, så tryck på en dag
+    // fortfarande registreras som ett klick.
+    if (!stripRef.current?.hasPointerCapture(g.id)) {
+      if (Math.abs(dx) < 8 || Math.abs(dx) <= Math.abs(dy)) return;
+      stripRef.current?.setPointerCapture(g.id);
+    }
+    setDragX(dx);
+  }
+
+  function onStripPointerEnd(e: React.PointerEvent<HTMLDivElement>) {
+    const g = gesture.current;
+    if (!g || e.pointerId !== g.id) return;
+    const captured = stripRef.current?.hasPointerCapture(g.id);
+    gesture.current = null;
+    if (!captured) return; // var ett tryck, inte ett svep
+    const dx = e.clientX - g.startX;
+    const threshold = Math.min(g.width * 0.18, 64);
+    setGliding(true);
+    if (Math.abs(dx) > threshold) {
+      // Glid hela vägen till grannpanelen; byt vecka när glidningen tar slut.
+      pendingDelta.current = dx < 0 ? 1 : -1;
+      setDragX(dx < 0 ? -g.width : g.width);
+    } else {
+      setDragX(0); // fjädra tillbaka
+    }
+  }
+
+  function onStripTransitionEnd(e: React.TransitionEvent<HTMLDivElement>) {
+    // Bara spårets egen förflyttning, inte färgövergångar som bubblar upp.
+    if (e.propertyName !== "transform") return;
+    const delta = pendingDelta.current;
+    if (delta) {
+      pendingDelta.current = 0;
+      // Behåll spåret på grannpanelen (den visar rätt datum) tills navigeringen
+      // laddat klart och komponenten renderas om med veckan centrerad.
+      shiftWeek(delta);
+      return;
+    }
+    setGliding(false);
   }
 
   // Ordrar för den valda dagen, grupperade mekaniker → ordrar (otilldelade först).
@@ -126,6 +187,77 @@ export function MobileAgenda({
   const totalDay = dayGroups.reduce((n, g) => n + g.jobs.length, 0);
   const monthLabel = `${MONTHS[selected.getMonth()]} ${selected.getFullYear()}`;
 
+  // En veckopanel i karusellen. `live` = den laddade veckan (klickbar, med
+  // orderprickar); grannveckorna ritas som förhandsvisning med rätt datum men
+  // utan prickar (den datan hämtas först när man landat på veckan).
+  const weekPanel = (ws: Date, live: boolean) => {
+    const selDay = addDays(ws, selDow);
+    return (
+      <div
+        className="grid w-full shrink-0 grid-cols-7 gap-1"
+        aria-hidden={!live}
+      >
+        {Array.from({ length: 7 }, (_, i) => addDays(ws, i)).map((d) => {
+          const isSelected = sameDay(d, selDay);
+          const isToday = sameDay(d, today);
+          const count = live
+            ? jobs.filter(
+                (j) =>
+                  j.scheduledStart && sameDay(new Date(j.scheduledStart), d),
+              ).length
+            : 0;
+          return (
+            <button
+              key={toParam(d)}
+              type="button"
+              onClick={live ? () => pickDay(d) : undefined}
+              tabIndex={live ? undefined : -1}
+              aria-pressed={isSelected}
+              className={cn(
+                "flex flex-col items-center gap-1 rounded-xl py-1.5 transition-colors",
+                isSelected
+                  ? "bg-brand-600 text-white"
+                  : "text-ink active:bg-surface-muted",
+              )}
+            >
+              <span
+                className={cn(
+                  "text-[0.6rem] font-semibold uppercase tracking-wide",
+                  isSelected ? "text-white/80" : "text-muted-foreground",
+                )}
+              >
+                {WEEKDAYS_SHORT[isoDow(d)]}
+              </span>
+              <span
+                className={cn(
+                  "flex size-7 items-center justify-center rounded-full text-sm font-bold tabular-nums",
+                  isSelected
+                    ? "bg-white/20"
+                    : isToday
+                      ? "text-brand-600"
+                      : "text-ink",
+                )}
+              >
+                {d.getDate()}
+              </span>
+              <span
+                className={cn(
+                  "size-1.5 rounded-full",
+                  count > 0
+                    ? isSelected
+                      ? "bg-white"
+                      : "bg-brand-400"
+                    : "bg-transparent",
+                )}
+                aria-hidden
+              />
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Rubrik: månad + Idag + skapa */}
@@ -141,80 +273,32 @@ export function MobileAgenda({
         </div>
       </div>
 
-      {/* Veckoremsa */}
-      <div className="flex items-center gap-1.5 border-b border-line pb-3">
-        <button
-          type="button"
-          onClick={() => shiftWeek(-1)}
-          aria-label="Föregående vecka"
-          className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-line bg-surface text-muted-foreground transition-colors active:bg-surface-muted"
+      {/* Veckoremsa som karusell – dra i sidled för att bläddra en hel vecka
+          (ersätter pilarna). Grannveckorna ligger utanför vyn och tittar fram
+          när man drar. */}
+      <div
+        ref={stripRef}
+        onPointerDown={onStripPointerDown}
+        onPointerMove={onStripPointerMove}
+        onPointerUp={onStripPointerEnd}
+        onPointerCancel={onStripPointerEnd}
+        className="overflow-hidden select-none border-b border-line pb-3"
+        style={{ touchAction: "pan-y" }}
+      >
+        <div
+          className="flex"
+          onTransitionEnd={onStripTransitionEnd}
+          style={{
+            transform: `translateX(calc(-100% + ${dragX}px))`,
+            transition: gliding
+              ? "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)"
+              : undefined,
+          }}
         >
-          <ChevronLeft className="size-5" />
-        </button>
-        <div className="grid flex-1 grid-cols-7 gap-1">
-          {weekDays.map((d) => {
-            const isSelected = sameDay(d, selected);
-            const isToday = sameDay(d, today);
-            const count = jobs.filter(
-              (j) =>
-                j.scheduledStart && sameDay(new Date(j.scheduledStart), d),
-            ).length;
-            return (
-              <button
-                key={toParam(d)}
-                type="button"
-                onClick={() => pickDay(d)}
-                aria-pressed={isSelected}
-                className={cn(
-                  "flex flex-col items-center gap-1 rounded-xl py-1.5 transition-colors",
-                  isSelected
-                    ? "bg-brand-600 text-white"
-                    : "text-ink active:bg-surface-muted",
-                )}
-              >
-                <span
-                  className={cn(
-                    "text-[0.6rem] font-semibold uppercase tracking-wide",
-                    isSelected ? "text-white/80" : "text-muted-foreground",
-                  )}
-                >
-                  {WEEKDAYS_SHORT[isoDow(d)]}
-                </span>
-                <span
-                  className={cn(
-                    "flex size-7 items-center justify-center rounded-full text-sm font-bold tabular-nums",
-                    isSelected
-                      ? "bg-white/20"
-                      : isToday
-                        ? "text-brand-600"
-                        : "text-ink",
-                  )}
-                >
-                  {d.getDate()}
-                </span>
-                <span
-                  className={cn(
-                    "size-1.5 rounded-full",
-                    count > 0
-                      ? isSelected
-                        ? "bg-white"
-                        : "bg-brand-400"
-                      : "bg-transparent",
-                  )}
-                  aria-hidden
-                />
-              </button>
-            );
-          })}
+          {weekPanel(addDays(weekStart, -7), false)}
+          {weekPanel(weekStart, true)}
+          {weekPanel(addDays(weekStart, 7), false)}
         </div>
-        <button
-          type="button"
-          onClick={() => shiftWeek(1)}
-          aria-label="Nästa vecka"
-          className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-line bg-surface text-muted-foreground transition-colors active:bg-surface-muted"
-        >
-          <ChevronRight className="size-5" />
-        </button>
       </div>
 
       {/* Agenda för vald dag */}
