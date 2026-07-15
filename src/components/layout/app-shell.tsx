@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 import { BottomNav } from "./bottom-nav";
 import { PageTransition } from "./page-transition";
+import { navGroups, secondaryNav } from "./nav";
 import type { SwitcherData } from "@/lib/data/tenant-context";
 
 const COLLAPSE_KEY = "fv-sidebar-collapsed";
@@ -57,7 +59,14 @@ export function AppShell({
         )}
       >
         <Sidebar
-          switcher={switcher}
+          groups={navGroups}
+          secondary={secondaryNav}
+          homeHref="/"
+          footer={
+            switcher.isSuperadmin
+              ? { label: "Superadmin", href: "/superadmin", icon: ShieldCheck }
+              : undefined
+          }
           collapsed={collapsed}
           onToggleCollapse={toggleCollapse}
         />

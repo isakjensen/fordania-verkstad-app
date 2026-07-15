@@ -2,15 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronsLeft, ShieldCheck } from "lucide-react";
+import { ChevronsLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/ui/logo";
 import { TenantSwitcher } from "./tenant-switcher";
-import { navGroups, secondaryNav, type NavItem } from "./nav";
+import { type NavItem, type NavGroup } from "./nav";
 import type { SwitcherData } from "@/lib/data/tenant-context";
 
 interface SidebarProps {
-  switcher: SwitcherData;
+  /** Navigationsgrupper (verkstad eller superadmin). */
+  groups: NavGroup[];
+  /** Sekundära länkar längst ner (t.ex. Inställningar). */
+  secondary?: NavItem[];
+  /** Bas-route för aktiv-detektion ("/" för verkstad, "/superadmin" för super). */
+  homeHref: string;
+  /** Om satt renderas verkstadsväljaren under loggan (bara där vi vill ha den). */
+  switcher?: SwitcherData;
+  /** Extra länk längst ner (t.ex. "Superadmin" eller "Till verkstaden"). */
+  footer?: NavItem;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   /** Anropas när en länk klickas – används för att stänga mobil-drawern */
@@ -97,7 +106,11 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 export function Sidebar({
+  groups,
+  secondary,
+  homeHref,
   switcher,
+  footer,
   collapsed = false,
   onToggleCollapse,
   onNavigate,
@@ -105,7 +118,9 @@ export function Sidebar({
   const pathname = usePathname();
 
   const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
+    href === homeHref ? pathname === homeHref : pathname.startsWith(href);
+
+  const hasBottom = (secondary && secondary.length > 0) || !!footer;
 
   return (
     <div className="flex h-full flex-col bg-linear-to-b from-[#fff1e4] via-[#fff9f4] to-white dark:from-[#1c1813] dark:via-[#151311] dark:to-[#100f0d]">
@@ -119,10 +134,13 @@ export function Sidebar({
         <Logo iconOnly={collapsed} />
       </div>
 
-      {/* Aktiv tenant / byt verkstad */}
-      <div className="border-b border-line/70">
-        <TenantSwitcher data={switcher} collapsed={collapsed} />
-      </div>
+      {/* Aktiv tenant / byt verkstad – renderas bara där väljaren ska finnas
+          (superadmin). Verkstadens meny visar den inte längre. */}
+      {switcher ? (
+        <div className="border-b border-line/70">
+          <TenantSwitcher data={switcher} collapsed={collapsed} />
+        </div>
+      ) : null}
 
       {/* Navigation */}
       <nav
@@ -131,7 +149,7 @@ export function Sidebar({
           collapsed ? "items-center gap-1 px-2" : "gap-4 px-3",
         )}
       >
-        {navGroups.map((group, gi) => (
+        {groups.map((group, gi) => (
           <div
             key={group.label}
             className={cn(
@@ -156,40 +174,33 @@ export function Sidebar({
           </div>
         ))}
 
-        {/* Sekundär navigation – förankrad nederst */}
-        <div
-          className={cn(
-            "mt-auto flex flex-col gap-0.5 border-t border-line/70 pt-3",
-            collapsed && "w-full items-center",
-          )}
-        >
-          {secondaryNav.map((item) => (
-            <NavLink
-              key={item.href}
-              item={item}
-              active={isActive(item.href)}
-              collapsed={collapsed}
-              onNavigate={onNavigate}
-            />
-          ))}
-          {/* Plattformsadministration – endast global superadmin (Fordania).
-              Vanliga verkstadsanvändare ser inte ens länken. */}
-          {switcher.isSuperadmin ? (
-            <Link
-              href="/superadmin"
-              onClick={onNavigate}
-              title={collapsed ? "Superadmin" : undefined}
-              className={cn(
-                "group flex items-center rounded-lg text-[0.85rem] font-medium",
-                "text-ink-soft transition-colors hover:bg-white/70 hover:text-ink",
-                collapsed ? "h-9 w-9 justify-center" : "h-9 gap-2.5 px-2.5",
-              )}
-            >
-              <ShieldCheck className="size-[18px] shrink-0 text-muted-foreground group-hover:text-ink-soft" />
-              {!collapsed ? <span>Superadmin</span> : null}
-            </Link>
-          ) : null}
-        </div>
+        {/* Sekundär navigation + ev. extra länk – förankrad nederst */}
+        {hasBottom ? (
+          <div
+            className={cn(
+              "mt-auto flex flex-col gap-0.5 border-t border-line/70 pt-3",
+              collapsed && "w-full items-center",
+            )}
+          >
+            {secondary?.map((item) => (
+              <NavLink
+                key={item.href}
+                item={item}
+                active={isActive(item.href)}
+                collapsed={collapsed}
+                onNavigate={onNavigate}
+              />
+            ))}
+            {footer ? (
+              <NavLink
+                item={footer}
+                active={false}
+                collapsed={collapsed}
+                onNavigate={onNavigate}
+              />
+            ) : null}
+          </div>
+        ) : null}
       </nav>
 
       {/* Bottensektion: kollaps-knapp (endast desktop) */}
