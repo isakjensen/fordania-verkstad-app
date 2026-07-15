@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "motion/react";
 import {
   Keyboard,
   X,
@@ -117,19 +118,19 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
     streamRef.current = null;
   }, []);
 
-  // Stäng skannern: glid ner först, navigera sedan tillbaka dit man kom ifrån
-  // (annars översikten). Den lilla fördröjningen matchar nedglidningen.
+  // Navigering tillbaka dit man kom ifrån (annars översikten). Körs FÖRST när
+  // nedglidningen är klar (motion onAnimationComplete), så inget hoppar.
+  const finishClose = useCallback(() => {
+    if (window.history.length > 1) router.back();
+    else router.push("/");
+  }, [router]);
+
+  // Stäng skannern: stäng kameran och starta nedglidningen. Själva navigeringen
+  // sker när animationen är färdig.
   const close = useCallback(() => {
-    setClosing((alreadyClosing) => {
-      if (alreadyClosing) return true;
-      stopCamera();
-      window.setTimeout(() => {
-        if (window.history.length > 1) router.back();
-        else router.push("/");
-      }, 320);
-      return true;
-    });
-  }, [router, stopCamera]);
+    stopCamera();
+    setClosing(true);
+  }, [stopCamera]);
 
   const open = useCallback(
     (id: string) => {
@@ -304,16 +305,13 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
     [open],
   );
 
-  // Sheet-position: "100%" = helt nere (utanför skärmen), "0px" = uppe. I
-  // kameravyn följer fingret (dragY) medan man drar ner. Uppglidningen sköts av
-  // CSS-keyframen (animate-sheet-rise) på den stabila wrappern; inline-
-  // transformen tar över efteråt för stängning och drag.
-  const sheetTransform = `translateY(${
-    closing ? "100%" : dragY ? `${dragY}px` : "0px"
-  })`;
+  // Sheet-läge för motion: "100%" = helt nere (utanför skärmen), 0 = uppe.
+  // Öppning: initial "100%" → animate 0 (glider upp nedifrån). Stängning:
+  // animate "100%" (glider ner). I kameravyn följer fingret (dragY) direkt.
+  const sheetY: number | string = closing ? "100%" : dragY;
   const sheetTransition = dragging
-    ? "none"
-    : "transform 320ms var(--ease-out-soft)";
+    ? { duration: 0 }
+    : { duration: 0.34, ease: [0.22, 1, 0.36, 1] as const };
 
   function onSheetPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     if (closing) return;
@@ -358,14 +356,18 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
   // växlar mellan kameravyn och det manuella skrivläget.
   const isManual = mode === "manual";
   return (
-    <div
+    <motion.div
       className={cn(
-        "relative h-full w-full overflow-hidden animate-sheet-rise",
+        "relative h-full w-full overflow-hidden",
         isManual ? "bg-canvas" : "bg-ink text-white select-none",
       )}
+      initial={{ y: "100%" }}
+      animate={{ y: sheetY }}
+      transition={sheetTransition}
+      onAnimationComplete={() => {
+        if (closing) finishClose();
+      }}
       style={{
-        transform: sheetTransform,
-        transition: sheetTransition,
         willChange: "transform",
         // Bara kameravyn fångar drag (manuella läget har en scroll-lista).
         touchAction: isManual ? undefined : "none",
@@ -604,6 +606,6 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
       </div>
         </>
       )}
-    </div>
+    </motion.div>
   );
 }
