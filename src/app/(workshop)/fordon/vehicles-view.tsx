@@ -141,7 +141,7 @@ export function VehiclesView({
     <>
       {/* Kortets huvud – bara det aktiva läget renderas (inget grid-överlapp),
           så höjden matchar innehållet och markeringsläget lämnar inget tomrum. */}
-      <div className="border-b border-line">
+      <div className="shrink-0 border-b border-line">
         {selectMode ? (
           <div className="flex items-center justify-between gap-3 px-5 py-4">
             <button
@@ -213,6 +213,9 @@ export function VehiclesView({
         )}
       </div>
 
+      {/* Scroll-yta: listan scrollar inuti kortet (som på arbetsordersidan),
+          inte hela sidan. */}
+      <div className="min-h-0 flex-1 overflow-auto">
       {/* Mobil / iPad-stående: touch-kort */}
       <ul className="divide-y divide-line lg:hidden">
         {vehicles.map((v) => {
@@ -343,6 +346,7 @@ export function VehiclesView({
           })}
         </TableBody>
       </Table>
+      </div>
 
       {/* Bekräfta borttagning */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
