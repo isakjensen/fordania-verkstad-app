@@ -69,6 +69,19 @@
   --animate-card-drop-in: card-drop-in 0.3s var(--ease-out-soft) both;
   /* Skannlinjen som sveper upp och ner över skyltramen i skanningsvyn. */
   --animate-scan: scan 2.2s ease-in-out infinite;
+  /* Skannern glider upp nedifrån när den öppnas – mjukt, ingen studs.
+   * `backwards` gör att starttillståndet (nere) gäller redan första bildrutan,
+   * och efter animationen tar inline-transformen över (för drag/stängning). */
+  --animate-sheet-rise: sheet-rise 0.36s var(--ease-out-soft) backwards;
+
+  @keyframes sheet-rise {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
 
   @keyframes fade-up {
     from {
