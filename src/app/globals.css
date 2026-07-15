@@ -69,9 +69,6 @@
   --animate-card-drop-in: card-drop-in 0.3s var(--ease-out-soft) both;
   /* Skannlinjen som sveper upp och ner över skyltramen i skanningsvyn. */
   --animate-scan: scan 2.2s ease-in-out infinite;
-  /* Skannern/kameran reser sig upp när den öppnas: glider upp nedifrån med
-   * en mjuk fade och en lätt zoom som "sätter sig" med en subtil studs. */
-  --animate-sheet-up: sheet-up 0.5s cubic-bezier(0.34, 1.42, 0.5, 1) both;
 
   @keyframes fade-up {
     from {
@@ -105,16 +102,6 @@
     }
   }
 
-  @keyframes sheet-up {
-    from {
-      opacity: 0;
-      transform: translateY(45%) scale(0.965);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
 }
 
 @layer base {

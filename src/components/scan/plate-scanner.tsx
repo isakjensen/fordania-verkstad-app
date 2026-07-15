@@ -6,7 +6,6 @@ import {
   Keyboard,
   X,
   Loader2,
-  Check,
   ChevronRight,
   Search,
   ScanLine,
@@ -94,6 +93,19 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
+  // Sheet-animation: skannern glider upp när den öppnas och ner när den stängs.
+  // I kameravyn kan man dessutom dra ner för att stänga (fingret följer).
+  const [entered, setEntered] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [dragY, setDragY] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const dragRef = useRef<{
+    startX: number;
+    startY: number;
+    id: number;
+    active: boolean;
+  } | null>(null);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const roiCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -106,11 +118,18 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
     streamRef.current = null;
   }, []);
 
-  // Stäng skannern och gå tillbaka dit man kom ifrån (annars översikten).
+  // Stäng skannern: glid ner först, navigera sedan tillbaka dit man kom ifrån
+  // (annars översikten). Den lilla fördröjningen matchar nedglidningen.
   const close = useCallback(() => {
-    stopCamera();
-    if (window.history.length > 1) router.back();
-    else router.push("/");
+    setClosing((alreadyClosing) => {
+      if (alreadyClosing) return true;
+      stopCamera();
+      window.setTimeout(() => {
+        if (window.history.length > 1) router.back();
+        else router.push("/");
+      }, 320);
+      return true;
+    });
   }, [router, stopCamera]);
 
   const open = useCallback(
@@ -248,6 +267,12 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Spela uppglidningen efter första paint (så starttillståndet hinner målas).
+  useEffect(() => {
+    const r = requestAnimationFrame(() => setEntered(true));
+    return () => cancelAnimationFrame(r);
+  }, []);
+
   const filtered = useMemo(() => {
     const q = normalizePlate(query);
     const list = q
@@ -286,10 +311,61 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
     [open],
   );
 
+  // Sheet-position: "100%" = helt nere (utanför skärmen), "0px" = uppe. I
+  // kameravyn följer fingret (dragY) medan man drar ner.
+  const sheetOffset = closing ? "100%" : entered ? `${dragY}px` : "100%";
+  const sheetTransition = dragging
+    ? "none"
+    : "transform 320ms var(--ease-out-soft)";
+
+  function onSheetPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (closing) return;
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      id: e.pointerId,
+      active: false,
+    };
+  }
+  function onSheetPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const g = dragRef.current;
+    if (!g || e.pointerId !== g.id) return;
+    const dx = e.clientX - g.startX;
+    const dy = e.clientY - g.startY;
+    if (!g.active) {
+      // Engagera bara på en tydlig nedåtdragning; åt sidan/uppåt lämnas ifred.
+      if (dy > 8 && dy > Math.abs(dx)) {
+        g.active = true;
+        setDragging(true);
+        e.currentTarget.setPointerCapture(g.id);
+      } else if (Math.abs(dx) > 8 || dy < -8) {
+        dragRef.current = null;
+      }
+      return;
+    }
+    setDragY(Math.max(0, dy));
+  }
+  function onSheetPointerEnd(e: React.PointerEvent<HTMLDivElement>) {
+    const g = dragRef.current;
+    if (!g || e.pointerId !== g.id) return;
+    dragRef.current = null;
+    if (!g.active) return;
+    setDragging(false);
+    // Dra ner tillräckligt långt → stäng; annars fjädra tillbaka.
+    if (e.clientY - g.startY > 140) close();
+    else setDragY(0);
+  }
+
   // ---------- MANUELL (fullskärm, ljust) ----------
   if (mode === "manual") {
     return (
-      <div className="flex h-full flex-col bg-canvas px-4 pt-safe pb-safe animate-sheet-up">
+      <div
+        className="flex h-full flex-col bg-canvas px-4 pt-safe pb-safe"
+        style={{
+          transform: `translateY(${closing ? "100%" : entered ? "0px" : "100%"})`,
+          transition: "transform 320ms var(--ease-out-soft)",
+        }}
+      >
         <div className="flex items-center justify-between py-3">
           <h1 className="text-lg font-bold tracking-[-0.01em] text-ink">
             Sök fordon
@@ -363,13 +439,29 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
 
   // ---------- SKANNING (fullskärm kamera) ----------
   return (
-    <div className="relative h-full w-full overflow-hidden bg-ink text-white select-none animate-sheet-up">
+    <div
+      className="relative h-full w-full overflow-hidden bg-ink text-white select-none"
+      style={{
+        transform: `translateY(${sheetOffset})`,
+        transition: sheetTransition,
+        touchAction: "none",
+      }}
+      onPointerDown={onSheetPointerDown}
+      onPointerMove={onSheetPointerMove}
+      onPointerUp={onSheetPointerEnd}
+      onPointerCancel={onSheetPointerEnd}
+    >
       <video
         ref={videoRef}
         playsInline
         muted
         className="absolute inset-0 size-full object-cover"
       />
+
+      {/* Drag-handtag – antyder att man kan dra ner för att stänga */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center pt-safe">
+        <span className="mt-2 h-1.5 w-10 rounded-full bg-white/45" />
+      </div>
 
       {/* Siktruta + skannlinje, centrerad */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
