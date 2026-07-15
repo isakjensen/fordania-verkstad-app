@@ -19,13 +19,12 @@ import { cn } from "@/lib/utils";
 import { formatPlate } from "@/lib/plate-ocr";
 import type { Mechanic, ScheduleJob } from "@/lib/data/schedule";
 import { statusLabels } from "./calendar-meta";
-import { cardStyleFor } from "./card-style";
+import { eventCardClass, EventCardBody } from "./event-card";
 import type { MoveArgs } from "./time-grid";
 import {
   type CalGroup,
   type CalVehicleRow,
   WEEKDAYS_SHORT,
-  hm,
   toParam,
   addDays,
   sameDay,
@@ -187,7 +186,6 @@ export function WeekBoard({
   }
 
   const activeJob = activeId ? jobById.get(activeId.split("|")[0]) : null;
-  const activeCs = activeJob ? cardStyleFor(activeJob.status) : null;
   const minW = LABEL_W + 7 * DAY_MIN;
 
   return (
@@ -266,25 +264,15 @@ export function WeekBoard({
       </div>
 
       <DragOverlay dropAnimation={null}>
-        {activeJob && activeCs ? (
+        {activeJob ? (
           <div
             className={cn(
-              "relative flex flex-col gap-0.5 overflow-hidden rounded-lg px-2.5 py-2 shadow-lift ring-1 ring-line-strong",
-              activeCs.tint,
+              "flex items-stretch text-left shadow-lift",
+              eventCardClass(activeJob.type),
             )}
             style={{ width: 178, rotate: "2.5deg" }}
           >
-            <span className="truncate text-[0.8rem] font-semibold leading-tight tracking-tight text-ink">
-              {activeJob.type}
-            </span>
-            {activeJob.scheduledStart ? (
-              <span className="truncate text-[0.68rem] font-medium leading-none text-muted-foreground tabular-nums">
-                {hm(new Date(activeJob.scheduledStart))}
-                {activeJob.scheduledEnd
-                  ? `–${hm(new Date(activeJob.scheduledEnd))}`
-                  : ""}
-              </span>
-            ) : null}
+            <EventCardBody job={activeJob} />
           </div>
         ) : null}
       </DragOverlay>
@@ -523,9 +511,6 @@ const JobChip = memo(function JobChip({
     disabled: !canManage,
   });
   const justMoved = useJustMoved(job.id);
-  const cs = cardStyleFor(job.status);
-  const start = job.scheduledStart ? new Date(job.scheduledStart) : null;
-  const end = job.scheduledEnd ? new Date(job.scheduledEnd) : null;
 
   return (
     <button
@@ -534,8 +519,8 @@ const JobChip = memo(function JobChip({
       onClick={() => onOpen(job)}
       title={`${job.type} · ${statusLabels[job.status] ?? job.status}`}
       className={cn(
-        "group/chip relative flex min-w-0 flex-col gap-0.5 overflow-hidden rounded-lg px-2.5 py-2 text-left ring-1 ring-line transition duration-150",
-        cs.tint,
+        "group/chip relative flex items-stretch text-left transition duration-150",
+        eventCardClass(job.type),
         justMoved && "animate-card-drop-in",
         isDragging ? "opacity-40" : "shadow-chip",
         canManage ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
@@ -543,15 +528,7 @@ const JobChip = memo(function JobChip({
       {...(canManage ? listeners : {})}
       {...(canManage ? attributes : {})}
     >
-      <span className="truncate text-[0.8rem] font-semibold leading-tight tracking-tight text-ink">
-        {job.type}
-      </span>
-      {start ? (
-        <span className="truncate text-[0.68rem] font-medium leading-tight text-muted-foreground tabular-nums">
-          {hm(start)}
-          {end ? `–${hm(end)}` : ""}
-        </span>
-      ) : null}
+      <EventCardBody job={job} />
     </button>
   );
 });

@@ -1,5 +1,15 @@
 /** Delad styling och etiketter för arbetsorderstatus i kalendern och drawern. */
 
+import {
+  Wrench,
+  Hammer,
+  ClipboardCheck,
+  Disc3,
+  Sparkles,
+  ScanSearch,
+  type LucideIcon,
+} from "lucide-react";
+
 export const statusMeta: Record<
   string,
   {
@@ -92,3 +102,78 @@ export const priorityLabels: Record<string, string> = {
   normal: "Normal",
   high: "Hög",
 };
+
+/**
+ * Färg + ikon per ordertyp. Kalenderkorten färgas efter typ (Service,
+ * Reparation, …) så veckan blir lätt att skanna. Kulören hålls "lagom": den
+ * bär i vänsterkanten, ikonen och en tunn ring, medan ytan är en mjuk ton.
+ * Mörkt läge tonas ned via låg opacitet.
+ */
+export interface TypeMeta {
+  icon: LucideIcon;
+  /** Solid vänsterkant. */
+  bar: string;
+  /** Mjuk bakgrundston. */
+  tint: string;
+  /** Tunn ring i samma kulör. */
+  ring: string;
+  /** Ikonens färg. */
+  iconColor: string;
+}
+
+export const typeMeta: Record<string, TypeMeta> = {
+  Service: {
+    icon: Wrench,
+    bar: "bg-sky-500",
+    tint: "bg-sky-50 dark:bg-sky-500/10",
+    ring: "ring-sky-200/70 dark:ring-sky-500/20",
+    iconColor: "text-sky-600 dark:text-sky-400",
+  },
+  Reparation: {
+    icon: Hammer,
+    bar: "bg-amber-500",
+    tint: "bg-amber-50 dark:bg-amber-500/10",
+    ring: "ring-amber-200/70 dark:ring-amber-500/20",
+    iconColor: "text-amber-600 dark:text-amber-400",
+  },
+  Besiktning: {
+    icon: ClipboardCheck,
+    bar: "bg-violet-500",
+    tint: "bg-violet-50 dark:bg-violet-500/10",
+    ring: "ring-violet-200/70 dark:ring-violet-500/20",
+    iconColor: "text-violet-600 dark:text-violet-400",
+  },
+  Däckbyte: {
+    icon: Disc3,
+    bar: "bg-teal-500",
+    tint: "bg-teal-50 dark:bg-teal-500/10",
+    ring: "ring-teal-200/70 dark:ring-teal-500/20",
+    iconColor: "text-teal-600 dark:text-teal-400",
+  },
+  Rekond: {
+    icon: Sparkles,
+    bar: "bg-emerald-500",
+    tint: "bg-emerald-50 dark:bg-emerald-500/10",
+    ring: "ring-emerald-200/70 dark:ring-emerald-500/20",
+    iconColor: "text-emerald-600 dark:text-emerald-400",
+  },
+  Felsökning: {
+    icon: ScanSearch,
+    bar: "bg-rose-500",
+    tint: "bg-rose-50 dark:bg-rose-500/10",
+    ring: "ring-rose-200/70 dark:ring-rose-500/20",
+    iconColor: "text-rose-600 dark:text-rose-400",
+  },
+};
+
+export const typeFallback: TypeMeta = {
+  icon: Wrench,
+  bar: "bg-slate-400",
+  tint: "bg-surface-muted/70",
+  ring: "ring-line",
+  iconColor: "text-muted-foreground",
+};
+
+export function typeMetaFor(type: string): TypeMeta {
+  return typeMeta[type] ?? typeFallback;
+}

@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { formatPlate } from "@/lib/plate-ocr";
 import type { Mechanic, ScheduleJob } from "@/lib/data/schedule";
 import { statusLabels } from "./calendar-meta";
-import { cardStyleFor } from "./card-style";
+import { eventCardClass, EventCardBody } from "./event-card";
 import type { MoveArgs } from "./time-grid";
 import {
   type PlacedH,
@@ -32,7 +32,6 @@ import {
   MONTHS,
   isoDow,
   pad,
-  hm,
   clamp,
   sameDay,
   durationHoursOf,
@@ -195,7 +194,6 @@ export function DayBoard({
   }
 
   const activeJob = activeId ? jobById.get(activeId.split("|")[0]) : null;
-  const activeCs = activeJob ? cardStyleFor(activeJob.status) : null;
 
   return (
     <MovedProvider value={movedId ?? null}>
@@ -258,25 +256,15 @@ export function DayBoard({
       </div>
 
       <DragOverlay dropAnimation={null}>
-        {activeJob && activeCs ? (
+        {activeJob ? (
           <div
             className={cn(
-              "relative flex flex-col justify-center gap-0.5 overflow-hidden rounded-lg px-2.5 shadow-lift ring-1 ring-line-strong",
-              activeCs.tint,
+              "flex items-stretch text-left shadow-lift",
+              eventCardClass(activeJob.type),
             )}
             style={{ width: 178, height: BLOCK_H, rotate: "2.5deg" }}
           >
-            <span className="truncate text-[0.82rem] font-semibold leading-tight tracking-tight text-ink">
-              {activeJob.type}
-            </span>
-            {activeJob.scheduledStart ? (
-              <span className="truncate text-[0.66rem] font-medium leading-none text-muted-foreground tabular-nums">
-                {hm(new Date(activeJob.scheduledStart))}
-                {activeJob.scheduledEnd
-                  ? `–${hm(new Date(activeJob.scheduledEnd))}`
-                  : ""}
-              </span>
-            ) : null}
+            <EventCardBody job={activeJob} />
           </div>
         ) : null}
       </DragOverlay>
@@ -453,9 +441,6 @@ const JobBlock = memo(function JobBlock({
     disabled: !canManage,
   });
   const justMoved = useJustMoved(job.id);
-  const cs = cardStyleFor(job.status);
-  const start = job.scheduledStart ? new Date(job.scheduledStart) : null;
-  const end = job.scheduledEnd ? new Date(job.scheduledEnd) : null;
   const top = ROW_PAD + sublane * (BLOCK_H + GAP);
 
   return (
@@ -465,8 +450,8 @@ const JobBlock = memo(function JobBlock({
       onClick={() => onOpen(job)}
       title={`${job.type} · ${statusLabels[job.status] ?? job.status}`}
       className={cn(
-        "absolute z-20 flex flex-col justify-center gap-0.5 overflow-hidden rounded-lg px-2.5 py-1 text-left ring-1 ring-line transition duration-150",
-        cs.tint,
+        "absolute z-20 flex items-stretch text-left transition duration-150",
+        eventCardClass(job.type),
         justMoved && "animate-card-drop-in",
         isDragging ? "opacity-40" : "shadow-chip hover:z-30",
         canManage ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
@@ -481,15 +466,7 @@ const JobBlock = memo(function JobBlock({
       {...(canManage ? listeners : {})}
       {...(canManage ? attributes : {})}
     >
-      <span className="truncate text-[0.82rem] font-semibold leading-tight tracking-tight text-ink">
-        {job.type}
-      </span>
-      {start ? (
-        <span className="truncate text-[0.66rem] font-medium leading-tight text-muted-foreground tabular-nums">
-          {hm(start)}
-          {end ? `–${hm(end)}` : ""}
-        </span>
-      ) : null}
+      <EventCardBody job={job} />
     </button>
   );
 });

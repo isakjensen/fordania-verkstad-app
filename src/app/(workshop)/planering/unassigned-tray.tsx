@@ -8,7 +8,7 @@ import { formatPlate } from "@/lib/plate-ocr";
 import type { ScheduleJob } from "@/lib/data/schedule";
 import { toParam, hm } from "./calendar-utils";
 import { statusLabels } from "./calendar-meta";
-import { cardStyleFor } from "./card-style";
+import { eventCardClass, EventCardBody } from "./event-card";
 import { useJustMoved } from "./moved-context";
 
 /** Droppzon-id: släpp en tilldelad order här för att avtilldela den. */
@@ -49,14 +49,38 @@ export function UnassignedTray({
       <div
         ref={setNodeRef}
         className={cn(
-          "w-fit max-w-full min-w-[340px] rounded-2xl p-2 transition-colors",
+          "w-fit max-w-full min-w-[340px] rounded-2xl transition-colors",
+          withStart.length === 0 ? "p-0" : "p-2",
           active ? "bg-brand-50 ring-2 ring-brand-300" : "",
         )}
       >
         {withStart.length === 0 ? (
-          <div className="flex items-center justify-center gap-2 py-4 text-xs font-medium text-muted-foreground/70">
-            <Inbox className="size-4" />
-            Dra hit en order för att avtilldela den
+          <div
+            className={cn(
+              "flex items-center gap-3 rounded-2xl border border-dashed px-4 py-3 transition-colors",
+              active
+                ? "border-brand-300 bg-brand-50/60"
+                : "border-line-strong/70 bg-surface-muted/30",
+            )}
+          >
+            <span
+              className={cn(
+                "flex size-9 shrink-0 items-center justify-center rounded-full ring-1 transition-colors",
+                active
+                  ? "bg-brand-100 text-brand-600 ring-brand-200"
+                  : "bg-surface text-muted-foreground ring-line",
+              )}
+            >
+              <Inbox className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-ink-soft">
+                Inga otilldelade ordrar
+              </p>
+              <p className="text-[0.7rem] leading-tight text-muted-foreground">
+                Dra en order hit för att ta bort dess mekaniker
+              </p>
+            </div>
           </div>
         ) : (
           <div className="no-scrollbar flex items-stretch gap-2 overflow-x-auto">
@@ -90,7 +114,6 @@ function TrayCard({
     disabled: !canManage,
   });
   const justMoved = useJustMoved(job.id);
-  const cs = cardStyleFor(job.status);
   const start = job.scheduledStart ? new Date(job.scheduledStart) : null;
   const end = job.scheduledEnd ? new Date(job.scheduledEnd) : null;
   const regNo = job.vehicles[0]?.vehicle?.regNo;
@@ -102,8 +125,8 @@ function TrayCard({
       onClick={() => onOpen(job)}
       title={`${job.type} · ${statusLabels[job.status] ?? job.status}`}
       className={cn(
-        "relative flex h-[62px] w-[196px] shrink-0 min-w-0 flex-col justify-center gap-1 overflow-hidden rounded-lg px-3 py-2 text-left ring-1 ring-line transition duration-150",
-        cs.tint,
+        "relative flex min-h-[46px] w-[196px] shrink-0 items-stretch text-left transition duration-150",
+        eventCardClass(job.type),
         justMoved && "animate-card-drop-in",
         isDragging ? "opacity-40" : "shadow-chip",
         canManage ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
@@ -111,22 +134,25 @@ function TrayCard({
       {...(canManage ? listeners : {})}
       {...(canManage ? attributes : {})}
     >
-      <span className="truncate text-[0.82rem] font-semibold leading-tight tracking-tight text-ink">
-        {job.type}
-      </span>
-      <span className="flex min-w-0 items-center gap-1.5 leading-none">
-        {start ? (
-          <span className="shrink-0 text-[0.68rem] font-medium text-muted-foreground tabular-nums">
-            {hm(start)}
-            {end ? `–${hm(end)}` : ""}
+      <EventCardBody
+        job={job}
+        showTime={false}
+        extra={
+          <span className="flex min-w-0 items-center gap-1.5 leading-none">
+            {start ? (
+              <span className="shrink-0 text-[0.68rem] font-medium text-muted-foreground tabular-nums">
+                {hm(start)}
+                {end ? `–${hm(end)}` : ""}
+              </span>
+            ) : null}
+            {regNo ? (
+              <span className="min-w-0 truncate border-l border-line pl-1.5 text-[0.66rem] font-bold uppercase tracking-wide text-ink-soft">
+                {formatPlate(regNo)}
+              </span>
+            ) : null}
           </span>
-        ) : null}
-        {regNo ? (
-          <span className="min-w-0 truncate border-l border-line pl-1.5 text-[0.66rem] font-bold uppercase tracking-wide text-ink-soft">
-            {formatPlate(regNo)}
-          </span>
-        ) : null}
-      </span>
+        }
+      />
     </button>
   );
 }
