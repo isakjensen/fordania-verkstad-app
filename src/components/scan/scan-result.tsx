@@ -1,8 +1,8 @@
-import Link from "next/link";
-import { ArrowLeft, Gauge, User, ClipboardList, Wrench } from "lucide-react";
+import { Gauge, User, ClipboardList, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LicensePlate } from "@/components/ui/license-plate";
 import { FleetTag } from "@/components/ui/fleet-tag";
+import { ScanAgainButton } from "./scan-again-button";
 import type { ScanVehicle } from "@/lib/data/scan";
 
 const statusLabels: Record<string, string> = {
@@ -44,13 +44,7 @@ export function ScanResult({ vehicle }: { vehicle: ScanVehicle }) {
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col px-4 pt-4">
-      <Link
-        href="/scanna"
-        className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground active:text-ink"
-      >
-        <ArrowLeft className="size-4.5" />
-        Skanna igen
-      </Link>
+      <ScanAgainButton />
 
       {/* Fordonshuvud */}
       <div className="rounded-2xl border border-line bg-surface p-4">

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import {
   Keyboard,
@@ -24,7 +23,7 @@ import {
   type PlateMatch,
 } from "@/lib/plate-ocr";
 import { scanFrame, warmUpPlateReader } from "@/lib/plate-alpr";
-import { addScannedVehicle } from "@/app/(workshop)/scanna/actions";
+import { addScannedVehicle, getScanFleet } from "@/app/(workshop)/scanna/actions";
 
 type Mode = "scanning" | "manual";
 
@@ -83,10 +82,13 @@ function guideRegion(
   return { x: visX + (visW - w) / 2, y: visY + (visH - h) / 2, w, h };
 }
 
-export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
-  const router = useRouter();
+export function PlateScanner({ onClose }: { onClose: () => void }) {
   const [mode, setMode] = useState<Mode>("scanning");
   const [modelsReady, setModelsReady] = useState(false);
+  // Kameran ger bild? Tills dess visas ett tydligt laddningsläge (ingen tom/
+  // buggig känsla). Fordonslistan hämtas internt när overlayn öppnas.
+  const [cameraReady, setCameraReady] = useState(false);
+  const [fleet, setFleet] = useState<ScanFleetVehicle[]>([]);
   const [reading, setReading] = useState<string | null>(null);
   const [voteCount, setVoteCount] = useState(0);
   const [result, setResult] = useState<ScanResult | null>(null);
@@ -94,9 +96,7 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
-  // Sheet-animation: skannern glider upp när den öppnas (CSS-keyframe) och ner
-  // när den stängs. I kameravyn kan man dessutom dra ner för att stänga.
-  const [closing, setClosing] = useState(false);
+  // Sheet-drag: i kameravyn kan man dra ner för att stänga (fingret följer).
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
   const dragRef = useRef<{
@@ -118,19 +118,13 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
     streamRef.current = null;
   }, []);
 
-  // Navigering tillbaka dit man kom ifrån (annars översikten). Körs FÖRST när
-  // nedglidningen är klar (motion onAnimationComplete), så inget hoppar.
-  const finishClose = useCallback(() => {
-    if (window.history.length > 1) router.back();
-    else router.push("/");
-  }, [router]);
-
-  // Stäng skannern: stäng kameran och starta nedglidningen. Själva navigeringen
-  // sker när animationen är färdig.
+  // Stäng skannern: stäng kameran och be föräldern fälla ihop overlayn.
+  // AnimatePresence spelar nedglidningen och avmonterar sedan – ingen
+  // navigering, så sidan under avslöjas direkt utan vit blink.
   const close = useCallback(() => {
     stopCamera();
-    setClosing(true);
-  }, [stopCamera]);
+    onClose();
+  }, [stopCamera, onClose]);
 
   const open = useCallback(
     (id: string) => {
@@ -230,6 +224,7 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
     setReading(null);
     setVoteCount(0);
     setResult(null);
+    setCameraReady(false);
     votesRef.current = [];
     setMode("scanning");
     try {
@@ -262,6 +257,10 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
     warmUpPlateReader()
       .then(() => setModelsReady(true))
       .catch(() => setModelsReady(true));
+    // Fordonslistan hämtas parallellt medan kameran startar.
+    getScanFleet()
+      .then(setFleet)
+      .catch(() => {});
     void startCamera();
     return stopCamera;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -305,16 +304,14 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
     [open],
   );
 
-  // Sheet-läge för motion: "100%" = helt nere (utanför skärmen), 0 = uppe.
-  // Öppning: initial "100%" → animate 0 (glider upp nedifrån). Stängning:
-  // animate "100%" (glider ner). I kameravyn följer fingret (dragY) direkt.
-  const sheetY: number | string = closing ? "100%" : dragY;
+  // Sheet-animation via motion + AnimatePresence: öppning glider upp nedifrån
+  // (initial y "100%" → 0), stängning glider ner (exit y "100%"). I kameravyn
+  // följer fingret (dragY) direkt medan man drar ner.
   const sheetTransition = dragging
     ? { duration: 0 }
     : { duration: 0.34, ease: [0.22, 1, 0.36, 1] as const };
 
   function onSheetPointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    if (closing) return;
     dragRef.current = {
       startX: e.clientX,
       startY: e.clientY,
@@ -351,22 +348,20 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
     else setDragY(0);
   }
 
-  // En stabil yttre sheet-wrapper som ALDRIG byter element vid lägesbyte, så
-  // uppglidnings-keyframen (animate-sheet-rise) spelas exakt en gång. Innehållet
-  // växlar mellan kameravyn och det manuella skrivläget.
+  // Overlay ovanpå sidan man är på – öppnas direkt (ingen route-navigering).
+  // AnimatePresence i föräldern sköter upp-/nedglidningen; innehållet växlar
+  // mellan kameravyn och det manuella skrivläget utan att montera om roten.
   const isManual = mode === "manual";
   return (
     <motion.div
       className={cn(
-        "relative h-full w-full overflow-hidden",
+        "fixed inset-0 z-[60] overflow-hidden",
         isManual ? "bg-canvas" : "bg-ink text-white select-none",
       )}
       initial={{ y: "100%" }}
-      animate={{ y: sheetY }}
+      animate={{ y: dragY }}
+      exit={{ y: "100%" }}
       transition={sheetTransition}
-      onAnimationComplete={() => {
-        if (closing) finishClose();
-      }}
       style={{
         willChange: "transform",
         // Bara kameravyn fångar drag (manuella läget har en scroll-lista).
@@ -457,31 +452,42 @@ export function PlateScanner({ fleet }: { fleet: ScanFleetVehicle[] }) {
         ref={videoRef}
         playsInline
         muted
+        onPlaying={() => setCameraReady(true)}
         className="absolute inset-0 size-full bg-ink object-cover"
       />
+
+      {/* Laddningsläge tills kameran ger bild – tydligt i stället för tomt/buggigt */}
+      {!cameraReady ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-ink text-white/80">
+          <Loader2 className="size-7 animate-spin text-brand-300" />
+          <span className="text-sm font-medium">Startar kameran…</span>
+        </div>
+      ) : null}
 
       {/* Drag-handtag – antyder att man kan dra ner för att stänga */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center pt-safe">
         <span className="mt-2 h-1.5 w-10 rounded-full bg-white/45" />
       </div>
 
-      {/* Siktruta + skannlinje, centrerad */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div
-          className={cn(
-            "relative overflow-hidden rounded-xl ring-2 shadow-[0_0_0_100vmax_rgb(9_16_28/0.55)] transition-colors",
-            result ? "ring-success" : "ring-white/90",
-          )}
-          style={{ width: `${GUIDE_W * 100}%`, height: `${GUIDE_H * 100}%` }}
-        >
-          <span className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/90 px-3 py-1 text-[0.7rem] font-semibold text-[#172230]">
-            {result ? "Skylt avläst" : "Håll skylten inom ramen"}
-          </span>
-          {!result && (
-            <span className="absolute inset-x-0 top-0 h-0.5 animate-scan bg-brand-400/90" />
-          )}
+      {/* Siktruta + skannlinje, centrerad (visas när kameran är igång) */}
+      {cameraReady ? (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div
+            className={cn(
+              "relative overflow-hidden rounded-xl ring-2 shadow-[0_0_0_100vmax_rgb(9_16_28/0.55)] transition-colors",
+              result ? "ring-success" : "ring-white/90",
+            )}
+            style={{ width: `${GUIDE_W * 100}%`, height: `${GUIDE_H * 100}%` }}
+          >
+            <span className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/90 px-3 py-1 text-[0.7rem] font-semibold text-[#172230]">
+              {result ? "Skylt avläst" : "Håll skylten inom ramen"}
+            </span>
+            {!result && (
+              <span className="absolute inset-x-0 top-0 h-0.5 animate-scan bg-brand-400/90" />
+            )}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {/* Topprad: status + stäng */}
       <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-safe">

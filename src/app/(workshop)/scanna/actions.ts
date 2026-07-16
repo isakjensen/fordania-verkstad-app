@@ -5,6 +5,19 @@ import { db } from "@/lib/db";
 import { requireUser, getActiveOrganizationId } from "@/lib/session";
 import { recordAudit } from "@/lib/audit";
 import { normalizePlate } from "@/lib/plate-ocr";
+import { getFleetForScan, type ScanFleetVehicle } from "@/lib/data/scan";
+
+/**
+ * Hämtar den lätta fordonslistan som skannern matchar mot. Anropas från
+ * klienten när skanner-overlayn öppnas, så kameran kan starta direkt medan
+ * flottan laddas i bakgrunden.
+ */
+export async function getScanFleet(): Promise<ScanFleetVehicle[]> {
+  await requireUser();
+  const organizationId = await getActiveOrganizationId();
+  if (!organizationId) return [];
+  return getFleetForScan(organizationId);
+}
 
 export type AddScannedResult =
   | { success: true; vehicleId: string; created: boolean }

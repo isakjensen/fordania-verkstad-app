@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "./sidebar";
@@ -9,6 +8,7 @@ import { Topbar } from "./topbar";
 import { BottomNav } from "./bottom-nav";
 import { PageTransition } from "./page-transition";
 import { navGroups, secondaryNav } from "./nav";
+import { ScannerOverlay } from "@/components/scan/scanner-overlay";
 import type { SwitcherData } from "@/lib/data/tenant-context";
 
 const COLLAPSE_KEY = "fv-sidebar-collapsed";
@@ -21,12 +21,21 @@ export function AppShell({
   switcher: SwitcherData;
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const pathname = usePathname();
+  // Skanner-overlayn öppnas via ett fönster-event ("fv:open-scanner") som
+  // flikfältets skanna-knapp (och "skanna igen") skickar – så den kan triggas
+  // från vilken sida som helst utan att navigera.
+  const [scanOpen, setScanOpen] = useState(false);
 
   // Läs in sparat kollaps-läge efter mount (undviker hydration-mismatch)
   useEffect(() => {
     const saved = window.localStorage.getItem(COLLAPSE_KEY);
     if (saved === "1") setCollapsed(true);
+  }, []);
+
+  useEffect(() => {
+    const open = () => setScanOpen(true);
+    window.addEventListener("fv:open-scanner", open);
+    return () => window.removeEventListener("fv:open-scanner", open);
   }, []);
 
   const toggleCollapse = useCallback(() => {
@@ -36,15 +45,6 @@ export function AppShell({
       return next;
     });
   }, []);
-
-  // Skanningsvyn tar hela skärmen: inget skal (topbar, sidomeny, flikfält)
-  // så kameran fyller hela ytan som en riktig app. Gäller bara själva
-  // skannern (/scanna), inte fordonsvyn efter en träff (/scanna/[id]).
-  // OBS: måste ligga EFTER alla hooks – en tidig return före hooks bryter mot
-  // React:s hook-regler och kraschar vid klient-navigering in i skannern.
-  if (pathname === "/scanna") {
-    return <div className="h-[100svh] w-full overflow-hidden bg-ink">{children}</div>;
-  }
 
   return (
     <div className="flex h-[calc(100svh-var(--fv-topgap,0px))] overflow-hidden bg-canvas mt-[var(--fv-topgap,0px)] transition-[margin-top,height] duration-300 ease-out">
@@ -83,6 +83,9 @@ export function AppShell({
 
       {/* Flikfält – iPad-stående / mobil */}
       <BottomNav switcher={switcher} />
+
+      {/* Skanner-overlay – öppnas ovanpå sidan man är på */}
+      <ScannerOverlay open={scanOpen} onClose={() => setScanOpen(false)} />
     </div>
   );
 }

@@ -111,9 +111,11 @@ export function BottomNav({ switcher }: { switcher: SwitcherData }) {
           </div>
 
           {/* Upphöjd skanna-knapp – exakt i mitten. Endast telefon (iPad väntar
-              vi med, sm:hidden). Kort etikett "Scanna"; full lydelse i aria. */}
-          <Link
-            href="/scanna"
+              vi med, sm:hidden). Öppnar skanner-overlayn direkt (ingen
+              navigering), så den glider upp på plats. */}
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event("fv:open-scanner"))}
             aria-label="Scanna reggplåt"
             className="group flex shrink-0 select-none flex-col items-center justify-end gap-1 px-3 pb-1.5 sm:hidden"
           >
@@ -121,7 +123,7 @@ export function BottomNav({ switcher }: { switcher: SwitcherData }) {
               <ScanLine className="size-7" strokeWidth={2.2} />
             </span>
             <span className="text-[0.66rem] font-semibold text-brand-700">Scanna</span>
-          </Link>
+          </button>
 
           <div className="flex flex-1 items-stretch justify-around sm:contents">
             {TABS.slice(3).map(renderTab)}
