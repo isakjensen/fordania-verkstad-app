@@ -266,6 +266,17 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Mörk statusbar medan skannern är öppen, så toppremsan (notch/statusbar) blir
+  // svart oavsett tema. En extra, media-lös theme-color läggs sist och vinner;
+  // den tas bort igen när overlayn stängs så appens vanliga färg återgår.
+  useEffect(() => {
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.content = "#070605";
+    document.head.appendChild(meta);
+    return () => meta.remove();
+  }, []);
+
   const filtered = useMemo(() => {
     const q = normalizePlate(query);
     const list = q
@@ -356,9 +367,9 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
     <motion.div
       className={cn(
         "fixed inset-0 z-[60] overflow-hidden",
-        // navy är mörk i BÅDA teman – till skillnad från `ink` som flippar till
-        // ljus i dark mode. Kameravyn ska alltid vara mörk (som en kamera-app).
-        isManual ? "bg-canvas" : "bg-navy text-white select-none",
+        // Kameravyn är alltid nästan svart (som en kamera-app), oavsett tema –
+        // därför en fast kulör i stället för en tema-token som byter färg.
+        isManual ? "bg-canvas" : "bg-[#070605] text-white select-none",
       )}
       initial={{ y: "100%" }}
       animate={{ y: dragY }}
@@ -448,19 +459,19 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
       ) : (
         // ---------- SKANNING (kameravy) ----------
         <>
-      {/* bg-navy på videon så skärmen är mörk (inte vit) tills första bildrutan
-          kommit – annars blinkar det vitt när skannern glider upp. */}
+      {/* Mörk bakgrund på videon så skärmen är svart (inte vit) tills första
+          bildrutan kommit – annars blinkar det till när skannern glider upp. */}
       <video
         ref={videoRef}
         playsInline
         muted
         onPlaying={() => setCameraReady(true)}
-        className="absolute inset-0 size-full bg-navy object-cover"
+        className="absolute inset-0 size-full bg-[#070605] object-cover"
       />
 
       {/* Laddningsläge tills kameran ger bild – tydligt i stället för tomt/buggigt */}
       {!cameraReady ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-navy text-white/80">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#070605] text-white/80">
           <Loader2 className="size-7 animate-spin text-brand-300" />
           <span className="text-sm font-medium">Startar kameran…</span>
         </div>
@@ -493,7 +504,7 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
 
       {/* Topprad: status + stäng */}
       <div className="absolute inset-x-0 top-0 flex items-start justify-between px-4 pt-safe">
-        <div className="mt-3 flex items-center gap-2 rounded-full bg-navy/55 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm">
+        <div className="mt-3 flex items-center gap-2 rounded-full bg-[#070605]/55 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm">
           {!modelsReady ? (
             <>
               <Loader2 className="size-3.5 animate-spin" />
@@ -517,7 +528,7 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           onClick={close}
-          className="mt-3 flex size-10 items-center justify-center rounded-full bg-navy/55 backdrop-blur-sm active:bg-navy/75"
+          className="mt-3 flex size-10 items-center justify-center rounded-full bg-[#070605]/55 backdrop-blur-sm active:bg-[#070605]/75"
           aria-label="Stäng skannern"
         >
           <X className="size-5" />
