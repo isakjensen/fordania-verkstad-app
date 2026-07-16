@@ -67,7 +67,8 @@ export function UserMenu({ subtitle }: { subtitle: string }) {
           </DropdownMenuLabel>
           <DropdownMenuItem
             onClick={logout}
-            className="gap-2 text-danger focus:bg-danger-soft focus:text-danger"
+            variant="destructive"
+            className="gap-2"
           >
             <LogOut className="size-4" />
             Logga ut
