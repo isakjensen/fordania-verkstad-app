@@ -44,7 +44,12 @@ export const viewport: Viewport = {
   initialScale: 1,
   // Fyll hela skärmen bakom safe-areas (native-känsla på iPad/iPhone).
   viewportFit: "cover",
-  themeColor: "#ffffff",
+  // Statusbaren följer temat – annars blir remsan högst upp (notch/statusbar)
+  // vit även i mörkt läge, t.ex. över den mörka skannern.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0c0b0a" },
+  ],
 };
 
 export default function RootLayout({
