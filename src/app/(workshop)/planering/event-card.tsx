@@ -5,15 +5,20 @@ import { typeMetaFor, statusMeta } from "./calendar-meta";
 
 /**
  * Gemensam look för kalenderns orderkort (vecko-, dag- och otilldelade-korten):
- * färgsatta efter ordertyp (Service, Reparation, …) med en solid vänsterkant,
- * en typ-ikon och en mjuk ton – och en liten statusprick för ordrar som inte är
- * "planerad" så pågående/väntar/klar/försenad syns direkt.
+ * färgsatta efter ordertyp (Service, Reparation, …) med en mjuk ton, en typ-ikon
+ * i kulören och en hårfin ring – och en liten statusprick för ordrar som inte är
+ * "planerad" så pågående/väntar/klar/försenad syns direkt. Kortet lyfter med en
+ * diskret skugga vid hover.
  */
 
-/** Klasserna för själva kort-knappen: mjuk typton + tunn ring i samma kulör. */
+/** Klasserna för själva kort-knappen: mjuk typton + hårfin ring i samma kulör. */
 export function eventCardClass(type: string) {
   const t = typeMetaFor(type);
-  return cn("overflow-hidden rounded-lg ring-1", t.tint, t.ring);
+  return cn(
+    "overflow-hidden rounded-lg ring-1 transition-shadow duration-150 hover:shadow-[0_6px_16px_-6px_rgb(15_23_41/0.22)]",
+    t.tint,
+    t.ring,
+  );
 }
 
 export function EventCardBody({
@@ -35,33 +40,29 @@ export function EventCardBody({
   const end = job.scheduledEnd ? new Date(job.scheduledEnd) : null;
 
   return (
-    <span className="flex min-w-0 flex-1 items-stretch">
-      {/* Typfärgad vänsterkant */}
-      <span className={cn("w-1.5 shrink-0", t.bar)} aria-hidden />
-      <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-2 py-1">
-        <span className="flex items-center gap-1">
-          <Icon className={cn("size-3 shrink-0", t.iconColor)} aria-hidden />
-          <span className="min-w-0 flex-1 truncate text-[0.8rem] font-semibold leading-tight tracking-tight text-ink">
-            {job.type}
-          </span>
-          {showStatus ? (
-            <span
-              className={cn(
-                "size-1.5 shrink-0 rounded-full",
-                meta?.dot ?? "bg-slate-400",
-              )}
-              aria-hidden
-            />
-          ) : null}
+    <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-2.5 py-1">
+      <span className="flex items-center gap-1.5">
+        <Icon className={cn("size-3 shrink-0", t.iconColor)} aria-hidden />
+        <span className="min-w-0 flex-1 truncate text-[0.8rem] font-semibold leading-tight tracking-tight text-ink">
+          {job.type}
         </span>
-        {showTime && start ? (
-          <span className="truncate text-[0.66rem] font-medium leading-tight text-muted-foreground tabular-nums">
-            {hm(start)}
-            {end ? `–${hm(end)}` : ""}
-          </span>
+        {showStatus ? (
+          <span
+            className={cn(
+              "size-1.5 shrink-0 rounded-full",
+              meta?.dot ?? "bg-slate-400",
+            )}
+            aria-hidden
+          />
         ) : null}
-        {extra}
       </span>
+      {showTime && start ? (
+        <span className="truncate text-[0.66rem] font-medium leading-tight text-muted-foreground tabular-nums">
+          {hm(start)}
+          {end ? `–${hm(end)}` : ""}
+        </span>
+      ) : null}
+      {extra}
     </span>
   );
 }
