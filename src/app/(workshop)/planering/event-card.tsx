@@ -15,7 +15,7 @@ import { typeMetaFor, statusMeta } from "./calendar-meta";
 export function eventCardClass(type: string) {
   const t = typeMetaFor(type);
   return cn(
-    "overflow-hidden rounded-lg ring-1 transition-shadow duration-150 hover:shadow-[0_6px_16px_-6px_rgb(15_23_41/0.22)]",
+    "overflow-hidden rounded-md ring-1 transition-shadow duration-150 hover:shadow-[0_6px_16px_-6px_rgb(15_23_41/0.22)]",
     t.tint,
     t.ring,
   );

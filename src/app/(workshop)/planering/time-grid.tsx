@@ -246,7 +246,7 @@ export function TimeGrid({
       <DragOverlay>
         {activeJob ? (
           <div
-            className="flex items-stretch overflow-hidden rounded-lg bg-surface shadow-lift ring-2 ring-brand-400/50"
+            className="flex items-stretch overflow-hidden rounded-md bg-surface shadow-lift ring-2 ring-brand-400/50"
             style={{ width: 150, height: 52, rotate: "1.5deg" }}
           >
             <span
@@ -398,7 +398,7 @@ const JobBlock = memo(function JobBlock({
       onClick={() => onOpen(job)}
       title={`${job.type} · ${statusLabels[job.status] ?? job.status}`}
       className={cn(
-        "absolute z-20 flex items-stretch overflow-hidden rounded-lg text-left ring-1 ring-line",
+        "absolute z-20 flex items-stretch overflow-hidden rounded-md text-left ring-1 ring-line",
         meta?.tint ?? "bg-surface",
         isDragging
           ? "opacity-30"
