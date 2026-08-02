@@ -26,7 +26,8 @@ export function LogTabs({ active }: { active: "log" | "live" }) {
   }
 
   return (
-    <div className="inline-flex rounded-xl border border-line bg-surface-muted p-0.5">
+    // Touch: full bredd med hälften var, så båda flikarna blir stora träffytor.
+    <div className="flex w-full rounded-xl border border-line bg-surface-muted p-0.5 sm:inline-flex sm:w-auto">
       {TABS.map((t) => {
         const Icon = t.icon;
         const isActive = t.value === active;
@@ -36,7 +37,8 @@ export function LogTabs({ active }: { active: "log" | "live" }) {
             type="button"
             onClick={() => select(t.value)}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-semibold transition-all",
+              "inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-semibold transition-all sm:flex-none",
+              "pointer-coarse:min-h-11",
               isActive
                 ? "bg-surface text-ink shadow-xs ring-1 ring-line"
                 : "text-muted-foreground hover:text-ink",

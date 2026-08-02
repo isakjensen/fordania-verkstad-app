@@ -56,7 +56,9 @@ export default async function SuperadminLogPage({
       <LogTabs active="log" />
 
       {/* Nyckeltal */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-line pb-4">
+      {/* Touch: 2×2-rutnät så de fyra talen får jämna rader i stället för att
+          wrappa hur som helst. Desktop: en rad. */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-b border-line pb-4 sm:flex sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2">
         <Metric icon={Activity} label="Totalt" value={overview.total} />
         <Metric icon={Clock} label="Senaste dygnet" value={overview.last24h} />
         <Metric

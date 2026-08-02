@@ -48,9 +48,11 @@ export function AuditFilters({
   ];
 
   return (
-    <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
+    // Touch: sökrutan på egen rad, de tre filtren i ett 2-kolumnsrutnät under –
+    // annars äter fyra staplade fullbreddskontroller upp hela mobilskärmen.
+    <div className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-row sm:flex-wrap sm:items-center">
       {/* Sök */}
-      <div className="relative min-w-0 flex-1 sm:min-w-[16rem]">
+      <div className="relative col-span-2 min-w-0 flex-1 sm:min-w-[16rem]">
         <Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
         {pending ? (
           <Loader2 className="absolute right-3 top-1/2 z-10 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
@@ -69,20 +71,20 @@ export function AuditFilters({
         />
       </div>
 
-      {/* Kategori */}
+      {/* Kategori – smalt, delar rad med tidsperioden på touch */}
       <FieldSelect
         options={CATEGORY_FILTER}
         value={params.get("category") ?? "all"}
         onValueChange={(v) => setParam("category", v)}
-        className="sm:w-48"
+        className="order-1 sm:order-none sm:w-48"
       />
 
-      {/* Företag */}
+      {/* Företag – egen rad på touch, företagsnamn blir långa */}
       <FieldSelect
         options={tenantOptions}
         value={params.get("tenant") ?? "all"}
         onValueChange={(v) => setParam("tenant", v)}
-        className="sm:w-52"
+        className="order-3 col-span-2 sm:order-none sm:col-span-1 sm:w-52"
       />
 
       {/* Tidsperiod */}
@@ -90,7 +92,7 @@ export function AuditFilters({
         options={TIMEFRAME_FILTER}
         value={params.get("days") ?? "all"}
         onValueChange={(v) => setParam("days", v)}
-        className="sm:w-48"
+        className="order-2 sm:order-none sm:w-48"
       />
     </div>
   );

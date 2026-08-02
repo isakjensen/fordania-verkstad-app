@@ -40,7 +40,7 @@ export function AuditPagination({
           onClick={() => goto(page - 1)}
           disabled={page <= 1}
           className={cn(
-            "flex size-9 items-center justify-center rounded-lg border border-line bg-surface text-ink-soft transition-colors",
+            "flex size-9 items-center justify-center rounded-lg border border-line bg-surface text-ink-soft transition-colors pointer-coarse:size-11",
             "hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40",
           )}
           aria-label="Föregående sida"
@@ -55,7 +55,7 @@ export function AuditPagination({
           onClick={() => goto(page + 1)}
           disabled={page >= pageCount}
           className={cn(
-            "flex size-9 items-center justify-center rounded-lg border border-line bg-surface text-ink-soft transition-colors",
+            "flex size-9 items-center justify-center rounded-lg border border-line bg-surface text-ink-soft transition-colors pointer-coarse:size-11",
             "hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40",
           )}
           aria-label="Nästa sida"
