@@ -84,6 +84,23 @@ export function PwaManager() {
         .catch(() => {
           /* SW ej kritisk för att appen ska fungera online */
         });
+    } else if ("serviceWorker" in navigator) {
+      // I dev: en service worker som råkat registreras av en tidigare
+      // produktionsbuild på samma origin (t.ex. localhost) lever kvar och
+      // fortsätter servera gammal, cachad CSS/JS cache-first – vilket får
+      // dev-läget att visa inaktuellt tema (t.ex. gammalt blått i stället
+      // för orange). Avregistrera den och töm alla cachar så dev alltid
+      // speglar koden på disk.
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((regs) => Promise.all(regs.map((r) => r.unregister())))
+        .catch(() => {});
+      if ("caches" in window) {
+        caches
+          .keys()
+          .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+          .catch(() => {});
+      }
     }
 
     return () => {
