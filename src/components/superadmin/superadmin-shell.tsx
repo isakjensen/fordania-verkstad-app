@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "@/components/layout/sidebar";
 import { UserMenu } from "@/components/layout/user-menu";
+import { PageTransition } from "@/components/layout/page-transition";
 import { superadminNav } from "./nav";
 import { SuperBottomNav } from "./super-bottom-nav";
 import type { NavGroup } from "@/components/layout/nav";
@@ -58,21 +59,26 @@ export function SuperAdminShell({
         />
       </aside>
 
-      {/* Innehållskolumn */}
-      <div className="flex min-w-0 flex-1 flex-col pl-safe pr-safe">
-        <header className="sticky top-[var(--fv-topgap,0px)] z-30 flex h-16 items-center gap-3 border-b border-line bg-surface/80 px-4 pt-safe backdrop-blur-md md:px-6">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-navy px-2.5 py-1 text-xs font-semibold text-white">
-            <ShieldCheck className="size-3.5 text-brand-300" />
-            Plattform
-          </span>
-          <span className="hidden text-sm text-muted-foreground sm:inline">
+      {/* Innehållskolumn. Som i verkstaden saknas topbaren på mobil/iPad, så
+          kolumnen bär själv notch-skyddet. */}
+      <div className="flex min-w-0 flex-1 flex-col pt-safe-gap pl-safe pr-safe pointer-fine:lg:pt-0">
+        {/* Topbar – endast desktop (mus/fine pointer + lg). På touch nås konto
+            och utloggning i stället via "Mer" i flikfältet, precis som i
+            verkstaden, så toppen hålls ren. */}
+        <header className="sticky top-[var(--fv-topgap,0px)] z-30 hidden h-16 items-center gap-3 border-b border-line bg-surface/80 px-4 pt-safe backdrop-blur-md pointer-fine:lg:flex md:px-6">
+          <span className="text-sm text-muted-foreground">
             Fordania superadmin
           </span>
           <div className="flex-1" />
           <UserMenu subtitle="Plattform" />
         </header>
-        <main className="flex-1 pb-[calc(4.25rem+env(safe-area-inset-bottom))] pointer-fine:lg:pb-0">
-          {children}
+        <main className="flex-1">
+          {/* Samma mjuka in-toning vid ruttbyte som verkstaden. Superadmin
+              scrollar hela sidan, så här skickas bara bottenutrymmet för
+              flikfältet – ingen egen scroll-yta. */}
+          <PageTransition className="pb-[calc(4.25rem+env(safe-area-inset-bottom))] pointer-fine:lg:pb-0">
+            {children}
+          </PageTransition>
         </main>
       </div>
 
