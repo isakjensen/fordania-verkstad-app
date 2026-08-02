@@ -6,6 +6,7 @@ import { Trash2, RotateCcw, Loader2, Car, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LicensePlate } from "@/components/ui/license-plate";
+import { formatPlate } from "@/lib/plate-ocr";
 import {
   Table,
   TableHeader,
@@ -149,7 +150,7 @@ export function RemovedVehiclesButton({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Sök reg.nr, märke eller modell…"
-                className="pl-10 pointer-coarse:pl-10"
+                className="pl-10"
                 aria-label="Sök bland borttagna fordon"
               />
             </div>
@@ -209,7 +210,7 @@ export function RemovedVehiclesButton({
                               size="sm"
                               onClick={() => onRestore(v.id)}
                               disabled={pending}
-                              aria-label={`Återställ ${v.regNo}`}
+                              aria-label={`Återställ ${formatPlate(v.regNo)}`}
                             >
                               {busy ? (
                                 <Loader2 className="size-4 animate-spin" />
