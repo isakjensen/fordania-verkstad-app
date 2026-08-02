@@ -201,7 +201,12 @@ function MoreSheet({
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm duration-200 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
+        {/* CSS-transition (inte keyframe-animation) så backdroppen hålls kvar i
+            sitt stängda läge tills Base UI avmonterar den. Keyframe-varianten
+            var klar på 200 ms medan popupen glider 300 ms – de sista bildrutorna
+            reverterade då till fullt blur, vilket syntes som ett blink strax
+            efter att man stängt. Nu fade:as den i takt med popupen. */}
+        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm transition-opacity duration-300 ease-out data-starting-style:opacity-0 data-closed:opacity-0" />
         <DialogPrimitive.Popup
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 flex max-h-[88svh] flex-col rounded-t-3xl bg-surface shadow-lift outline-none",
