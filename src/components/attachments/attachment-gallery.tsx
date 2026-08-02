@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { formatPlate } from "@/lib/plate-ocr";
 import {
   ChevronLeft,
   ChevronRight,
@@ -190,7 +191,7 @@ export function AttachmentGallery({
                             key={v}
                             className="rounded-md bg-surface-muted px-1.5 py-0.5 font-mono text-xs font-semibold text-ink"
                           >
-                            {v}
+                            {formatPlate(v)}
                           </span>
                         ))}
                       </span>

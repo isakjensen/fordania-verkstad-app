@@ -95,7 +95,7 @@ export function VehicleLinks({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label={`Ta bort ${v.regNo}`}
+                  aria-label={`Ta bort ${formatPlate(v.regNo)}`}
                   disabled={pending}
                   onClick={() => setConfirm({ id: v.id, regNo: v.regNo })}
                 >

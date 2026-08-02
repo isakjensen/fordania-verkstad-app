@@ -102,7 +102,7 @@ export function VehicleLinks({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label={`Koppla bort ${v.regNo}`}
+                  aria-label={`Koppla bort ${formatPlate(v.regNo)}`}
                   disabled={pending}
                   onClick={() => remove(v.id)}
                 >

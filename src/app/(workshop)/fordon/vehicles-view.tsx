@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { ChevronRight, Gauge, Check, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LicensePlate } from "@/components/ui/license-plate";
+import { formatPlate } from "@/lib/plate-ocr";
 import { FleetTag } from "@/components/ui/fleet-tag";
 import {
   Table,
@@ -335,7 +336,7 @@ export function VehiclesView({
                     <Link
                       href={`/fordon/${v.id}`}
                       className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-surface-muted hover:text-ink"
-                      aria-label={`Öppna ${v.regNo}`}
+                      aria-label={`Öppna ${formatPlate(v.regNo)}`}
                     >
                       <ChevronRight className="size-5" />
                     </Link>

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser, getActiveOrganizationId } from "@/lib/session";
 import { recordAudit } from "@/lib/audit";
-import { normalizePlate } from "@/lib/plate-ocr";
+import { normalizePlate, formatPlate } from "@/lib/plate-ocr";
 import { getFleetForScan, type ScanFleetVehicle } from "@/lib/data/scan";
 
 /**
@@ -60,7 +60,7 @@ export async function addScannedVehicle(
   await recordAudit({
     action: "vehicle.create",
     category: "vehicle",
-    summary: `Lade till fordonet ${regNo} via skanning`,
+    summary: `Lade till fordonet ${formatPlate(regNo)} via skanning`,
     organizationId,
     entityType: "vehicle",
     entityId: created.id,

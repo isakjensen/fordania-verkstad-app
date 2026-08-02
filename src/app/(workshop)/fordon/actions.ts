@@ -9,6 +9,7 @@ import {
   canManageUsers,
 } from "@/lib/session";
 import { recordAudit } from "@/lib/audit";
+import { formatPlate } from "@/lib/plate-ocr";
 import { fetchFordaniaVehicles, FordaniaSyncError } from "@/lib/fordania";
 import {
   getFordaniaSyncPreview,
@@ -93,7 +94,7 @@ export async function createVehicle(formData: FormData): Promise<ActionResult> {
   await recordAudit({
     action: "vehicle.create",
     category: "vehicle",
-    summary: `Lade till fordonet ${regNo}`,
+    summary: `Lade till fordonet ${formatPlate(regNo)}`,
     organizationId,
     entityType: "vehicle",
     entityId: created.id,
@@ -161,7 +162,7 @@ export async function updateVehicle(formData: FormData): Promise<ActionResult> {
   await recordAudit({
     action: "vehicle.update",
     category: "vehicle",
-    summary: `Uppdaterade fordonet ${regNo}`,
+    summary: `Uppdaterade fordonet ${formatPlate(regNo)}`,
     organizationId,
     entityType: "vehicle",
     entityId: id,
@@ -194,7 +195,7 @@ export async function deleteVehicle(id: string): Promise<ActionResult> {
   await recordAudit({
     action: "vehicle.delete",
     category: "vehicle",
-    summary: `Tog bort fordonet ${existing.regNo}`,
+    summary: `Tog bort fordonet ${formatPlate(existing.regNo)}`,
     organizationId,
     entityType: "vehicle",
     entityId: id,
@@ -223,7 +224,7 @@ export async function restoreVehicle(id: string): Promise<ActionResult> {
   await recordAudit({
     action: "vehicle.restore",
     category: "vehicle",
-    summary: `Återställde fordonet ${existing.regNo}`,
+    summary: `Återställde fordonet ${formatPlate(existing.regNo)}`,
     organizationId,
     entityType: "vehicle",
     entityId: id,

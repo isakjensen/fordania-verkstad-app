@@ -18,6 +18,7 @@ import { LicensePlate } from "@/components/ui/license-plate";
 import {
   matchPlate,
   normalizePlate,
+  formatPlate,
   isSwedishPlate,
   type ScanFleetVehicle,
   type PlateMatch,
@@ -513,7 +514,7 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
           ) : reading ? (
             <>
               <ScanLine className="size-3.5 text-brand-300" />
-              {reading}
+              {formatPlate(reading)}
               <span className="ml-0.5 tabular-nums text-white/70">
                 {Math.min(voteCount, REQUIRED_VOTES)}/{REQUIRED_VOTES}
               </span>
@@ -558,7 +559,7 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
               ) : (
                 <Plus className="size-4.5" />
               )}
-              Lägg till {result.plate} som nytt fordon
+              Lägg till {formatPlate(result.plate)} som nytt fordon
             </button>
 
             {error ? (

@@ -4,6 +4,7 @@ import {
   laborLines,
   formatOre,
 } from "@/lib/pricing";
+import { formatPlate } from "@/lib/plate-ocr";
 import type { WorkOrderDocument } from "@/lib/data/work-orders";
 
 /** En arbetsrad (mekanikers timlön) för faktura/utskrift. */
@@ -96,7 +97,7 @@ export function invoiceEmailHtml(
     [org?.phone, org?.email].filter(Boolean).join(" · ") || null,
   ].filter((l): l is string => Boolean(l));
   const veh = primaryVehicle
-    ? `${primaryVehicle.regNo}${
+    ? `${formatPlate(primaryVehicle.regNo)}${
         primaryVehicle.brand || primaryVehicle.model
           ? ` · ${[primaryVehicle.brand, primaryVehicle.model]
               .filter(Boolean)
