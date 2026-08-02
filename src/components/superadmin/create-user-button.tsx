@@ -53,8 +53,15 @@ export function CreateUserButton({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button size="md" variant="success" disabled={tenants.length === 0}>
+          <Button
+            size="md"
+            variant="success"
+            disabled={tenants.length === 0}
+            className="pointer-coarse:h-11 pointer-coarse:px-4 pointer-coarse:text-sm"
+          >
             <Plus className="size-4" />
+            {/* Kort etikett på mobil, beskrivande på desktop – aldrig bara ikon */}
+            <span className="sm:hidden">Ny användare</span>
             <span className="hidden sm:inline">Skapa användare</span>
           </Button>
         }

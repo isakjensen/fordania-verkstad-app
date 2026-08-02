@@ -43,8 +43,16 @@ export function CreateTenantButton() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button size="md" variant="success">
+          <Button
+            size="md"
+            variant="success"
+            // Något nättare på touch än md:s h-12 – annars får inte knappen
+            // plats bredvid kortrubriken med text på en smal telefon.
+            className="pointer-coarse:h-11 pointer-coarse:px-4 pointer-coarse:text-sm"
+          >
             <Plus className="size-4" />
+            {/* Kort etikett på mobil, beskrivande på desktop – aldrig bara ikon */}
+            <span className="sm:hidden">Nytt företag</span>
             <span className="hidden sm:inline">Lägg till företag</span>
           </Button>
         }
