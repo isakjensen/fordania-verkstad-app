@@ -54,6 +54,10 @@ self.addEventListener("activate", (event) => {
         ),
       )
       .then(() => sweepExpired())
+      // Precachningen vid install är tillåten att misslyckas (nätet kan vara
+      // dåligt just då). Försök igen här, annars står vi utan offline-sida
+      // och en misslyckad navigering ger webbläsarens felsida i stället.
+      .then(() => ensureOfflineCached())
       .then(() => self.clients.claim()),
   );
 });
@@ -143,11 +147,46 @@ async function networkFirst(event, { cacheName, key, navigate }) {
     if (cached) await cache.delete(cacheKey, { ignoreVary: true });
     if (navigate) {
       const pages = await caches.open(PAGE_CACHE);
-      const offline = await pages.match(OFFLINE_URL);
+      let offline = await pages.match(OFFLINE_URL);
+      if (!offline) {
+        // Saknas den cachade offline-sidan (precachningen kan ha misslyckats)
+        // – hämta den nu om nätet hunnit komma tillbaka.
+        await ensureOfflineCached();
+        offline = await pages.match(OFFLINE_URL);
+      }
       if (offline) return offline;
+      // Sista utväg: hellre ett tydligt svenskt meddelande än webbläsarens
+      // egen felsida, som ser ut som att sidan inte finns.
+      return offlineFallbackResponse();
     }
     return Response.error();
   }
+}
+
+// Ser till att offline-sidan finns i cachen. Tyst om den inte går att hämta.
+async function ensureOfflineCached() {
+  try {
+    const cache = await caches.open(PAGE_CACHE);
+    if (await cache.match(OFFLINE_URL)) return;
+    await cache.add(OFFLINE_URL);
+  } catch {
+    /* nätet nere – vi försöker igen nästa gång */
+  }
+}
+
+// Minimal inbyggd offline-sida som alltid kan levereras.
+function offlineFallbackResponse() {
+  return new Response(
+    `<!doctype html><html lang="sv"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ingen anslutning</title>
+<style>body{margin:0;min-height:100svh;display:grid;place-items:center;
+font-family:system-ui,sans-serif;background:#f6f7f9;color:#1c2333;padding:2rem}
+div{max-width:22rem;text-align:center}h1{font-size:1.125rem;margin:0 0 .5rem}
+p{margin:0;font-size:.875rem;color:#5b6478}</style>
+<div><h1>Ingen anslutning</h1><p>Sidan kunde inte hämtas. Kontrollera n&auml;tet och f&ouml;rs&ouml;k igen.</p></div>`,
+    { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } },
+  );
 }
 
 async function cacheFirst(request) {
