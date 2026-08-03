@@ -33,7 +33,7 @@ function Row({ u }: { u: PresenceUser }) {
         <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-ink">
           {u.name}
           {u.isSuperadmin ? (
-            <span className="rounded bg-navy/10 px-1 py-px text-[0.58rem] font-semibold uppercase tracking-wide text-navy">
+            <span className="rounded bg-ink/[0.08] px-1 py-px text-[0.58rem] font-semibold tracking-wide text-ink-soft uppercase">
               Superadmin
             </span>
           ) : null}

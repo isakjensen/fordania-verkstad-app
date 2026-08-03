@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Activity, Clock, UserCheck, LogIn } from "lucide-react";
 import { getAuditLog, getAuditOverview } from "@/lib/data/audit";
 import { getPresence } from "@/lib/data/platform";
 import { AuditFilters } from "./audit-filters";
@@ -7,6 +6,7 @@ import { AuditTable } from "./audit-table";
 import { AuditPagination } from "./audit-pagination";
 import { LogTabs } from "./log-tabs";
 import { ActiveUsers } from "./active-users";
+import { ViewSlide } from "./view-slide";
 
 export const metadata: Metadata = { title: "Systemlogg · Superadmin" };
 
@@ -29,7 +29,9 @@ export default async function SuperadminLogPage({
     return (
       <div className="w-full space-y-4 px-4 py-4 sm:px-6 lg:px-8">
         <LogTabs active="live" />
-        <ActiveUsers users={presence} />
+        <ViewSlide view="live">
+          <ActiveUsers users={presence} />
+        </ViewSlide>
       </div>
     );
   }
@@ -55,57 +57,40 @@ export default async function SuperadminLogPage({
     <div className="w-full space-y-4 px-4 py-4 sm:px-6 lg:px-8">
       <LogTabs active="log" />
 
-      {/* Nyckeltal */}
-      {/* Touch: 2×2-rutnät så de fyra talen får jämna rader i stället för att
-          wrappa hur som helst. Desktop: en rad. */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-b border-line pb-4 sm:flex sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2">
-        <Metric icon={Activity} label="Totalt" value={overview.total} />
-        <Metric icon={Clock} label="Senaste dygnet" value={overview.last24h} />
-        <Metric
-          icon={UserCheck}
-          label="Aktiva (24h)"
-          value={overview.activeUsers24h}
-        />
-        <Metric
-          icon={LogIn}
-          label="Inloggningar (24h)"
-          value={overview.logins24h}
-        />
-      </div>
+      <ViewSlide view="log">
+        <div className="space-y-4">
+          {/* Nyckeltal. Ikonchipsen är borttagna: fyra kulörta rutor drog
+              blicken till siffror man sällan agerar på. Nu bär talen sig
+              själva, med en hårlinje mellan dem. */}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-b border-line pb-4 sm:flex sm:flex-wrap sm:items-baseline sm:gap-x-8">
+            <Metric label="Totalt" value={overview.total} />
+            <Metric label="Senaste dygnet" value={overview.last24h} />
+            <Metric label="Aktiva (24h)" value={overview.activeUsers24h} />
+            <Metric label="Inloggningar (24h)" value={overview.logins24h} />
+          </div>
 
-      <AuditFilters tenants={overview.tenants} />
+          <AuditFilters tenants={overview.tenants} />
 
-      <AuditTable entries={data.entries} />
+          <AuditTable entries={data.entries} />
 
-      <AuditPagination
-        page={data.page}
-        pageCount={data.pageCount}
-        total={data.total}
-        pageSize={data.pageSize}
-      />
+          <AuditPagination
+            page={data.page}
+            pageCount={data.pageCount}
+            total={data.total}
+            pageSize={data.pageSize}
+          />
+        </div>
+      </ViewSlide>
     </div>
   );
 }
 
 /** Kompakt inline-nyckeltal för sidhuvudet. */
-function Metric({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Activity;
-  label: string;
-  value: number;
-}) {
+function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-muted-foreground">
-        <Icon className="size-4" />
-      </span>
-      <div className="leading-tight">
-        <p className="text-base font-bold tabular-nums text-ink">{value}</p>
-        <p className="text-[0.68rem] text-muted-foreground">{label}</p>
-      </div>
+    <div className="leading-tight">
+      <p className="text-lg font-bold text-ink tabular-nums">{value}</p>
+      <p className="text-[0.68rem] text-muted-foreground">{label}</p>
     </div>
   );
 }

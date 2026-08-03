@@ -20,21 +20,63 @@ export interface CategoryMeta {
   dot: string;
 }
 
-/** Utseende per loggkategori. Ljust tema (superadmin-innehållsytan). */
+/**
+ * Utseende per loggkategori.
+ *
+ * De ljusa 100-tonerna är byggda för vit yta och blir lysande plumpar mot
+ * det nästan svarta i mörkt läge – därför en genomskinlig ton av samma
+ * kulör och en ljus ikonfärg där i stället. Brand-tonerna vänder redan
+ * själva via designsystemet och behöver ingen dark-variant.
+ */
 export const CATEGORY_META: Record<string, CategoryMeta> = {
-  auth: { label: "Inloggning", icon: LogIn, chip: "bg-indigo-100 text-indigo-700", dot: "bg-indigo-500" },
-  job: { label: "Arbetsorder", icon: ClipboardList, chip: "bg-brand-100 text-brand-700", dot: "bg-brand-500" },
-  vehicle: { label: "Fordon", icon: Car, chip: "bg-emerald-100 text-emerald-700", dot: "bg-emerald-500" },
-  customer: { label: "Kund", icon: Contact, chip: "bg-violet-100 text-violet-700", dot: "bg-violet-500" },
-  user: { label: "Användare", icon: Users, chip: "bg-amber-100 text-amber-700", dot: "bg-amber-500" },
-  tenant: { label: "Företag", icon: Building2, chip: "bg-sky-100 text-sky-700", dot: "bg-sky-500" },
-  settings: { label: "Inställningar", icon: Settings, chip: "bg-slate-100 text-slate-600", dot: "bg-slate-400" },
+  auth: {
+    label: "Inloggning",
+    icon: LogIn,
+    chip: "bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300",
+    dot: "bg-indigo-500",
+  },
+  job: {
+    label: "Arbetsorder",
+    icon: ClipboardList,
+    chip: "bg-brand-100 text-brand-700",
+    dot: "bg-brand-500",
+  },
+  vehicle: {
+    label: "Fordon",
+    icon: Car,
+    chip: "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300",
+    dot: "bg-emerald-500",
+  },
+  customer: {
+    label: "Kund",
+    icon: Contact,
+    chip: "bg-violet-100 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300",
+    dot: "bg-violet-500",
+  },
+  user: {
+    label: "Användare",
+    icon: Users,
+    chip: "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300",
+    dot: "bg-amber-500",
+  },
+  tenant: {
+    label: "Företag",
+    icon: Building2,
+    chip: "bg-sky-100 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300",
+    dot: "bg-sky-500",
+  },
+  settings: {
+    label: "Inställningar",
+    icon: Settings,
+    chip: "bg-slate-100 text-slate-600 dark:bg-slate-400/15 dark:text-slate-300",
+    dot: "bg-slate-400",
+  },
 };
 
 export const FALLBACK_META: CategoryMeta = {
   label: "Händelse",
   icon: Activity,
-  chip: "bg-slate-100 text-slate-600",
+  chip: "bg-slate-100 text-slate-600 dark:bg-slate-400/15 dark:text-slate-300",
   dot: "bg-slate-400",
 };
 

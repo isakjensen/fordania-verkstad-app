@@ -170,7 +170,7 @@ function EntryDetail({
 
               {entry.userRole === "admin" ? (
                 <DetailRow label="Behörighet">
-                  <span className="rounded bg-navy/10 px-1.5 py-0.5 text-[0.65rem] font-semibold tracking-wide text-navy uppercase">
+                  <span className="rounded bg-ink/[0.08] px-1.5 py-0.5 text-[0.65rem] font-semibold tracking-wide text-ink-soft uppercase">
                     Superadmin
                   </span>
                 </DetailRow>
@@ -228,64 +228,75 @@ export function AuditTable({ entries }: { entries: AuditEntry[] }) {
   const groups = groupByDay(entries, now);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {groups.map((group) => (
         <section key={group.key}>
-          {/* Dagsrubrik */}
-          <div className="mb-2 flex items-center gap-2.5 px-1">
-            <h2 className="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft">
+          {/* Dagsrubrik – fastnar i toppen så man alltid vet vilken dag man
+           * läser, även långt ner i en lång dag. */}
+          <div className="sticky top-0 z-20 -mx-1 mb-1 flex items-center gap-2.5 bg-canvas/90 px-1 py-2 backdrop-blur-sm">
+            <h2 className="text-xs font-bold tracking-[0.08em] text-ink-soft uppercase">
               {group.label}
             </h2>
             <span className="h-px flex-1 bg-line" aria-hidden />
-            <span className="text-[0.7rem] font-medium tabular-nums text-muted-foreground">
+            <span className="text-[0.7rem] font-medium text-muted-foreground tabular-nums">
               {group.count} {group.count === 1 ? "händelse" : "händelser"}
             </span>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
-            <ul className="divide-y divide-line">
-              {group.items.map((e) => {
+          {/* Tidslinje: klockslagen i en egen kolumn längst till vänster och
+           * en skena genom ikonerna, så dygnets förlopp läses rakt nedför en
+           * linje i stället för i sicksack mellan text och tid. */}
+          <ol className="relative">
+            <span
+              className="absolute top-3 bottom-3 left-[4.625rem] w-px bg-line"
+              aria-hidden
+            />
+            {group.items.map((e) => {
                 const meta = entryMeta(e.action, e.category);
                 const Icon = meta.icon;
-                return (
-                  <li key={e.id}>
-                    {/* Raden bär bara VAD som hände och NÄR. Vem, vilken
-                     * verkstad och IP flyttades till händelsevyn – i en logg
-                     * med hundratals rader är det brus tills man söker just
-                     * den detaljen. */}
-                    <button
-                      type="button"
-                      onClick={() => setSelected(e)}
-                      className="group flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-muted/50 sm:px-4"
+              return (
+                <li key={e.id}>
+                  {/* Raden bär vad som hände, när och av vem. Verkstad, IP,
+                   * behörighet och teknisk åtgärd ligger i händelsevyn – i en
+                   * logg med hundratals rader är det brus tills man söker just
+                   * den detaljen. */}
+                  <button
+                    type="button"
+                    onClick={() => setSelected(e)}
+                    className="group -mx-2 grid w-[calc(100%+1rem)] grid-cols-[3rem_1.75rem_1fr_auto] items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-surface-muted/60"
+                  >
+                    <time
+                      dateTime={new Date(e.createdAt).toISOString()}
+                      className="text-right text-xs text-muted-foreground tabular-nums"
                     >
-                      <span
-                        className={cn(
-                          "flex size-8 shrink-0 items-center justify-center rounded-lg",
-                          meta.chip,
-                        )}
-                        title={meta.label}
-                      >
-                        <Icon className="size-4" />
-                      </span>
+                      {timeFmt.format(new Date(e.createdAt))}
+                    </time>
 
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
+                    <span
+                      className={cn(
+                        "relative flex size-7 items-center justify-center rounded-lg",
+                        meta.chip,
+                      )}
+                      title={meta.label}
+                    >
+                      <Icon className="size-3.5" />
+                    </span>
+
+                    <span className="flex min-w-0 items-baseline gap-2">
+                      <span className="truncate text-sm text-ink">
                         {e.summary}
                       </span>
+                      <span className="hidden shrink-0 truncate text-xs text-muted-foreground sm:inline">
+                        {e.userName}
+                      </span>
+                    </span>
 
-                      <time
-                        dateTime={new Date(e.createdAt).toISOString()}
-                        className="shrink-0 text-xs tabular-nums text-muted-foreground"
-                      >
-                        {timeFmt.format(new Date(e.createdAt))}
-                      </time>
-
-                      <ChevronRight className="size-4 shrink-0 text-muted-foreground/40 transition-all group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+                    <ChevronRight className="size-4 text-muted-foreground/30 transition-all group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
         </section>
       ))}
 
