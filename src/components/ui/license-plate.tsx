@@ -74,14 +74,10 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
         // Ljust läge: ren vit platta. Mörkt läge: dämpad off-white – en helvit
         // platta glarar mot den nästan svarta bakgrunden.
         "inline-flex w-fit shrink-0 select-none items-stretch overflow-hidden bg-white dark:bg-[#e4e4e6]",
-        // Nedtonat djup: en skarp hårlinje runt plattan och en mycket svag
-        // skugga så den sitter på ytan. INGEN topp-gloss – skylten ska läsas
-        // som en matt platta, inte som blank plast.
-        "shadow-[0_0_0_1px_rgba(15,23,41,0.3),0_1px_1px_rgba(15,23,41,0.1)]",
-        // Mörkt läge: en yttre svart hårlinje syns inte mot svart bakgrund.
-        // Kanten läggs därför INUTI plattan, och en tydligare skugga lyfter
-        // den från ytan.
-        "dark:shadow-[inset_0_0_0_1px_rgba(0,0,0,0.22),0_1px_3px_rgba(0,0,0,0.55)]",
+        // Ramen ligger INTE här längre. Den grå hårlinjen runt hela plattan
+        // lade sig även runt EU-bandet, som ska ha en mörkblå kant i stället.
+        // Varje del bär därför sin egen kant, och plattan bara djupet.
+        "shadow-[0_1px_1px_rgba(15,23,41,0.1)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.55)]",
         s.plate,
         className,
       )}
@@ -89,10 +85,12 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
       {/* EU-band */}
       <span
         className={cn(
-          // En enda solid EU-blå i stället för gradient. Kvar finns bara en
-          // hårfin skiljelinje mot textytan. I mörkt läge en aning ljusare
-          // blå, annars sjunker bandet ihop till en mörk klump.
-          "relative flex flex-col items-center justify-center gap-[1px] bg-[#0b4ecb] shadow-[inset_-1px_0_0_rgba(0,0,0,0.16)] dark:bg-[#1559d8]",
+          // En enda solid EU-blå i stället för gradient. I mörkt läge en aning
+          // ljusare blå, annars sjunker bandet ihop till en mörk klump.
+          "relative flex flex-col items-center justify-center gap-[1px] bg-[#0b4ecb] dark:bg-[#1559d8]",
+          // Bandets egen kant, hela vägen runt, i en mörkare ton av samma blå
+          // – samma linje som tidigare bara satt mot textytan.
+          "shadow-[inset_0_0_0_1px_#073a9c] dark:shadow-[inset_0_0_0_1px_#0a3f9e]",
           s.band,
         )}
       >
@@ -118,6 +116,10 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
           // FE-Schrift med mono som fallback. Skrivs som family-name så
           // tailwind-merge inte förväxlar den med en font-vikt.
           "flex items-center whitespace-nowrap bg-white font-[family-name:var(--font-plate)] font-bold text-[#181818] dark:bg-[#e4e4e6]",
+          // Grå kant på tre sidor – vänsterkanten hoppas över, där möter
+          // textytan bandets mörkblå kant och två linjer hade blivit dubbelt.
+          "shadow-[inset_0_1px_0_rgba(15,23,41,0.3),inset_0_-1px_0_rgba(15,23,41,0.3),inset_-1px_0_0_rgba(15,23,41,0.3)]",
+          "dark:shadow-[inset_0_1px_0_rgba(0,0,0,0.22),inset_0_-1px_0_rgba(0,0,0,0.22),inset_-1px_0_0_rgba(0,0,0,0.22)]",
           s.text,
         )}
       >

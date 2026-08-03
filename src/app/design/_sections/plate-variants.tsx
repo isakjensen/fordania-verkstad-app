@@ -142,9 +142,9 @@ export const plateCurrent: PlateStyle = {
  */
 export const plateFlat: PlateStyle = {
   frame:
-    "rounded-[5px] bg-white dark:bg-[#e4e4e6] shadow-[0_0_0_1px_rgba(15,23,41,0.3),0_1px_1px_rgba(15,23,41,0.1)] dark:shadow-[inset_0_0_0_1px_rgba(0,0,0,0.22),0_1px_3px_rgba(0,0,0,0.55)]",
-  band: "bg-[#0b4ecb] shadow-[inset_-1px_0_0_rgba(0,0,0,0.16)] dark:bg-[#1559d8]",
-  face: "bg-white dark:bg-[#e4e4e6]",
+    "rounded-[5px] bg-white dark:bg-[#e4e4e6] shadow-[0_1px_1px_rgba(15,23,41,0.1)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.55)]",
+  band: "bg-[#0b4ecb] shadow-[inset_0_0_0_1px_#073a9c] dark:bg-[#1559d8] dark:shadow-[inset_0_0_0_1px_#0a3f9e]",
+  face: "bg-white dark:bg-[#e4e4e6] shadow-[inset_0_1px_0_rgba(15,23,41,0.3),inset_0_-1px_0_rgba(15,23,41,0.3),inset_-1px_0_0_rgba(15,23,41,0.3)] dark:shadow-[inset_0_1px_0_rgba(0,0,0,0.22),inset_0_-1px_0_rgba(0,0,0,0.22),inset_-1px_0_0_rgba(0,0,0,0.22)]",
   text: "font-bold text-[#181818]",
 };
 
