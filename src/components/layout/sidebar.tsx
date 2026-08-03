@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useAnimate } from "motion/react";
 import { ChevronsLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/ui/logo";
@@ -26,22 +28,68 @@ interface SidebarProps {
   onNavigate?: () => void;
 }
 
+/* ------------------------------------------------------------------ *
+ *  Markören (den ljusa brickan bakom aktiv vy)
+ *
+ *  Den är EN ruta som mäts fram ur länkarna och flyttas mellan dem.
+ *
+ *  Viktigt: den landar ALLTID exakt på en rad. Ett tidigare försök lät
+ *  den krypa mot målet så länge sidan laddade, men blev laddningen lång
+ *  stod brickan kvar mitt emellan två rader och såg trasig ut.
+ *
+ *  Att sidan fortfarande laddar visas i stället av att den orangea
+ *  stapeln pulserar – samma puls som sidans skelett – så menyn och
+ *  innehållet börjar och slutar röra sig samtidigt.
+ * ------------------------------------------------------------------ */
+
+/** Markörens förflyttning mellan två rader. */
+const glide = { duration: 0.2, ease: [0.22, 1, 0.36, 1] } as const;
+
+interface Box {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
+/** Länkens mått i förhållande till menyns scrollyta. */
+function boxOf(el: HTMLElement, nav: HTMLElement): Box {
+  const a = el.getBoundingClientRect();
+  const b = nav.getBoundingClientRect();
+  return {
+    top: a.top - b.top + nav.scrollTop,
+    left: a.left - b.left,
+    width: a.width,
+    height: a.height,
+  };
+}
+
 function NavLink({
   item,
   active,
   collapsed,
   onNavigate,
+  onPick,
+  itemRef,
 }: {
   item: NavItem;
   active: boolean;
   collapsed: boolean;
   onNavigate?: () => void;
+  /** Startar markörens resa direkt vid klick, utan att vänta på laddningen. */
+  onPick: (href: string) => void;
+  /** Registrerar elementet så markören kan mätas fram. */
+  itemRef: (href: string, el: HTMLAnchorElement | null) => void;
 }) {
   const Icon = item.icon;
   return (
     <Link
       href={item.href}
-      onClick={onNavigate}
+      ref={(el) => itemRef(item.href, el)}
+      onClick={() => {
+        onPick(item.href);
+        onNavigate?.();
+      }}
       title={collapsed ? item.label : undefined}
       aria-current={active ? "page" : undefined}
       className={cn(
@@ -51,23 +99,15 @@ function NavLink({
           ? "h-9 w-9 justify-center pointer-coarse:h-11 pointer-coarse:w-11"
           : "h-9 gap-2.5 px-2.5 pointer-coarse:h-12 pointer-coarse:px-3",
         active
-          ? "bg-white font-semibold text-brand-700 shadow-[0_1px_2px_rgb(15_42_67/0.08)] ring-1 ring-brand-100 dark:bg-white/[0.07] dark:shadow-none dark:ring-white/10"
+          ? "font-semibold text-brand-700"
           : "font-medium text-ink-soft hover:bg-white/70 hover:text-ink dark:hover:bg-white/[0.04]",
       )}
     >
-      {/* Blå accentstapel för aktiv vy */}
-      {!collapsed ? (
-        <span
-          className={cn(
-            "absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-brand-600 transition-opacity duration-200",
-            active ? "opacity-100" : "opacity-0",
-          )}
-          aria-hidden
-        />
-      ) : null}
+      {/* Ingen egen bakgrund här – markören ritas en gång i <nav> och
+       * flyttas mellan länkarna. relative håller innehållet ovanpå den. */}
       <Icon
         className={cn(
-          "size-[18px] shrink-0 transition-colors",
+          "relative size-[18px] shrink-0 transition-colors",
           active
             ? "text-brand-600"
             : "text-muted-foreground group-hover:text-ink-soft",
@@ -76,11 +116,11 @@ function NavLink({
       />
       {!collapsed ? (
         <>
-          <span className="truncate">{item.label}</span>
+          <span className="relative truncate">{item.label}</span>
           {item.badge ? (
             <span
               className={cn(
-                "ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1.5 text-[0.7rem] font-semibold tabular-nums",
+                "relative ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1.5 text-[0.7rem] font-semibold tabular-nums",
                 active
                   ? "bg-brand-600 text-white"
                   : "bg-white/80 text-ink-soft",
@@ -116,11 +156,102 @@ export function Sidebar({
   onNavigate,
 }: SidebarProps) {
   const pathname = usePathname();
+  const navRef = useRef<HTMLElement>(null);
+  const items = useRef(new Map<string, HTMLAnchorElement>());
+  const [indicator, animateIndicator] = useAnimate();
+  const mounted = useRef(false);
 
-  const isActive = (href: string) =>
-    href === homeHref ? pathname === homeHref : pathname.startsWith(href);
+  /**
+   * usePathname byter först när den nya sidan committats, och eftersom vyerna
+   * hämtar data på servern dröjer det. Textfärgen ska däremot följa fingret
+   * direkt. Vi kommer därför ihåg vad som klickades tillsammans med adressen
+   * det klickades från: så fort adressen ändras (navigeringen landade, eller
+   * användaren gick bakåt) faller vi tillbaka på den riktiga adressen igen.
+   */
+  const [picked, setPicked] = useState<{ href: string; from: string } | null>(
+    null,
+  );
+  const current = picked && picked.from === pathname ? picked.href : pathname;
+
+  /** Sant medan den klickade sidan hämtas – adressen har inte hunnit byta än. */
+  const loading = Boolean(picked && picked.from === pathname);
+
+  const matches = (href: string, path: string) =>
+    href === homeHref ? path === homeHref : path.startsWith(href);
+
+  const isActive = (href: string) => matches(href, current);
 
   const hasBottom = (secondary && secondary.length > 0) || !!footer;
+
+  /** Länken som hör till adressen vi faktiskt står på. */
+  const settledHref = [
+    ...groups.flatMap((g) => g.items),
+    ...(secondary ?? []),
+  ].find((i) => matches(i.href, pathname))?.href;
+
+  const registerItem = useCallback(
+    (href: string, el: HTMLAnchorElement | null) => {
+      if (el) items.current.set(href, el);
+      else items.current.delete(href);
+    },
+    [],
+  );
+
+  /**
+   * Klick: flytta markören direkt och tänd pulsen – men bara om vi faktiskt
+   * navigerar någonstans. Klickar man på raden man redan står på sker ingen
+   * laddning, och då ska ingenting pulsa.
+   */
+  function pick(href: string) {
+    moveTo(href);
+    if (matches(href, pathname)) return;
+    setPicked({ href, from: pathname });
+  }
+
+  /** Flyttar markören hela vägen till en rad. Aldrig någon mellanposition. */
+  function moveTo(href: string) {
+    const nav = navRef.current;
+    const el = items.current.get(href);
+    const box = indicator.current;
+    if (!nav || !el || !box) return;
+    void animateIndicator(box, { ...boxOf(el, nav), opacity: 1 }, glide);
+  }
+
+  /* Rättar markören när sidan landat, och vid hopfällning, fönsterändring
+   * eller navigering utanför menyn (bakåtknapp, flikfältet på mobilen). Är
+   * den redan på plats blir det ingen synlig rörelse. */
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    const box = indicator.current;
+    const el = settledHref ? items.current.get(settledHref) : null;
+    if (!nav || !box) return;
+
+    if (!el) {
+      // Ingen meny-post matchar adressen – tona bort markören.
+      void animateIndicator(box, { opacity: 0 }, { duration: 0.15 });
+      return;
+    }
+
+    const to = boxOf(el, nav);
+    const first = !mounted.current;
+    mounted.current = true;
+    void animateIndicator(
+      box,
+      { ...to, opacity: 1 },
+      first ? { duration: 0 } : glide,
+    );
+
+    const onResize = () => {
+      const el2 = settledHref ? items.current.get(settledHref) : null;
+      if (el2 && navRef.current) {
+        void animateIndicator(box, boxOf(el2, navRef.current), {
+          duration: 0,
+        });
+      }
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [settledHref, collapsed, animateIndicator, indicator]);
 
   return (
     <div className="flex h-full flex-col bg-linear-to-b from-[#fff1e4] via-[#fff9f4] to-white dark:from-[#1c1813] dark:via-[#151311] dark:to-[#100f0d]">
@@ -144,11 +275,30 @@ export function Sidebar({
 
       {/* Navigation */}
       <nav
+        ref={navRef}
         className={cn(
-          "flex flex-1 flex-col overflow-y-auto py-3",
+          "relative flex flex-1 flex-col overflow-y-auto py-3",
           collapsed ? "items-center gap-1 px-2" : "gap-4 px-3",
         )}
       >
+        {/* Markören – ligger bakom länkarna och flyttas mellan dem. */}
+        <div
+          ref={indicator}
+          aria-hidden
+          className="pointer-events-none absolute top-0 left-0 h-9 w-0 rounded-lg bg-white opacity-0 shadow-[0_1px_2px_rgb(15_42_67/0.08)] ring-1 ring-brand-100 dark:bg-white/[0.07] dark:shadow-none dark:ring-white/10"
+        >
+          {!collapsed ? (
+            <span
+              className={cn(
+                "absolute top-1/2 left-0 w-[3px] -translate-y-1/2 rounded-r-full bg-brand-600 transition-all duration-200",
+                // Medan sidan hämtas sträcker sig stapeln och pulserar i takt
+                // med skelettet på sidan – samma språk, samma tempo.
+                loading ? "h-7 animate-pulse" : "h-4",
+              )}
+            />
+          ) : null}
+        </div>
+
         {groups.map((group, gi) => (
           <div
             key={group.label}
@@ -169,6 +319,8 @@ export function Sidebar({
                 active={isActive(item.href)}
                 collapsed={collapsed}
                 onNavigate={onNavigate}
+                onPick={pick}
+                itemRef={registerItem}
               />
             ))}
           </div>
@@ -189,6 +341,8 @@ export function Sidebar({
                 active={isActive(item.href)}
                 collapsed={collapsed}
                 onNavigate={onNavigate}
+                onPick={pick}
+                itemRef={registerItem}
               />
             ))}
             {footer ? (
@@ -197,6 +351,8 @@ export function Sidebar({
                 active={false}
                 collapsed={collapsed}
                 onNavigate={onNavigate}
+                onPick={pick}
+                itemRef={registerItem}
               />
             ) : null}
           </div>
