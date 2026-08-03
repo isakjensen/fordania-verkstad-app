@@ -451,7 +451,7 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
             setQuery("");
             void startCamera();
           }}
-          className="mt-3 flex items-center justify-center gap-2 rounded-xl brand-fill py-3.5 text-sm font-bold"
+          className="brand-fill raised-brand mt-3 flex items-center justify-center gap-2 rounded-xl border border-brand-700/40 py-3.5 text-sm font-bold"
         >
           <ScanLine className="size-4.5" />
           Skanna med kameran
@@ -552,7 +552,7 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
               type="button"
               onClick={() => addVehicle(result.plate)}
               disabled={adding}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl brand-fill py-3.5 text-sm font-bold disabled:opacity-60"
+              className="brand-fill raised-brand mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-brand-700/40 py-3.5 text-sm font-bold disabled:opacity-60"
             >
               {adding ? (
                 <Loader2 className="size-4.5 animate-spin" />

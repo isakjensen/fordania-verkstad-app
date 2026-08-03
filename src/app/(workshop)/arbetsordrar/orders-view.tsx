@@ -181,7 +181,7 @@ export function OrdersView({
 
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             {/* Mina/Alla – full bredd och jämnt delad på mobil, kompakt på desktop */}
-            <div className="inline-flex w-full gap-0.5 rounded-xl bg-surface-muted p-1 sm:w-auto">
+            <div className="inset-track inline-flex w-full gap-0.5 rounded-xl border border-line bg-surface-muted p-1 sm:w-auto">
               {scopeTabs.map((s) => {
                 const active = scope === s.value;
                 return (
@@ -193,7 +193,7 @@ export function OrdersView({
                     className={cn(
                       "inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors sm:flex-none sm:py-1.5",
                       active
-                        ? "bg-surface text-ink shadow-sm"
+                        ? "raised bg-surface text-ink ring-1 ring-line-strong"
                         : "text-muted-foreground hover:text-ink",
                     )}
                   >

@@ -139,7 +139,7 @@ export function ScheduleCalendar({
           har agendan sin egen kompakta rubrik + veckoremsa i stället. */}
       <header className="hidden shrink-0 flex-wrap items-center justify-between gap-2 border-b border-line pb-3 lg:flex">
         {/* Vy-växel – dag/vecka. Samma höjd som knapparna (h-10/coarse h-12). */}
-        <div className="inline-flex h-10 rounded-xl border border-line bg-surface-muted p-0.5 pointer-coarse:h-12">
+        <div className="inset-track inline-flex h-10 rounded-xl border border-line bg-surface-muted p-0.5 pointer-coarse:h-12">
           {(["day", "week"] as View[]).map((v) => (
             <button
               key={v}
@@ -148,7 +148,7 @@ export function ScheduleCalendar({
               className={cn(
                 "inline-flex items-center rounded-lg px-4 text-sm font-semibold transition-all",
                 view === v
-                  ? "bg-surface text-ink shadow-xs ring-1 ring-line"
+                  ? "raised bg-surface text-ink ring-1 ring-line-strong"
                   : "text-muted-foreground hover:text-ink",
               )}
             >
@@ -162,7 +162,7 @@ export function ScheduleCalendar({
             Idag
           </Button>
           {/* Nav-grupp – varje pil lika hög som knapparna (40/48px). */}
-          <div className="flex h-10 items-center rounded-xl border border-line bg-surface pointer-coarse:h-12">
+          <div className="raised flex h-10 items-center rounded-xl border border-line-strong bg-surface pointer-coarse:h-12">
             <button
               type="button"
               onClick={() => navigate(-1)}

@@ -64,7 +64,7 @@ export function AuditFilters({
           placeholder="Sök händelse, användare, företag eller IP…"
           aria-label="Sök i loggen"
           className={cn(
-            "h-8 w-full rounded-lg border border-line bg-surface pl-9 pr-9 text-sm text-ink shadow-xs outline-none transition-colors pointer-coarse:h-11",
+            "raised-soft h-8 w-full rounded-lg border border-line-strong bg-surface pl-9 pr-9 text-sm text-ink outline-none transition-colors pointer-coarse:h-11",
             "placeholder:text-muted-foreground hover:border-brand-300 focus-visible:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500/30",
             "[&::-webkit-search-cancel-button]:appearance-none",
           )}

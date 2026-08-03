@@ -51,7 +51,7 @@ export function PrintActions({
               ? undefined
               : "Kunden saknar e-postadress (eller fordonet saknar kund)."
           }
-          className="inline-flex items-center gap-2 rounded-lg brand-fill h-10 px-4 text-sm font-semibold transition disabled:opacity-50"
+          className="brand-fill raised-brand inline-flex h-10 items-center gap-2 rounded-lg border border-brand-700/40 px-4 text-sm font-semibold transition disabled:opacity-50"
         >
           {pending ? (
             <Loader2 className="size-4 animate-spin" />

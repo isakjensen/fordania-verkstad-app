@@ -113,7 +113,9 @@ export function GlobalSearch() {
         placeholder="Sök fordon, reg.nr, kund eller order…"
         aria-label="Sök"
         className={cn(
-          "h-10 w-full rounded-xl border border-line bg-surface-muted pl-9 pr-9 text-sm text-ink shadow-soft outline-none transition-all pointer-coarse:h-12 pointer-coarse:text-base",
+          // raised-soft: samma upphöjning som knapparna men dämpad glans, så
+          // fältet fortfarande läses som skrivbart.
+          "raised-soft h-10 w-full rounded-xl border border-line-strong bg-surface pl-9 pr-9 text-sm text-ink outline-none transition-all pointer-coarse:h-12 pointer-coarse:text-base",
           "placeholder:text-muted-foreground",
           "hover:border-line-strong focus:border-brand-400 focus:bg-surface focus:ring-2 focus:ring-brand-500/20",
           "[&::-webkit-search-cancel-button]:appearance-none",

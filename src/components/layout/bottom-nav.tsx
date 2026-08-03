@@ -235,7 +235,7 @@ function MoreSheet({
               <button
                 type="button"
                 onClick={logout}
-                className="flex size-11 items-center justify-center rounded-xl bg-danger-soft text-danger active:bg-danger/15"
+                className="raised raised-press flex size-11 items-center justify-center rounded-xl border border-danger/25 bg-danger-soft text-danger active:bg-danger/15"
                 aria-label="Logga ut"
               >
                 <LogOut className="size-5" />
