@@ -1,35 +1,62 @@
 "use client";
 
-import { motion } from "motion/react";
+import { cn } from "@/lib/utils";
 
 /**
- * Glider innehållet i sidled när man byter mellan Systemlogg och Aktiva nu.
+ * Flikväxlingen mellan Systemlogg och Aktiva nu: hela sidan glider i sidled.
  *
- * Riktningen kommer ur vyns plats i flikraden i stället för ur ett minne av
- * var man kom ifrån: Aktiva nu ligger till höger och glider in från höger,
- * Systemlogg ligger till vänster och glider in från vänster. Resultatet blir
- * detsamma åt båda hållen – fram och tillbaka känns som samma rörelse
- * spegelvänd – men utan tillstånd som kan hamna i otakt.
+ * Båda vyerna renderas hela tiden och ligger sida vid sida på ett spår som är
+ * dubbelt så brett som fönstret. Bytet flyttar spåret ett halvt varv, så den
+ * gamla vyn glider ut åt ena hållet medan den nya glider in – i stället för
+ * att den gamla försvinner i ett hopp och bara den nya animeras.
+ *
+ * Spåret ligger kvar monterat över navigeringen, så CSS-övergången hinner
+ * köra även när adressen byts (?view=live).
  */
 export function ViewSlide({
   view,
   children,
+  live,
 }: {
   view: "log" | "live";
+  /** Systemloggen – vänstra rutan. */
+  children: React.ReactNode;
+  /** Aktiva nu – högra rutan. */
+  live: React.ReactNode;
+}) {
+  const showingLive = view === "live";
+
+  return (
+    // items-start: rutorna ska behålla sin egen höjd, den kortare av dem ska
+    // inte sträckas ut till den längres.
+    <div className="overflow-x-hidden">
+      <div
+        className={cn(
+          "flex w-[200%] items-start transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          showingLive && "-translate-x-1/2",
+        )}
+      >
+        <Pane hidden={showingLive}>{children}</Pane>
+        <Pane hidden={!showingLive}>{live}</Pane>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * En ruta i spåret. Den som inte visas göms för skärmläsare och tangentbord –
+ * annars kan man tabba in i osynligt innehåll utanför skärmkanten.
+ */
+function Pane({
+  hidden,
+  children,
+}: {
+  hidden: boolean;
   children: React.ReactNode;
 }) {
   return (
-    // overflow-x-hidden: den infarande vyn ska inte kunna skapa en vågrät
-    // rullningslist under rörelsen.
-    <div className="overflow-x-hidden">
-      <motion.div
-        key={view}
-        initial={{ x: view === "live" ? 40 : -40, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-      >
-        {children}
-      </motion.div>
+    <div className="w-1/2 shrink-0" aria-hidden={hidden} inert={hidden}>
+      {children}
     </div>
   );
 }

@@ -24,18 +24,6 @@ export default async function SuperadminLogPage({
   const sp = await searchParams;
   const view = one(sp.view) === "live" ? "live" : "log";
 
-  if (view === "live") {
-    const presence = await getPresence();
-    return (
-      <div className="w-full space-y-4 px-4 py-4 sm:px-6 lg:px-8">
-        <LogTabs active="live" />
-        <ViewSlide view="live">
-          <ActiveUsers users={presence} />
-        </ViewSlide>
-      </div>
-    );
-  }
-
   const daysRaw = one(sp.days);
   const pageRaw = one(sp.page);
 
@@ -48,16 +36,20 @@ export default async function SuperadminLogPage({
     pageSize: 50,
   };
 
-  const [data, overview] = await Promise.all([
+  /* Båda vyerna hämtas alltid, inte bara den som visas: för att den gamla
+   * vyn ska kunna glida UT när man byter flik måste den finnas kvar i DOM:en
+   * under rörelsen. Närvarolistan är liten och loggen hämtas ändå. */
+  const [data, overview, presence] = await Promise.all([
     getAuditLog(filters),
     getAuditOverview(),
+    getPresence(),
   ]);
 
   return (
     <div className="w-full space-y-4 px-4 py-4 sm:px-6 lg:px-8">
-      <LogTabs active="log" />
+      <LogTabs active={view} />
 
-      <ViewSlide view="log">
+      <ViewSlide view={view} live={<ActiveUsers users={presence} />}>
         <div className="space-y-4">
           {/* Nyckeltal. Ikonchipsen är borttagna: fyra kulörta rutor drog
               blicken till siffror man sällan agerar på. Nu bär talen sig
