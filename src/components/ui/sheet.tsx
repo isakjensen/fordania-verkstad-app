@@ -6,8 +6,12 @@ import { XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Sheet = höger-drawer byggd på Base UI Dialog. Glider in från kanten och
- * används bl.a. för arbetsorderdetaljer i arbetskalendern.
+ * Sheet, byggd på Base UI Dialog. Används bl.a. för arbetsorderdetaljer i
+ * arbetskalendern.
+ *
+ * Presentationen följer enheten, precis som Dialog:
+ *  - telefon: bottensark som glider upp nerifrån (tummen når stänglisten)
+ *  - sm och uppåt: drawer som glider in från höger kant
  */
 function Sheet({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="sheet" {...props} />;
@@ -40,11 +44,30 @@ function SheetContent({
       <DialogPrimitive.Popup
         data-slot="sheet-content"
         className={cn(
-          "fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col overflow-y-auto bg-surface shadow-lift ring-1 ring-line outline-none transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] data-closed:translate-x-full data-starting-style:translate-x-full",
+          "fixed z-50 flex w-full max-w-md flex-col overflow-y-auto bg-surface shadow-lift ring-1 ring-line outline-none",
+          // Telefon: förankrad i underkanten, rundad topp och aldrig högre än
+          // skärmen (svh, inte vh – annars hamnar botten bakom adressfältet).
+          "inset-x-0 bottom-0 max-h-[92svh] rounded-t-3xl max-sm:max-w-none",
+          // sm och uppåt: tillbaka till drawer längs högerkanten.
+          "sm:inset-y-0 sm:right-0 sm:bottom-auto sm:left-auto sm:max-h-none sm:rounded-none",
+          "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          // Stängt läge: nedskjuten under skärmkanten på telefon, utskjuten åt
+          // höger på större skärmar.
+          "data-closed:translate-y-full data-starting-style:translate-y-full",
+          "sm:data-closed:translate-y-0 sm:data-closed:translate-x-full",
+          "sm:data-starting-style:translate-y-0 sm:data-starting-style:translate-x-full",
           className,
         )}
         {...props}
       >
+        {/* Grabb-handtag – signalerar att arket hör till underkanten. Samma
+            handtag som mobilmenyn använder. */}
+        <div className="flex justify-center pt-3 pb-1 sm:hidden">
+          <span
+            className="h-1.5 w-10 rounded-full bg-line-strong"
+            aria-hidden
+          />
+        </div>
         {children}
         {showCloseButton ? (
           <DialogPrimitive.Close
