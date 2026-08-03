@@ -322,13 +322,21 @@ export function VehiclesView({
                   {v.chassisNumber ?? "—"}
                 </TableCell>
                 <TableCell className="hidden px-4 py-3 text-right sm:table-cell">
+                  {/* Siffran får en fast minsta bredd så både ikonen och
+                   * talets högerkant hamnar på samma x i alla rader. Utan den
+                   * flyttar sig ikonen med talets längd, eftersom hela gruppen
+                   * är högerställd i cellen. */}
                   {latest ? (
                     <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink tabular-nums">
-                      <Gauge className="size-3.5 text-muted-foreground" />
-                      {nf.format(latest.value)} km
+                      <Gauge className="size-3.5 shrink-0 text-muted-foreground" />
+                      <span className="min-w-[5.25rem] text-right">
+                        {nf.format(latest.value)} km
+                      </span>
                     </span>
                   ) : (
-                    <span className="text-sm text-muted-foreground">—</span>
+                    <span className="inline-block min-w-[5.25rem] text-right text-sm text-muted-foreground">
+                      —
+                    </span>
                   )}
                 </TableCell>
                 <TableCell className="px-4 py-3 text-right">
