@@ -91,6 +91,10 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
           // Bandets egen kant, hela vägen runt, i en mörkare ton av samma blå
           // – samma linje som tidigare bara satt mot textytan.
           "shadow-[inset_0_0_0_1px_#073a9c] dark:shadow-[inset_0_0_0_1px_#0a3f9e]",
+          // Ärver plattans hörnradie i vänsterkanten. Utan den ritas kanten
+          // som en rät rektangel och kapas av plattans overflow-hidden, så
+          // hörnet ser avhugget ut i stället för runt.
+          "rounded-l-[inherit]",
           s.band,
         )}
       >
@@ -120,6 +124,9 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
           // textytan bandets mörkblå kant och två linjer hade blivit dubbelt.
           "shadow-[inset_0_1px_0_rgba(15,23,41,0.3),inset_0_-1px_0_rgba(15,23,41,0.3),inset_-1px_0_0_rgba(15,23,41,0.3)]",
           "dark:shadow-[inset_0_1px_0_rgba(0,0,0,0.22),inset_0_-1px_0_rgba(0,0,0,0.22),inset_-1px_0_0_rgba(0,0,0,0.22)]",
+          // Samma sak i högerkanten: ärver plattans radie så kanten rundar
+          // med hörnet i stället för att kapas.
+          "rounded-r-[inherit]",
           s.text,
         )}
       >

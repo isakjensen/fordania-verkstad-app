@@ -89,7 +89,9 @@ export function DesignPlate({
     >
       <span
         className={cn(
-          "relative flex flex-col items-center justify-center gap-[1px]",
+          // rounded-l-[inherit]: kantlinjen måste följa plattans hörnradie,
+          // annars kapas den av overflow-hidden och hörnet ser avhugget ut.
+          "relative flex flex-col items-center justify-center gap-[1px] rounded-l-[inherit]",
           s.band,
           style.band,
         )}
@@ -110,7 +112,7 @@ export function DesignPlate({
       </span>
       <span
         className={cn(
-          "flex items-center font-mono whitespace-nowrap",
+          "flex items-center rounded-r-[inherit] font-mono whitespace-nowrap",
           s.text,
           style.face,
           style.text,
