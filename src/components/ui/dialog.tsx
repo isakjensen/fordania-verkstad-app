@@ -60,9 +60,17 @@ function DialogContent({
         className={cn(
           // Mobil / iPad-stående: bottensheet som glider upp (native-känsla).
           "fixed inset-x-0 bottom-0 z-50 grid max-h-[92svh] w-full gap-4 overflow-y-auto rounded-t-3xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none",
-          "duration-200 data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom-8 data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-bottom-8",
           // sm+ : centrerad modal som tidigare.
-          "sm:inset-x-auto sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:max-w-sm sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:duration-100 sm:data-open:slide-in-from-bottom-0 sm:data-open:zoom-in-95 sm:data-closed:slide-out-to-bottom-0 sm:data-closed:zoom-out-95",
+          "sm:inset-x-auto sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:max-w-sm sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl",
+          // Rörelsen är en CSS-transition, inte en keyframe-animation: då
+          // glider arket hela vägen ner igen när det stängs i stället för att
+          // hoppa undan de sista bildrutorna. Telefon: hela vägen från
+          // underkanten. sm+: samma centrering, bara skala och opacitet.
+          "transition-[translate,scale,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:duration-150",
+          "data-closed:translate-y-full data-starting-style:translate-y-full",
+          "sm:data-closed:translate-y-[-50%] sm:data-starting-style:translate-y-[-50%]",
+          "sm:data-closed:scale-95 sm:data-starting-style:scale-95",
+          "sm:data-closed:opacity-0 sm:data-starting-style:opacity-0",
           className
         )}
         {...props}
