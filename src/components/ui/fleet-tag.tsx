@@ -1,9 +1,16 @@
+import { ArrowUpRight } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 /**
- * Markerar om ett fordon tillhör den egna uthyrningsflottan (Intern) eller
- * en extern kund som bokat in sig i verkstaden (Extern). Härleds från om
- * fordonet är kopplat till en kund eller inte.
+ * Markerar fordon som tillhör en EXTERN kund – alltså någon som bokat in sig
+ * i verkstaden, till skillnad från den egna uthyrningsflottan.
+ *
+ * Interna fordon får ingen markering alls. De är normalfallet, och en etikett
+ * på varje rad i en lista som mest består av egna fordon säger ingenting –
+ * det är avvikelsen som är värd bläck. Därför en liten ikon i stället för en
+ * textetikett: den läses på ett ögonkast bredvid registreringsskylten utan
+ * att konkurrera med den.
  */
 export function FleetTag({
   internal,
@@ -12,22 +19,18 @@ export function FleetTag({
   internal: boolean;
   className?: string;
 }) {
+  if (internal) return null;
+
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.07em] ring-1 ring-inset",
-        internal
-          ? "bg-surface text-muted-foreground ring-line-strong"
-          : "bg-brand-50 text-brand-700 ring-brand-200",
+        "inline-flex size-5 shrink-0 items-center justify-center rounded-md bg-brand-50 text-brand-700 ring-1 ring-brand-200 ring-inset",
         className,
       )}
-      title={
-        internal
-          ? "Internt fordon – egen uthyrningsflotta"
-          : "Externt fordon – kund som bokat verkstaden"
-      }
+      title="Externt fordon – kund som bokat verkstaden"
     >
-      {internal ? "Intern" : "Extern"}
+      <ArrowUpRight className="size-3.5" strokeWidth={2.5} aria-hidden />
+      <span className="sr-only">Externt fordon</span>
     </span>
   );
 }
