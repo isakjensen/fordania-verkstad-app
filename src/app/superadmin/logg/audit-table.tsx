@@ -83,28 +83,36 @@ function groupByDay(entries: AuditEntry[], now: Date): DayGroup[] {
   return groups;
 }
 
-/** Ett fält i händelsevyn: etikett över värdet, vänsterställt. */
-function Field({
+/**
+ * En rad i händelsevyn: etikett i en smal vänsterkolumn, värdet till höger.
+ * Inga lådor och inga versaler – hårlinjerna mellan raderna räcker som
+ * struktur, precis som i appens kort.
+ */
+function Row({
   label,
   children,
-  className,
+  copy,
 }: {
   label: string;
   children: React.ReactNode;
-  className?: string;
+  /** Värde som går att kopiera; ikonen visas vid hover och på touch. */
+  copy?: string;
 }) {
   return (
-    <div className={cn("min-w-0", className)}>
-      <p className="text-[0.65rem] font-semibold tracking-[0.08em] text-muted-foreground uppercase">
-        {label}
-      </p>
-      <div className="mt-1 text-sm break-words text-ink">{children}</div>
+    // Etiketten hugger vänsterkanten och värdet högerkanten. En fast
+    // etikettkolumn lämnade ett tomrum mitt i raden vid korta värden.
+    <div className="group flex items-baseline justify-between gap-6 px-5 py-2.5 text-sm">
+      <dt className="shrink-0 text-muted-foreground">{label}</dt>
+      <dd className="flex min-w-0 items-center justify-end gap-2 text-right text-ink">
+        {copy ? <CopyButton value={copy} /> : null}
+        <div className="min-w-0">{children}</div>
+      </dd>
     </div>
   );
 }
 
-/** Tekniskt värde som går att kopiera – ofta det man faktiskt vill ha härifrån. */
-function CopyValue({ value }: { value: string }) {
+/** Diskret kopiering – det man oftast vill ta med sig från en loggpost. */
+function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
 
   return (
@@ -116,14 +124,13 @@ function CopyValue({ value }: { value: string }) {
           setTimeout(() => setCopied(false), 1200);
         });
       }}
-      title="Kopiera"
-      className="group inline-flex max-w-full items-center gap-1.5 rounded-md bg-surface-muted px-2 py-1 font-mono text-xs text-ink-soft transition-colors hover:bg-ink/[0.08]"
+      aria-label={`Kopiera ${value}`}
+      className="-m-1 shrink-0 p-1 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
     >
-      <span className="truncate">{value}</span>
       {copied ? (
-        <Check className="size-3 shrink-0 text-success" />
+        <Check className="size-3.5 text-success" />
       ) : (
-        <Copy className="size-3 shrink-0 text-muted-foreground/60 transition-colors group-hover:text-muted-foreground" />
+        <Copy className="size-3.5" />
       )}
     </button>
   );
@@ -149,84 +156,75 @@ function EntryDetail({
       <DialogContent showCloseButton className="gap-0 p-0 sm:max-w-md">
         {entry && meta && Icon ? (
           <>
-            {/* Sidhuvud i kategorins kulör – man ser på en gång vilken sorts
-             * händelse det är, utan att läsa. */}
-            <DialogHeader
-              className={cn(
-                "rounded-t-3xl px-5 pt-5 pb-4 sm:rounded-t-xl",
-                meta.chip,
-              )}
-            >
-              <div className="flex items-start gap-3">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-current/15">
-                  <Icon className="size-5" />
+            {/* Rubriken bär händelsen själv. Kategorin står som en liten rad
+             * ovanför – ingen färgad banner, ingen ikonplatta: kulören hör
+             * hemma i listan där man skannar, inte här där man redan valt. */}
+            <DialogHeader className="px-5 pt-4 pb-3">
+              {/* Kategori och tidpunkt delar rad – två korta uppgifter på var
+               * sin rad lämnade bara luft mellan sig. Marginal höger för att
+               * inte hamna under stängkrysset. */}
+              <div className="mr-8 flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <Icon className="size-3.5" />
+                  {meta.label}
                 </span>
-                <div className="min-w-0 pt-0.5">
-                  <p className="text-[0.65rem] font-bold tracking-[0.12em] uppercase opacity-70">
-                    {meta.label}
-                  </p>
-                  <DialogTitle className="mt-0.5 text-base leading-snug text-current">
-                    {entry.summary}
-                  </DialogTitle>
-                </div>
+                <time
+                  dateTime={new Date(entry.createdAt).toISOString()}
+                  className="shrink-0 tabular-nums"
+                >
+                  {fullFmt.format(new Date(entry.createdAt))}
+                </time>
               </div>
+              <DialogTitle className="mt-1.5 text-[1.05rem] leading-snug font-semibold tracking-[-0.01em] text-ink">
+                {entry.summary}
+              </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-4 px-5 py-4">
-              {/* Vem – det första man vill veta om en loggpost. */}
-              <div className="flex items-center gap-3 rounded-xl border border-line bg-surface-muted/50 p-3">
-                <Avatar
-                  initials={initialsOf(entry.userName)}
-                  size="size-9 text-xs"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-ink">
+            <dl className="divide-y divide-line border-t border-line">
+              <Row label="Av">
+                <span className="flex items-center justify-end gap-2">
+                  <span className="min-w-0 truncate">
                     {entry.userName}
-                  </p>
-                  {entry.userEmail ? (
-                    <p className="truncate text-xs text-muted-foreground">
-                      {entry.userEmail}
-                    </p>
-                  ) : null}
-                </div>
-                {entry.userRole === "admin" ? (
-                  <span className="shrink-0 rounded-md bg-ink/[0.08] px-1.5 py-0.5 text-[0.6rem] font-bold tracking-wide text-ink-soft uppercase">
-                    Superadmin
+                    {entry.userRole === "admin" ? (
+                      <span className="text-muted-foreground">
+                        {" · Superadmin"}
+                      </span>
+                    ) : null}
+                  </span>
+                  <Avatar
+                    initials={initialsOf(entry.userName)}
+                    size="size-5 text-[0.55rem]"
+                  />
+                </span>
+                {entry.userEmail ? (
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {entry.userEmail}
                   </span>
                 ) : null}
-              </div>
+              </Row>
 
-              {/* När och var */}
-              <div className="grid grid-cols-2 gap-x-4 gap-y-4">
-                <Field label="Tidpunkt" className="col-span-2">
-                  <time dateTime={new Date(entry.createdAt).toISOString()}>
-                    {fullFmt.format(new Date(entry.createdAt))}
-                  </time>
-                </Field>
+              {entry.organizationName ? (
+                <Row label="Verkstad">{entry.organizationName}</Row>
+              ) : null}
 
-                {entry.organizationName ? (
-                  <Field label="Verkstad" className="col-span-2">
-                    {entry.organizationName}
-                  </Field>
-                ) : null}
+              {ip ? (
+                <Row label="IP-adress" copy={ip}>
+                  <span className="font-mono text-xs tabular-nums">{ip}</span>
+                </Row>
+              ) : null}
 
-                {ip ? (
-                  <Field label="IP-adress">
-                    <CopyValue value={ip} />
-                  </Field>
-                ) : null}
+              <Row label="Åtgärd" copy={entry.action}>
+                <span className="font-mono text-xs break-all">
+                  {entry.action}
+                </span>
+              </Row>
 
-                {entry.entityType ? (
-                  <Field label="Objekt">
-                    <CopyValue value={entry.entityType} />
-                  </Field>
-                ) : null}
-
-                <Field label="Åtgärd" className="col-span-2">
-                  <CopyValue value={entry.action} />
-                </Field>
-              </div>
-            </div>
+              {entry.entityType ? (
+                <Row label="Objekt">
+                  <span className="font-mono text-xs">{entry.entityType}</span>
+                </Row>
+              ) : null}
+            </dl>
           </>
         ) : null}
       </DialogContent>
