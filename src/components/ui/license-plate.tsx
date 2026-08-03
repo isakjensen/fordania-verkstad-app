@@ -115,7 +115,9 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
       <span
         className={cn(
           // Helt jämn yta – ingen toning uppifrån och ned.
-          "flex items-center whitespace-nowrap bg-white font-mono font-bold text-[#181818] dark:bg-[#e4e4e6]",
+          // FE-Schrift med mono som fallback. Skrivs som family-name så
+          // tailwind-merge inte förväxlar den med en font-vikt.
+          "flex items-center whitespace-nowrap bg-white font-[family-name:var(--font-plate)] font-bold text-[#181818] dark:bg-[#e4e4e6]",
           s.text,
         )}
       >

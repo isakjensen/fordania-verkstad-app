@@ -5,6 +5,27 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ------------------------------------------------------------------ *
+ *  FE-Schrift – typsnittet på registreringsskyltar. Finns varken på
+ *  Google Fonts eller som paket, så filen bor i projektet:
+ *
+ *      public/fonts/fe-schrift.woff2   (eller .ttf)
+ *
+ *  Saknas filen faller skylten tyst tillbaka på mono-fonten och ser ut
+ *  som förut – inget kraschar. Deklarationen ligger som vanlig @font-face
+ *  i stället för next/font/local just därför: next/font kräver att filen
+ *  finns vid bygget.
+ * ------------------------------------------------------------------ */
+@font-face {
+  font-family: "FE-Schrift";
+  src:
+    url("/fonts/fe-schrift.woff2") format("woff2"),
+    url("/fonts/fe-schrift.ttf") format("truetype");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ------------------------------------------------------------------ *
  *  Fordania Verkstad – designsystem
  *  Ren, professionell estetik i Fordania-anda: varm brand-orange
  *  (från loggan), svala neutraler, mjuka ytor och tydlig hierarki.
@@ -376,6 +397,11 @@
 :root {
   color-scheme: light;
   --radius: 0.65rem;
+  /* Registreringsskyltens typsnitt. Faller tillbaka på mono innan fontfilen
+   * lagts in, så skylten alltid är läsbar. Ligger här och inte i @theme:
+   * tailwind-merge tolkar en egen font-klass som en VIKT och skulle plocka
+   * bort den när skylten också sätter font-bold. */
+  --font-plate: "FE-Schrift", var(--font-geist-mono), ui-monospace, monospace;
   /* shadcn-tokens mappade till Fordanias designsystem (explicita värden) */
   --background: #f5f7fa;
   --foreground: #172230;
