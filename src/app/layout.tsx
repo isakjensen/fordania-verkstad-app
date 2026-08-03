@@ -1,16 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Hanken_Grotesk, Geist_Mono } from "next/font/google";
+import { IBM_Plex_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { themeScript } from "@/lib/theme";
 import { InlineScript } from "@/components/inline-script";
 import { PwaManager } from "@/components/pwa/pwa-manager";
 
-const sans = Hanken_Grotesk({
+// IBM Plex Sans finns bara upp till 700. De få font-extrabold-rubrikerna
+// (800) faller därför tillbaka på 700 – ingen syntetisk fetstil.
+const sans = IBM_Plex_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const geistMono = Geist_Mono({
