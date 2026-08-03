@@ -71,12 +71,11 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
         // registreringsnumret syns alltid (siblings får trunkeras i stället).
         // w-fit → skylten storleksanpassas efter innehållet och tänjs aldrig ut
         // till full bredd (t.ex. i en flex-kolumn med align-items: stretch).
-        // Ljust läge: ren vit platta. Mörkt läge: dämpad off-white – en helvit
-        // platta glarar mot den nästan svarta bakgrunden.
-        "inline-flex w-fit shrink-0 select-none items-stretch overflow-hidden bg-white dark:bg-[#e4e4e6]",
-        // Ramen ligger INTE här längre. Den grå hårlinjen runt hela plattan
-        // lade sig även runt EU-bandet, som ska ha en mörkblå kant i stället.
-        // Varje del bär därför sin egen kant, och plattan bara djupet.
+        // Plattan har varken bakgrund eller kant: de två delarna målar hela
+        // ytan själva. En bakgrund här sköt annars fram en hårfin ljus rand
+        // utanför delarnas kanter i rundningarna – de smutsiga hörnen.
+        "inline-flex w-fit shrink-0 select-none items-stretch",
+        // Bara djupet ligger kvar på plattan. Skuggan följer hörnradien.
         "shadow-[0_1px_1px_rgba(15,23,41,0.1)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.55)]",
         s.plate,
         className,
@@ -88,12 +87,10 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
           // En enda solid EU-blå i stället för gradient. I mörkt läge en aning
           // ljusare blå, annars sjunker bandet ihop till en mörk klump.
           "relative flex flex-col items-center justify-center gap-[1px] bg-[#0b4ecb] dark:bg-[#1559d8]",
-          // Bandets egen kant, hela vägen runt, i en mörkare ton av samma blå
-          // – samma linje som tidigare bara satt mot textytan.
-          "shadow-[inset_0_0_0_1px_#073a9c] dark:shadow-[inset_0_0_0_1px_#0a3f9e]",
-          // Ärver plattans hörnradie i vänsterkanten. Utan den ritas kanten
-          // som en rät rektangel och kapas av plattans overflow-hidden, så
-          // hörnet ser avhugget ut i stället för runt.
+          // Riktig kant i stället för en inre ring: en border följer
+          // hörnradien exakt och fogas rent i hörnen, medan en box-shadow
+          // ritas som en rät rektangel och måste klippas.
+          "border border-[#073a9c] dark:border-[#0a3f9e]",
           "rounded-l-[inherit]",
           s.band,
         )}
@@ -122,10 +119,7 @@ export function LicensePlate({ value, size = "md", className }: LicensePlateProp
           "flex items-center whitespace-nowrap bg-white font-[family-name:var(--font-plate)] font-bold text-[#181818] dark:bg-[#e4e4e6]",
           // Grå kant på tre sidor – vänsterkanten hoppas över, där möter
           // textytan bandets mörkblå kant och två linjer hade blivit dubbelt.
-          "shadow-[inset_0_1px_0_rgba(15,23,41,0.3),inset_0_-1px_0_rgba(15,23,41,0.3),inset_-1px_0_0_rgba(15,23,41,0.3)]",
-          "dark:shadow-[inset_0_1px_0_rgba(0,0,0,0.22),inset_0_-1px_0_rgba(0,0,0,0.22),inset_-1px_0_0_rgba(0,0,0,0.22)]",
-          // Samma sak i högerkanten: ärver plattans radie så kanten rundar
-          // med hörnet i stället för att kapas.
+          "border border-l-0 border-[rgba(15,23,41,0.3)] dark:border-[rgba(0,0,0,0.22)]",
           "rounded-r-[inherit]",
           s.text,
         )}
