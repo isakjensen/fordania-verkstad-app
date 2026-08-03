@@ -21,6 +21,17 @@ export function eventCardClass(type: string) {
   );
 }
 
+/** Beskrivningens första rad, kapad så den får plats på ett kalenderkort. */
+const PREVIEW_CHARS = 30;
+
+function descriptionPreview(description: string | null): string | null {
+  const text = description?.replace(/\s+/g, " ").trim();
+  if (!text) return null;
+  return text.length > PREVIEW_CHARS
+    ? `${text.slice(0, PREVIEW_CHARS).trimEnd()}…`
+    : text;
+}
+
 export function EventCardBody({
   job,
   showTime = true,
@@ -38,6 +49,7 @@ export function EventCardBody({
   const showStatus = job.status !== "planned";
   const start = job.scheduledStart ? new Date(job.scheduledStart) : null;
   const end = job.scheduledEnd ? new Date(job.scheduledEnd) : null;
+  const preview = descriptionPreview(job.description);
 
   return (
     <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-2.5 py-1">
@@ -60,6 +72,13 @@ export function EventCardBody({
         <span className="truncate text-[0.66rem] font-medium leading-tight text-muted-foreground tabular-nums">
           {hm(start)}
           {end ? `–${hm(end)}` : ""}
+        </span>
+      ) : null}
+      {/* Beskrivningen sist: på ett kort kort (kort jobb) klipps den bort av
+       * kortets overflow, och då är det typ och tid man vill ha kvar. */}
+      {preview ? (
+        <span className="truncate text-[0.66rem] leading-tight text-muted-foreground">
+          {preview}
         </span>
       ) : null}
       {extra}
