@@ -84,30 +84,29 @@ function groupByDay(entries: AuditEntry[], now: Date): DayGroup[] {
 }
 
 /**
- * En rad i händelsevyn: etikett i en smal vänsterkolumn, värdet till höger.
- * Inga lådor och inga versaler – hårlinjerna mellan raderna räcker som
- * struktur, precis som i appens kort.
+ * Ett faktapar i händelsevyns referensblock. Etiketterna ligger i en smal
+ * kolumn och värdena i en gemensam kolumn direkt efter: alla etiketter
+ * linjerar, alla värden linjerar, och raden får varken ett tomrum i mitten
+ * (som en högerställd kolumn ger) eller egna ramar.
  */
-function Row({
+function Fact({
   label,
   children,
   copy,
 }: {
   label: string;
   children: React.ReactNode;
-  /** Värde som går att kopiera; ikonen visas vid hover och på touch. */
+  /** Värde som går att kopiera; ikonen visas vid hover och alltid på touch. */
   copy?: string;
 }) {
   return (
-    // Etiketten hugger vänsterkanten och värdet högerkanten. En fast
-    // etikettkolumn lämnade ett tomrum mitt i raden vid korta värden.
-    <div className="group flex items-baseline justify-between gap-6 px-5 py-2.5 text-sm">
-      <dt className="shrink-0 text-muted-foreground">{label}</dt>
-      <dd className="flex min-w-0 items-center justify-end gap-2 text-right text-ink">
+    <>
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="group flex min-w-0 items-center gap-1.5 text-ink">
+        <span className="min-w-0 truncate">{children}</span>
         {copy ? <CopyButton value={copy} /> : null}
-        <div className="min-w-0">{children}</div>
       </dd>
-    </div>
+    </>
   );
 }
 
@@ -125,7 +124,8 @@ function CopyButton({ value }: { value: string }) {
         });
       }}
       aria-label={`Kopiera ${value}`}
-      className="-m-1 shrink-0 p-1 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
+      title="Kopiera"
+      className="-m-1 shrink-0 p-1 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100 hover:text-ink-soft focus-visible:opacity-100 pointer-coarse:opacity-100"
     >
       {copied ? (
         <Check className="size-3.5 text-success" />
@@ -148,82 +148,83 @@ function EntryDetail({
   onClose: () => void;
 }) {
   const meta = entry ? entryMeta(entry.action, entry.category) : null;
-  const Icon = meta?.icon;
   const ip = entry ? prettyIp(entry.ipAddress) : null;
 
   return (
     <Dialog open={Boolean(entry)} onOpenChange={(o) => !o && onClose()}>
       <DialogContent showCloseButton className="gap-0 p-0 sm:max-w-md">
-        {entry && meta && Icon ? (
+        {entry && meta ? (
           <>
-            {/* Rubriken bär händelsen själv. Kategorin står som en liten rad
-             * ovanför – ingen färgad banner, ingen ikonplatta: kulören hör
-             * hemma i listan där man skannar, inte här där man redan valt. */}
-            <DialogHeader className="px-5 pt-4 pb-3">
-              {/* Kategori och tidpunkt delar rad – två korta uppgifter på var
-               * sin rad lämnade bara luft mellan sig. Marginal höger för att
-               * inte hamna under stängkrysset. */}
-              <div className="mr-8 flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <Icon className="size-3.5" />
-                  {meta.label}
-                </span>
-                <time
-                  dateTime={new Date(entry.createdAt).toISOString()}
-                  className="shrink-0 tabular-nums"
-                >
-                  {fullFmt.format(new Date(entry.createdAt))}
-                </time>
-              </div>
-              <DialogTitle className="mt-1.5 text-[1.05rem] leading-snug font-semibold tracking-[-0.01em] text-ink">
+            {/* Läsordningen följer frågorna man ställer: vad hände, vem gjorde
+             * det och när – och först därefter referensdatan. Kategorin är en
+             * liten prick i stället för en färgad banner: kulören hör hemma i
+             * listan där man skannar, inte här där man redan valt. */}
+            {/* gap-0: DialogHeader har en egen gap-2 som annars läggs ovanpå
+             * marginalerna nedan, så varje mellanrum blir dubbelt och ojämnt. */}
+            <DialogHeader className="gap-0 px-5 pt-5 pb-4">
+              <p className="mr-8 flex items-center gap-2 text-xs text-muted-foreground">
+                <span
+                  className={cn("size-1.5 rounded-full", meta.dot)}
+                  aria-hidden
+                />
+                {meta.label}
+              </p>
+
+              <DialogTitle className="mt-2 text-[1.15rem] leading-snug font-semibold tracking-[-0.015em] text-balance text-ink">
                 {entry.summary}
               </DialogTitle>
-            </DialogHeader>
 
-            <dl className="divide-y divide-line border-t border-line">
-              <Row label="Av">
-                <span className="flex items-center justify-end gap-2">
-                  <span className="min-w-0 truncate">
-                    {entry.userName}
+              {/* Vem och när hör ihop och står som ett stycke: namnet bär
+               * raden, e-post och tidpunkt är underrad. Förut låg e-post och
+               * behörighet nere bland referensdatan och splittrade identiteten
+               * på två ställen. */}
+              <div className="mt-4 flex items-center gap-2.5">
+                <Avatar
+                  initials={initialsOf(entry.userName)}
+                  size="size-8 text-[0.7rem]"
+                />
+                <div className="min-w-0">
+                  <p className="flex items-baseline gap-2 text-sm">
+                    <span className="truncate font-medium text-ink">
+                      {entry.userName}
+                    </span>
                     {entry.userRole === "admin" ? (
-                      <span className="text-muted-foreground">
-                        {" · Superadmin"}
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        Superadmin
                       </span>
                     ) : null}
-                  </span>
-                  <Avatar
-                    initials={initialsOf(entry.userName)}
-                    size="size-5 text-[0.55rem]"
-                  />
-                </span>
-                {entry.userEmail ? (
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {entry.userEmail}
-                  </span>
-                ) : null}
-              </Row>
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {entry.userEmail ? `${entry.userEmail} · ` : ""}
+                    <time dateTime={new Date(entry.createdAt).toISOString()}>
+                      {fullFmt.format(new Date(entry.createdAt))}
+                    </time>
+                  </p>
+                </div>
+              </div>
+            </DialogHeader>
 
+            {/* Referensdata – ett lugnt block, inte fem egna rader med ramar
+             * runt. Etikettkolumnen är smal så värdena börjar tidigt. */}
+            {/* Referensdatan är nu tre rader. Objekt är borttaget: det är bara
+             * prefixet ur åtgärden (vehicle av vehicle.create) och fyllde en
+             * rad utan att tillföra något. */}
+            <dl className="grid grid-cols-[5.5rem_1fr] gap-x-4 gap-y-2 border-t border-line px-5 py-4 text-sm">
               {entry.organizationName ? (
-                <Row label="Verkstad">{entry.organizationName}</Row>
+                <Fact label="Verkstad">{entry.organizationName}</Fact>
               ) : null}
 
               {ip ? (
-                <Row label="IP-adress" copy={ip}>
-                  <span className="font-mono text-xs tabular-nums">{ip}</span>
-                </Row>
+                <Fact label="IP-adress" copy={ip}>
+                  <span className="font-mono text-[0.8rem] tabular-nums">
+                    {ip}
+                  </span>
+                </Fact>
               ) : null}
 
-              <Row label="Åtgärd" copy={entry.action}>
-                <span className="font-mono text-xs break-all">
-                  {entry.action}
-                </span>
-              </Row>
-
-              {entry.entityType ? (
-                <Row label="Objekt">
-                  <span className="font-mono text-xs">{entry.entityType}</span>
-                </Row>
-              ) : null}
+              <Fact label="Åtgärd" copy={entry.action}>
+                <span className="font-mono text-[0.8rem]">{entry.action}</span>
+              </Fact>
             </dl>
           </>
         ) : null}
