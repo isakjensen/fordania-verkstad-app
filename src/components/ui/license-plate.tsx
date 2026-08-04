@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
 import { formatPlate, plateCountry, type PlateCountry } from "@/lib/plate-ocr";
-import { AlbanianEagle } from "./country-flag";
 
 /** Landskoden längst ner i skyltens band. */
 const COUNTRY_CODE: Record<PlateCountry, string> = {
@@ -126,9 +125,15 @@ export function LicensePlate({
         )}
       >
         {albanian ? (
-          <svg viewBox="0 0 24 24" className={s.svg} aria-hidden>
-            <AlbanianEagle fill="#FFFFFF" />
-          </svg>
+          // Riktiga albanska skyltar har riksvapnets örn i vitt där EU:s
+          // stjärnkrans sitter. Filen är samma örn som i flaggan, fylld vit.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src="/flags/al-eagle-white.svg"
+            alt=""
+            aria-hidden
+            className={cn("object-contain", s.svg)}
+          />
         ) : (
           <svg viewBox="0 0 22 15" className={s.svg} aria-hidden>
             {euStars.map((d, i) => (
