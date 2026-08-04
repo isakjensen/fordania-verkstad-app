@@ -47,7 +47,15 @@ export function AppShell({
   }, []);
 
   return (
-    <div className="flex h-[calc(100svh-var(--fv-topgap,0px))] overflow-hidden bg-canvas mt-[var(--fv-topgap,0px)] transition-[margin-top,height] duration-300 ease-out">
+    /* Skalet ligger fast förankrat i fönstret, inte i dokumentflödet.
+     *
+     * Tidigare låg det i flödet med `mt` + `overflow-hidden`. Trots att varje
+     * vy klipper sitt eget innehåll räknade webbläsaren ändå med listornas
+     * fulla höjd i dokumentets scrollyta – på telefon gick det därför att dra
+     * hela sidan uppåt i remsan ovanför flikfältet, och då försvann både
+     * korthuvudet och listan ur bild. Med `fixed` finns ingen dokumentscroll
+     * kvar att fastna i: varje vy scrollar bara i sin egen yta. */
+    <div className="fixed inset-x-0 top-[var(--fv-topgap,0px)] flex h-[calc(100svh-var(--fv-topgap,0px))] overflow-hidden bg-canvas transition-[top,height] duration-300 ease-out">
       {/* Sidomeny – endast på desktop (mus/fine pointer + bredd). På iPad
           (touch) och mobil används i stället flikfältet längst ner, oavsett
           om iPaden hålls i stående eller liggande läge. */}
