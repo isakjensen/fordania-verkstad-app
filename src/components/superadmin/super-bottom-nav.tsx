@@ -8,6 +8,7 @@ import { Menu, Store, LogOut, ChevronRight, type LucideIcon } from "lucide-react
 import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
 import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { clearOfflinePageCache } from "@/lib/offline-cache";
 import { superadminNav } from "./nav";
 
@@ -145,14 +146,15 @@ function MoreSheet({
                   <p className="truncate text-sm text-muted-foreground">{email}</p>
                 ) : null}
               </div>
-              <button
-                type="button"
+              {/* Samma knappmaterial som i verkstadens meny. */}
+              <Button
+                variant="destructive"
+                size="icon-md"
                 onClick={logout}
-                className="raised raised-press flex size-11 items-center justify-center rounded-xl border border-danger/25 bg-danger-soft text-danger active:bg-danger/15"
                 aria-label="Logga ut"
               >
                 <LogOut className="size-5" />
-              </button>
+              </Button>
             </div>
 
             {/* Tillbaka till verkstaden */}

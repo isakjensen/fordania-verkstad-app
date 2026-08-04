@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
 import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { TenantLogo } from "@/components/ui/tenant-logo";
 import { setActiveTenant } from "@/lib/tenant-actions";
 import { clearOfflinePageCache } from "@/lib/offline-cache";
@@ -232,14 +233,16 @@ function MoreSheet({
                   <p className="truncate text-sm text-muted-foreground">{email}</p>
                 ) : null}
               </div>
-              <button
-                type="button"
+              {/* Samma knappmaterial som i desktop-menyn och i appens övriga
+                  knappar – ingen egen röd ruta med avvikande radie. */}
+              <Button
+                variant="destructive"
+                size="icon-md"
                 onClick={logout}
-                className="raised raised-press flex size-11 items-center justify-center rounded-xl border border-danger/25 bg-danger-soft text-danger active:bg-danger/15"
                 aria-label="Logga ut"
               >
                 <LogOut className="size-5" />
-              </button>
+              </Button>
             </div>
 
             {/* Verkstad. Superadmin (Fordania) kan byta verkstad; vanliga

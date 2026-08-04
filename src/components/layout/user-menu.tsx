@@ -2,8 +2,10 @@
 
 import { LogOut, ChevronDown } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
 import { clearOfflinePageCache } from "@/lib/offline-cache";
 import { Avatar } from "@/components/ui/avatar";
+import { buttonVariants } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -65,10 +67,17 @@ export function UserMenu({ subtitle }: { subtitle: string }) {
               </span>
             ) : null}
           </DropdownMenuLabel>
+          {/* Utloggningen får knapparnas material – kant, röd yta, glans och
+              nedtryckskänsla – men behåller menyradens egna mått. Därför
+              återställs höjd, padding och textstorlek efter buttonVariants:
+              en menyrad ska inte svälla till en knapp i full storlek. */}
           <DropdownMenuItem
             onClick={logout}
             variant="destructive"
-            className="gap-2"
+            className={cn(
+              buttonVariants({ variant: "destructive", size: "sm" }),
+              "mt-1 h-auto w-full cursor-pointer justify-start gap-2 px-1.5 py-1 text-sm",
+            )}
           >
             <LogOut className="size-4" />
             Logga ut
