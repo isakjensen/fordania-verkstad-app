@@ -219,7 +219,11 @@ export function ScheduleCalendar({
           glider ut medan den nya glider in – samma rörelse som växlingen i
           systemloggen. Alla tre är monterade hela tiden; det är det som gör
           att båda sidor av rörelsen faktiskt syns. */}
-      <div className="mt-4 hidden min-h-0 flex-1 overflow-x-hidden lg:flex">
+      {/* Ytan är `block`, inte `flex`: som flex-item krympte spåret ihop till
+          ytans bredd i stället för att bli tre gånger så brett, och då räckte
+          förflyttningen inte hela vägen – nästa vy syntes i kanten. `shrink-0`
+          på spåret håller det brett även om ytan blir en flexbox igen. */}
+      <div className="mt-4 hidden min-h-0 flex-1 overflow-x-hidden lg:block">
         {!hasOrg ? (
           <EmptyState text="Välj en verkstad för att se dess arbetskalender." />
         ) : mechanics.length === 0 ? (
@@ -227,7 +231,7 @@ export function ScheduleCalendar({
         ) : (
           <div
             className={cn(
-              "flex h-full w-[300%] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+              "flex h-full w-[300%] shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
               // Exakta tredjedelar som beräknade värden – en avrundad procent
               // hade lämnat en glipa av föregående vy synlig i kanten.
               view === "week" && "-translate-x-[calc(100%/3)]",
