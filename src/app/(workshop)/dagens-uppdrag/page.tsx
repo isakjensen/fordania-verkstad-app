@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
-import { ClipboardCheck, Clock, Car, Gauge, AlignLeft } from "lucide-react";
+import Link from "next/link";
+import { ClipboardCheck, Clock, Car, AlignLeft } from "lucide-react";
 import { Card, CardHeader } from "@/components/ui/card";
 import { LicensePlate } from "@/components/ui/license-plate";
+import { DoneToggle } from "./done-toggle";
 import { getSession, getActiveOrganizationId } from "@/lib/session";
 import { getJobsForUserOnDay } from "@/lib/data/schedule";
 import { statusMeta, statusLabels, priorityLabels } from "../planering/calendar-meta";
@@ -70,7 +72,20 @@ export default async function DagensUppdragPage() {
             {jobs.map((job) => {
               const meta = statusMeta[job.status];
               return (
-                <li key={job.id} className="flex gap-4 px-5 py-4">
+                <li
+                  key={job.id}
+                  className="relative flex gap-4 px-5 py-4 transition-colors hover:bg-surface-muted"
+                >
+                  {/* Hela raden öppnar arbetsordern. Länken ligger som ett
+                      genomskinligt lager över raden i stället för runt
+                      innehållet, så att klar-knappen kan ligga ovanpå den
+                      utan att hamna inuti en länk. */}
+                  <Link
+                    href={`/arbetsordrar/${job.id}`}
+                    aria-label={`Öppna ${job.type}`}
+                    className="absolute inset-0 z-10 rounded-lg focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                  />
+
                   {/* Tid */}
                   <div className="w-16 shrink-0 pt-0.5">
                     <p className="flex items-center gap-1 text-sm font-semibold tabular-nums text-ink">
@@ -112,8 +127,12 @@ export default async function DagensUppdragPage() {
                             key={jv.vehicle.id}
                             className="inline-flex items-center gap-2"
                           >
+                            {/* Liten skylt: raden är en beskrivning av jobbet,
+                                inte en fordonslista – skylten ska läsas, inte
+                                dominera. */}
                             <LicensePlate
                               value={jv.vehicle.regNo}
+                              size="sm"
                               className="shrink-0"
                             />
                             <span>
@@ -136,6 +155,12 @@ export default async function DagensUppdragPage() {
                         {job.description}
                       </p>
                     ) : null}
+                  </div>
+
+                  {/* Klarmarkering – den vanligaste handlingen på sidan, så
+                      den ska gå att nå utan att öppna arbetsordern. */}
+                  <div className="shrink-0 self-start pt-0.5">
+                    <DoneToggle jobId={job.id} done={job.status === "done"} />
                   </div>
                 </li>
               );
