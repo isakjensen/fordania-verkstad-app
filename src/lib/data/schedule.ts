@@ -124,3 +124,7 @@ export async function getJobsForUserOnDay(
 export type Mechanic = Awaited<ReturnType<typeof getMechanics>>[number];
 export type ScheduleJob = Awaited<ReturnType<typeof getScheduleJobs>>[number];
 export type JobDetail = NonNullable<Awaited<ReturnType<typeof getJob>>>;
+/** Ett uppdrag i Dagens uppdrag-listan. */
+export type JobForDay = Awaited<
+  ReturnType<typeof getJobsForUserOnDay>
+>[number];
