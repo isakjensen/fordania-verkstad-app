@@ -21,7 +21,6 @@ import {
   normalizePlate,
   formatPlate,
   plateCountry,
-  type PlateCountry,
   type ScanFleetVehicle,
   type PlateMatch,
 } from "@/lib/plate-ocr";
@@ -38,6 +37,8 @@ const VOTE_WINDOW = 5;
 const MIN_CHAR_SCORE = 0.55;
 /** Paus mellan skanningar (ms) – inferensen tar tid ändå. */
 const SCAN_GAP = 200;
+/** Hur olik en skylt i registret får vara för att föreslås som "menade du?". */
+const MAX_SUGGEST_DISTANCE = 2;
 
 /** Siktrutans andel av skärmen (bredd × höjd). Detektionen sker något
  *  generösare än så, se DETECT_*-fraktionerna. */
@@ -53,29 +54,12 @@ interface ScanResult {
 }
 
 /**
- * Visar vilket land skannern läste skylten som – bara flaggan, ingen text.
- * En flagga läses på en bråkdel av tiden det tar att läsa "Albansk skylt",
- * och landet är ändå bara en bekräftelse på att tolkningen blev rätt.
- * Landsnamnet ligger kvar som etikett för skärmläsare (se CountryFlag).
+ * Flaggan visar vilket land skannern läste skylten som. Ingen text och ingen
+ * platta bakom: flaggan är läsbar i sig, och en bricka runt den hade bara
+ * blivit ännu en form i en vy som redan har gott om dem. Landsnamnet ligger
+ * kvar som etikett för skärmläsare (se CountryFlag).
  */
-function OriginChip({
-  country,
-  tone,
-}: {
-  country: PlateCountry;
-  tone: "dark" | "light";
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full p-1",
-        tone === "dark" ? "bg-white/15" : "bg-surface-muted",
-      )}
-    >
-      <CountryFlag country={country} />
-    </span>
-  );
-}
+const FLAG_IN_ROW = "h-[1.15rem] w-[1.55rem]";
 
 /**
  * Räknar ut vilken del av KÄLLBILDEN som motsvarar siktrutan. Videon visas
@@ -124,12 +108,12 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
-  // Sheet-drag: i kameravyn kan man dra ner för att stänga (fingret följer).
   // Landet läses ur skyltens format och visas både under skanningen och i
   // resultatet, så man ser vad motorn tolkade skylten som.
   const readingCountry = plateCountry(reading);
   const resultCountry = plateCountry(result?.plate);
 
+  // Sheet-drag: i kameravyn kan man dra ner för att stänga (fingret följer).
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
   const dragRef = useRef<{
@@ -210,9 +194,9 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
     if (!scanningRef.current) return;
     if (!reading_ || reading_.score < MIN_CHAR_SCORE) return;
 
-    // Skannern agerar bara på skyltar i ett format vi känner igen (svenskt
-    // eller albanskt). Övrigt är brus: reklamskyltar, dekaler, bakomvarande
-    // bilar från andra länder.
+    // Skannern agerar bara på skyltar i ett format vi känner igen (svenskt,
+    // albanskt, danskt eller tyskt). Övrigt är brus: reklamskyltar, dekaler,
+    // bakomvarande bilar från länder vi inte har med.
     const plate = normalizePlate(reading_.text);
     if (!plateCountry(plate)) return;
 
@@ -243,8 +227,14 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
       return;
     }
     // Giltig skylt men ingen exakt träff → stanna och visa resultat.
+    //
+    // Bara förslag som ligger nära den avlästa skylten. Utan gränsen listades
+    // alltid de tre "minst olika" fordonen i registret, hur olika de än var:
+    // en dansk skylt som inte finns hos oss fick tre svenska förslag på köpet,
+    // och då blir "menade du något av dessa?" en ren gissning.
+    const near = matches.filter((m) => m.distance <= MAX_SUGGEST_DISTANCE);
     scanningRef.current = false;
-    setResult({ plate: leader, matches: matches.slice(0, 3) });
+    setResult({ plate: leader, matches: near.slice(0, 3) });
   }, [fleet, open, roiCanvas]);
 
   const runLoop = useCallback(async () => {
@@ -558,7 +548,7 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
               <ScanLine className="size-3.5 text-brand-300" />
               {formatPlate(reading)}
               {readingCountry ? (
-                <OriginChip country={readingCountry} tone="dark" />
+                <CountryFlag country={readingCountry} className={FLAG_IN_ROW} />
               ) : null}
               <span className="ml-0.5 tabular-nums text-white/70">
                 {Math.min(voteCount, REQUIRED_VOTES)}/{REQUIRED_VOTES}
@@ -589,7 +579,7 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
               <span className="text-muted-foreground">Avläst:</span>
               <LicensePlate value={result.plate} size="sm" />
               {resultCountry ? (
-                <OriginChip country={resultCountry} tone="light" />
+                <CountryFlag country={resultCountry} className={FLAG_IN_ROW} />
               ) : null}
               <span className="text-muted-foreground">
                 finns inte i registret

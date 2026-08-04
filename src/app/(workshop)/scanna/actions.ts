@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser, getActiveOrganizationId } from "@/lib/session";
 import { recordAudit } from "@/lib/audit";
-import { normalizePlate, formatPlate } from "@/lib/plate-ocr";
+import { normalizePlate, formatPlate, plateCountry } from "@/lib/plate-ocr";
 import { getFleetForScan, type ScanFleetVehicle } from "@/lib/data/scan";
 
 /**
@@ -40,8 +40,13 @@ export async function addScannedVehicle(
     return { error: "Du tillhör ingen verkstad – välj en verkstad först." };
   }
 
+  // Skylten måste vara i ett format vi känner igen. Klienten kollar redan det
+  // innan knappen visas, men den kollen sitter i webbläsaren: utan spärr här
+  // räcker ett trasigt anrop för att lägga en påhittad rad i fordonsregistret.
   const regNo = normalizePlate(rawRegNo);
-  if (!regNo) return { error: "Ogiltigt registreringsnummer." };
+  if (!regNo || !plateCountry(regNo)) {
+    return { error: "Ogiltigt registreringsnummer." };
+  }
 
   // Redan i registret? Öppna det befintliga i stället för att dubblera.
   const existing = await db.vehicle.findFirst({

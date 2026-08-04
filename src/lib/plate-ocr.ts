@@ -77,6 +77,17 @@ function group(compact: string, sizes: number[]): string {
  * tillåtet. Var ortskoden slutar går inte att läsa ur en hopskriven sträng, så
  * visningen antar två igenkänningsbokstäver – det vanligaste – och lägger
  * resten på ortskoden.
+ *
+ * Det tyska mönstret är löst nog att svälja mycket: bokstäver följt av siffror
+ * beskriver också halva världens dekaler och skyltar. Därför kräver det minst
+ * fem tecken. Priset är att mycket korta tyska skyltar (M A 1) inte känns
+ * igen; vinsten är att skannern slutar agera på skräpavläsningar, som annars
+ * hade kunnat öppna fel fordon eller lägga upp ett påhittat i registret.
+ *
+ * Två format delas med länder vi inte har med: norska skyltar ser likadana ut
+ * som danska (AB 12345) och finska som svenska (ABC 123). En norsk bil visas
+ * alltså med dansk flagga och en finsk med svensk. Det går inte att skilja på
+ * dem utan att läsa av landsbandet på skylten, vilket OCR:en inte gör.
  */
 const PLATE_FORMATS: {
   country: PlateCountry;
@@ -101,11 +112,15 @@ const PLATE_FORMATS: {
   {
     country: "DK",
     re: /^[A-Z]{2}[0-9]{5}$/,
-    display: (c) => group(c, [2, 2, 3]),
+    // Grupperingen 2-3-2 (AA 123 45) enligt hur skyltarna faktiskt ser ut.
+    // Wikipedia och flera danska sidor anger 2-2-3, men den som sett skylten
+    // vinner över den som läst om den.
+    display: (c) => group(c, [2, 3, 2]),
   },
   {
     country: "DE",
-    re: /^[A-Z]{2,5}[0-9]{1,4}[EH]?$/,
+    // (?=.{5,}) = minst fem tecken totalt, se kommentaren ovan.
+    re: /^(?=.{5,})[A-Z]{2,5}[0-9]{1,4}[EH]?$/,
     display: (c) => {
       const letters = c.match(/^[A-Z]+/)![0];
       const rest = c.slice(letters.length);
