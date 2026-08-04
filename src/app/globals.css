@@ -12,25 +12,29 @@
 @custom-variant roomy (@media (min-width: 64rem) and (min-height: 45rem));
 
 /* ------------------------------------------------------------------ *
- *  FE-Schrift – typsnittet på registreringsskyltar. Finns varken på
- *  Google Fonts eller som paket, så filen bor i projektet:
+ *  FE-Schrift – typsnittet på riktiga registreringsskyltar.
  *
- *      public/fonts/fe-schrift.woff2   (eller .ttf)
+ *  Filen finns INTE i projektet. Den ligger varken på Google Fonts eller
+ *  som npm-paket, och de gratisversioner som cirkulerar på nätet saknar
+ *  tydlig licens – ett typsnitt med oklar upphovsrätt hör inte hemma i en
+ *  produkt som säljs. Skyltarna renderas därför i mono-fonten, vilket är
+ *  det de gjort hela tiden.
  *
- *  Saknas filen faller skylten tyst tillbaka på mono-fonten och ser ut
- *  som förut – inget kraschar. Deklarationen ligger som vanlig @font-face
- *  i stället för next/font/local just därför: next/font kräver att filen
- *  finns vid bygget.
+ *  @font-face-deklarationen är borttagen, inte utkommenterad: en regel som
+ *  pekar på en fil som inte finns gör att webbläsaren försöker hämta den på
+ *  varje sidvisning med en skylt och får 404 varje gång.
+ *
+ *  Skaffar du en licensierad fil: lägg den som public/fonts/fe-schrift.woff2,
+ *  återinför regeln nedan och sätt "FE-Schrift" först i --font-plate.
+ *
+ *      @font-face {
+ *        font-family: "FE-Schrift";
+ *        src: url("/fonts/fe-schrift.woff2") format("woff2");
+ *        font-weight: 400 700;
+ *        font-style: normal;
+ *        font-display: swap;
+ *      }
  * ------------------------------------------------------------------ */
-@font-face {
-  font-family: "FE-Schrift";
-  src:
-    url("/fonts/fe-schrift.woff2") format("woff2"),
-    url("/fonts/fe-schrift.ttf") format("truetype");
-  font-weight: 400 700;
-  font-style: normal;
-  font-display: swap;
-}
 
 /* ------------------------------------------------------------------ *
  *  Fordania Verkstad – designsystem
@@ -410,10 +414,12 @@
 :root {
   color-scheme: light;
   --radius: 0.65rem;
-  /* Registreringsskyltens typsnitt. Faller tillbaka på mono innan fontfilen
-   * lagts in, så skylten alltid är läsbar. Ligger här och inte i @theme:
-   * tailwind-merge tolkar en egen font-klass som en VIKT och skulle plocka
-   * bort den när skylten också sätter font-bold. */
+  /* Registreringsskyltens typsnitt. "FE-Schrift" står kvar först men saknar
+   * @font-face (se kommentaren högst upp i filen) – namnet träffar bara om
+   * någon råkar ha typsnittet installerat lokalt, annars går det direkt på
+   * mono. Ligger här och inte i @theme: tailwind-merge tolkar en egen
+   * font-klass som en VIKT och skulle plocka bort den när skylten också
+   * sätter font-bold. */
   --font-plate: "FE-Schrift", var(--font-geist-mono), ui-monospace, monospace;
   /* shadcn-tokens mappade till Fordanias designsystem (explicita värden) */
   --background: #f5f7fa;
