@@ -22,6 +22,18 @@ export const auth = betterAuth({
     enabled: true,
   },
   plugins: [organization(), admin()],
+  rateLimit: {
+    // Better Auths standardregel för /sign-in är 3 försök per 10 sekunder,
+    // räknat PER IP – inte per konto. Hela verkstaden delar utgående IP, så
+    // två personer som loggar in samtidigt (eller en enda felskrivning följd
+    // av ett par snabba omförsök) slog i taket och fick 429. Varje blockerat
+    // försök förlänger dessutom fönstret, så den som fortsätter klicka blir
+    // kvar i spärren. Vi behåller ett tak mot brute force, men lägger det på
+    // en nivå som klarar en normal arbetsdag på ett delat kontorsnät.
+    customRules: {
+      "/sign-in/email": { window: 60, max: 20 },
+    },
+  },
   hooks: {
     // Körs efter varje auth-anrop. Vi loggar ENDAST faktiska inloggningar
     // (sign-in-endpointen) – inte vanliga sidbesök eller sessionsförnyelser.
