@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LicensePlate } from "@/components/ui/license-plate";
+import { CountryFlag } from "@/components/ui/country-flag";
 import {
   matchPlate,
   normalizePlate,
@@ -52,9 +53,10 @@ interface ScanResult {
 }
 
 /**
- * Visar vilket land skannern läste skylten som. Utan den går det inte att se
- * varför en skylt tolkades som den gjorde – och det är skillnaden mellan
- * "AA 123 BB" och "AAI 23B" när avläsningen är på gränsen.
+ * Visar vilket land skannern läste skylten som – bara flaggan, ingen text.
+ * En flagga läses på en bråkdel av tiden det tar att läsa "Albansk skylt",
+ * och landet är ändå bara en bekräftelse på att tolkningen blev rätt.
+ * Landsnamnet ligger kvar som etikett för skärmläsare (se CountryFlag).
  */
 function OriginChip({
   country,
@@ -66,20 +68,11 @@ function OriginChip({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-[0.7rem] font-semibold",
-        tone === "dark"
-          ? "bg-white/15 text-white"
-          : "bg-surface-muted text-ink-soft",
+        "inline-flex items-center rounded-full p-1",
+        tone === "dark" ? "bg-white/15" : "bg-surface-muted",
       )}
     >
-      {/* Prick i skyltbandets färg: blå för EU-bandet, röd för det albanska. */}
-      <span
-        className={cn(
-          "size-1.5 rounded-full",
-          country === "AL" ? "bg-[#c8102e]" : "bg-[#0b4ecb]",
-        )}
-      />
-      {country === "AL" ? "Albansk skylt" : "Svensk skylt"}
+      <CountryFlag country={country} />
     </span>
   );
 }
@@ -539,7 +532,14 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
               {result ? "Skylt avläst" : "Håll skylten inom ramen"}
             </span>
             {!result && (
-              <span className="absolute inset-x-0 top-0 h-0.5 animate-scan bg-brand-400/90" />
+              // Ytterrutan är det som animeras (fyller siktrutan), linjen
+              // ligger i dess överkant. Se @keyframes scan i globals.css.
+              <span
+                className="absolute inset-0 animate-scan"
+                style={{ willChange: "transform" }}
+              >
+                <span className="block h-0.5 bg-brand-400/90" />
+              </span>
             )}
           </div>
         </div>

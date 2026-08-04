@@ -1,5 +1,14 @@
 import { cn } from "@/lib/utils";
 import { formatPlate, plateCountry, type PlateCountry } from "@/lib/plate-ocr";
+import { AlbanianEagle } from "./country-flag";
+
+/** Landskoden längst ner i skyltens band. */
+const COUNTRY_CODE: Record<PlateCountry, string> = {
+  SE: "S",
+  AL: "AL",
+  DK: "DK",
+  DE: "D",
+};
 
 /**
  * Svensk registreringsskylt – vit platta med svart text, mörk ram och det
@@ -36,8 +45,6 @@ const sizes: Record<
     band: string;
     svg: string;
     code: string;
-    /** Landskoden på det albanska bandet, som får hela bandets höjd. */
-    codeAl: string;
     text: string;
   }
 > = {
@@ -46,7 +53,6 @@ const sizes: Record<
     band: "w-[18px]",
     svg: "h-[11px] w-[13px]",
     code: "text-[6px]",
-    codeAl: "text-[8px]",
     text: "px-1.5 text-[0.78rem] tracking-[0.06em]",
   },
   md: {
@@ -54,7 +60,6 @@ const sizes: Record<
     band: "w-[22px]",
     svg: "h-[13px] w-[15px]",
     code: "text-[7px]",
-    codeAl: "text-[10px]",
     text: "px-2 text-[0.95rem] tracking-[0.07em]",
   },
   lg: {
@@ -62,7 +67,6 @@ const sizes: Record<
     band: "w-[27px]",
     svg: "h-[16px] w-[19px]",
     code: "text-[8px]",
-    codeAl: "text-[12px]",
     text: "px-2.5 text-[1.1rem] tracking-[0.08em]",
   },
 };
@@ -82,10 +86,9 @@ export function LicensePlate({
   className,
 }: LicensePlateProps) {
   const s = sizes[size];
-  // Albanska skyltar har ett rött band med flaggans örn och "AL" i stället för
-  // EU:s blå med stjärnor. Landet läses ur formatet (AA 123 BB kontra
-  // ABC 12A), så skylten ser rätt ut överallt utan att fordonet behöver bära
-  // ett extra fält i databasen.
+  // Landet läses ur skyltens format (AA 123 BB kontra ABC 12A kontra
+  // AB 12 345), så skylten ser rätt ut överallt utan att fordonet behöver
+  // bära ett extra fält i databasen.
   const land = country ?? plateCountry(value) ?? "SE";
   const albanian = land === "AL";
   return (
@@ -105,29 +108,28 @@ export function LicensePlate({
         className,
       )}
     >
-      {/* Landsband: EU-blått med stjärnor (S) eller albanskt rött med örnen */}
+      {/* Landsbandet. Alla fyra länderna har samma blå band med ett märke
+          överst och landskoden under – det är bara märket och koden som
+          skiljer. Albanien har dubbelörnen i vitt i stället för EU:s
+          stjärnkrans (deras skyltar är blå på samma sätt, inte röda). */}
       <span
         className={cn(
-          // En enda solid färg i stället för gradient. I mörkt läge en aning
-          // ljusare, annars sjunker bandet ihop till en mörk klump.
-          "relative flex flex-col items-center justify-center gap-[1px]",
-          albanian
-            ? "bg-[#c8102e] dark:bg-[#d81c39]"
-            : "bg-[#0b4ecb] dark:bg-[#1559d8]",
+          // En enda solid blå i stället för gradient. I mörkt läge en aning
+          // ljusare blå, annars sjunker bandet ihop till en mörk klump.
+          "relative flex flex-col items-center justify-center gap-[1px] bg-[#0b4ecb] dark:bg-[#1559d8]",
           // Riktig kant i stället för en inre ring: en border följer
           // hörnradien exakt och fogas rent i hörnen, medan en box-shadow
           // ritas som en rät rektangel och måste klippas.
-          albanian
-            ? "border border-[#8f0b20] dark:border-[#9d1428]"
-            : "border border-[#073a9c] dark:border-[#0a3f9e]",
+          "border border-[#073a9c] dark:border-[#0a3f9e]",
           "rounded-l-[inherit]",
           s.band,
         )}
       >
-        {/* Det albanska bandet får bara landskoden. Flaggans örn blir en
-            oläslig klump i den här storleken – bättre en ren röd remsa med
-            "AL" som går att uppfatta direkt. */}
-        {albanian ? null : (
+        {albanian ? (
+          <svg viewBox="0 0 24 24" className={s.svg} aria-hidden>
+            <AlbanianEagle fill="#FFFFFF" />
+          </svg>
+        ) : (
           <svg viewBox="0 0 22 15" className={s.svg} aria-hidden>
             {euStars.map((d, i) => (
               <path key={i} d={d} fill="#FFCC00" />
@@ -136,11 +138,11 @@ export function LicensePlate({
         )}
         <span
           className={cn(
-            "font-bold leading-none tracking-tight text-white",
-            albanian ? s.codeAl : cn("-mt-0.5", s.code),
+            "-mt-0.5 font-bold leading-none tracking-tight text-white",
+            s.code,
           )}
         >
-          {albanian ? "AL" : "S"}
+          {COUNTRY_CODE[land]}
         </span>
       </span>
 
