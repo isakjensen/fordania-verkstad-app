@@ -5,6 +5,9 @@ interface LogoProps {
   iconOnly?: boolean;
   /** "md" i sidomenyn, "lg" på t.ex. inloggningssidan */
   size?: "md" | "lg";
+  /** Tvinga fram den ljusa ordmärkesvarianten – för ytor som alltid är
+   *  mörka oavsett tema, t.ex. inloggningssidans verkstadsbakgrund. */
+  onDark?: boolean;
   className?: string;
 }
 
@@ -37,9 +40,28 @@ function Monogram({ className }: { className?: string }) {
  * I hopfällt läge (`iconOnly`) visas i stället det kompakta F-monogrammet
  * eftersom det breda ordmärket inte får plats i den smala menyskenan.
  */
-export function Logo({ iconOnly = false, size = "md", className }: LogoProps) {
+export function Logo({
+  iconOnly = false,
+  size = "md",
+  onDark = false,
+  className,
+}: LogoProps) {
   if (iconOnly) {
     return <Monogram className={className} />;
+  }
+
+  // Alltid mörk yta: hoppa över temaväxlingen och visa bara ljusa märket.
+  if (onDark) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src="/fordania-verkstad-logo-dark.png"
+        alt="Fordania Verkstad"
+        width={1641}
+        height={559}
+        className={cn("w-auto select-none", heights[size], className)}
+      />
+    );
   }
 
   // Två varianter: ordinarie (marinblå FORDANIA) för ljust läge, och en
