@@ -1,28 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import {
-  AlertTriangle,
-  PackageSearch,
-  CheckCircle2,
-  ChevronRight,
-} from "lucide-react";
+import { CheckCircle2, ChevronRight } from "lucide-react";
 import { Card, CardHeader } from "@/components/ui/card";
 import { LicensePlate } from "@/components/ui/license-plate";
 import { cn } from "@/lib/utils";
 import type { DashboardData } from "@/lib/data/dashboard";
 
-const meta: Record<string, { icon: typeof AlertTriangle; chip: string; label: string }> = {
-  delayed: {
-    icon: AlertTriangle,
-    chip: "bg-danger-soft text-danger",
-    label: "Försenad",
-  },
-  waiting_parts: {
-    icon: PackageSearch,
-    chip: "bg-warning-soft text-warning",
-    label: "Väntar på delar",
-  },
+const meta: Record<string, { accent: string; label: string }> = {
+  delayed: { accent: "bg-danger", label: "Försenad" },
+  waiting_parts: { accent: "bg-warning", label: "Väntar på delar" },
 };
 
 /**
@@ -64,21 +51,20 @@ export function AttentionList({
         <ul className="min-h-0 flex-1 divide-y divide-line overflow-y-auto">
           {items.map((j) => {
             const m = meta[j.status] ?? meta.delayed;
-            const Icon = m.icon;
             return (
-              <li key={j.id}>
+              <li key={j.id} className="relative">
+                {/* Färgad kant i stället för en ikon i en ruta. Ikonen sa
+                    samma sak som ordet "Försenad" en centimeter längre in,
+                    och två varningstrianglar på rad blir bara buller. Kanten
+                    ger listan samma anslag på ett ögonkast, utan dekor. */}
+                <span
+                  aria-hidden
+                  className={cn("absolute inset-y-0 left-0 w-1", m.accent)}
+                />
                 <Link
                   href={`/arbetsordrar/${j.id}`}
                   className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-surface-muted active:bg-surface-muted"
                 >
-                  <span
-                    className={cn(
-                      "flex size-9 shrink-0 items-center justify-center rounded-xl",
-                      m.chip,
-                    )}
-                  >
-                    <Icon className="size-[1.05rem]" strokeWidth={2} />
-                  </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <LicensePlate value={j.regNo ?? "—"} size="sm" />

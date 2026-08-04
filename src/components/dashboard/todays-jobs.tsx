@@ -1,15 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Wrench,
-  ClipboardCheck,
-  Disc3,
-  Sparkles,
-  ScanSearch,
-  ArrowRight,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,15 +9,6 @@ import { Avatar } from "@/components/ui/avatar";
 import { LicensePlate } from "@/components/ui/license-plate";
 import { statusMeta, type JobStatus } from "@/lib/data";
 import type { DashboardData } from "@/lib/data/dashboard";
-
-const typeIcon: Record<string, LucideIcon> = {
-  Service: Wrench,
-  Reparation: Wrench,
-  Besiktning: ClipboardCheck,
-  Däckbyte: Disc3,
-  Rekond: Sparkles,
-  Felsökning: ScanSearch,
-};
 
 function duration(min: number | null) {
   if (!min) return null;
@@ -75,14 +58,25 @@ export function TodaysJobs({ jobs }: { jobs: DashboardData["todaysJobs"] }) {
       ) : (
         <ul className="min-h-0 flex-1 divide-y divide-line overflow-y-auto">
           {jobs.map((job) => {
-            const Icon = typeIcon[job.type] ?? Wrench;
             const status =
               statusMeta[job.status as JobStatus] ?? statusMeta.planned;
             const dur = duration(job.durationMin);
             const ongoing = job.status === "in_progress";
             const isNext = job.id === nextId;
             return (
-              <li key={job.id}>
+              <li key={job.id} className="relative">
+                {/* Statusfärgad kant i vänsterkanten på det som pågår. Den
+                    ersätter den gamla typ-ikonen: ikonen sa samma sak som
+                    ordet "Besiktning" två centimeter längre bort, och en
+                    ritad symbol per jobbtyp blev bara dekor. Kanten säger i
+                    stället något ordet inte gör – att just den här raden är
+                    igång. */}
+                {ongoing ? (
+                  <span
+                    aria-hidden
+                    className="absolute inset-y-0 left-0 w-1 bg-info"
+                  />
+                ) : null}
                 <Link
                   href={`/arbetsordrar/${job.id}`}
                   className={cn(
@@ -90,18 +84,6 @@ export function TodaysJobs({ jobs }: { jobs: DashboardData["todaysJobs"] }) {
                     ongoing && "bg-info-soft/40",
                   )}
                 >
-                  {/* Fordon + typ-ikon */}
-                  <span
-                    className={cn(
-                      "flex size-10 shrink-0 items-center justify-center rounded-xl ring-1",
-                      ongoing
-                        ? "bg-info-soft text-info ring-info/20"
-                        : "bg-surface-muted text-ink-soft ring-line",
-                    )}
-                  >
-                    <Icon className="size-5" strokeWidth={1.75} />
-                  </span>
-
                   {/* Reg.nr + modell */}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
