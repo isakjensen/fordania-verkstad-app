@@ -120,13 +120,19 @@
     }
   }
 
+  /* Linjen flyttas med transform, inte med `top`. `top` räknas om av layouten
+   * i varje bildruta på huvudtråden – och huvudtråden står upptagen med
+   * bildanalysen var 200:e ms medan man skannar, så linjen hackade till.
+   * En transform sköts av kompositorn och rör sig jämnt oavsett det.
+   * Procenten syftar på elementets EGEN höjd, så linjen ligger i en
+   * genomskinlig ruta som fyller siktrutan; minus 2 px för linjens tjocklek. */
   @keyframes scan {
     0%,
     100% {
-      top: 0;
+      transform: translateY(0);
     }
     50% {
-      top: calc(100% - 2px);
+      transform: translateY(calc(100% - 2px));
     }
   }
 
