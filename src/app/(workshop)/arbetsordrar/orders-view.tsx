@@ -103,14 +103,37 @@ export function OrdersView({
   }, [scoped]);
 
   // Bara statusar som faktiskt förekommer i den valda vyn blir flikar.
+  //
+  // Den valda filten färgas i sin egen statusfärg (`box` = mjuk ton, färgad
+  // kant och färgad text) i stället för att allt blir orange. Då säger raden
+  // två saker på en gång: vilket filter som är på, och vilken status man
+  // tittar på. "Alla" är ingen status och får därför varken punkt eller
+  // statusfärg – den tar appens brandfärg.
   const tabs = useMemo(
     () => [
-      { value: "all", label: "Alla", count: scoped.length, dot: "bg-slate-400" },
+      {
+        value: "all",
+        label: "Alla",
+        count: scoped.length,
+        dot: null,
+        active:
+          "border-brand-300 bg-brand-50 text-brand-700 hover:bg-brand-50 hover:text-brand-700",
+      },
       ...STATUS_ORDER.filter((s) => counts[s]).map((s) => ({
         value: s,
         label: statusLabels[s] ?? s,
         count: counts[s],
         dot: statusMeta[s]?.dot ?? "bg-slate-400",
+        // "Planerad" har ingen egen kulör (grå = neutral). Den får i stället
+        // en mörkare yta och tydligare text, annars går det inte att se att
+        // den är vald. Ringen i samma kulör som texten gör markeringen
+        // synlig även i mörkt läge, där de mjuka tonerna nästan försvinner.
+        active: cn(
+          "ring-1 ring-inset ring-current/25",
+          s === "planned"
+            ? "border-line-strong bg-surface-muted text-ink"
+            : (statusMeta[s]?.box ?? ""),
+        ),
       })),
     ],
     [counts, scoped.length],
@@ -242,29 +265,31 @@ export function OrdersView({
             {tabs.map((t) => {
               const active = filter === t.value;
               return (
-                <button
+                // Riktig Button i stället för en egen knapp: samma material,
+                // höjd, hörnradie, fokusring och nedtryckskänsla som appens
+                // övriga knappar – filterraden ska inte vara ett eget
+                // formspråk mitt i vyn.
+                <Button
                   key={t.value}
-                  type="button"
-                  onClick={() => setFilter(t.value)}
+                  variant="outline"
+                  size="sm"
                   aria-pressed={active}
+                  onClick={() => setFilter(t.value)}
                   className={cn(
-                    "inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-                    active
-                      ? "bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200"
-                      : "text-muted-foreground hover:bg-surface-muted hover:text-ink",
+                    "shrink-0 gap-2",
+                    active ? t.active : "text-ink-soft",
                   )}
                 >
-                  <span className={cn("size-2 rounded-full", t.dot)} />
+                  {t.dot ? (
+                    <span
+                      className={cn("size-1.5 shrink-0 rounded-full", t.dot)}
+                    />
+                  ) : null}
                   {t.label}
-                  <span
-                    className={cn(
-                      "text-xs font-semibold tabular-nums",
-                      active ? "text-brand-600" : "text-muted-foreground/60",
-                    )}
-                  >
+                  <span className="text-[0.72rem] font-semibold tabular-nums opacity-60">
                     {t.count}
                   </span>
-                </button>
+                </Button>
               );
             })}
           </div>
