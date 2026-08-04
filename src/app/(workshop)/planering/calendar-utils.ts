@@ -1,6 +1,10 @@
 import type { ScheduleJob, Mechanic } from "@/lib/data/schedule";
 
-export type View = "day" | "week";
+/**
+ * Kalenderns vyer. "sheet" är tabellvyn – samma vecka som "week", men som ett
+ * kalkylblad i stället för ett tidsrutnät (se sheet-view.tsx).
+ */
+export type View = "day" | "week" | "sheet";
 
 /** Dygnet i tidsrutnätet – hela 24 timmar. */
 export const DAY_START = 0;
