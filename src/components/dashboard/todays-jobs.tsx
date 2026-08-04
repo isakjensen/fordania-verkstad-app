@@ -46,7 +46,12 @@ export function TodaysJobs({ jobs }: { jobs: DashboardData["todaysJobs"] }) {
   )?.id;
 
   return (
-    <Card className="flex h-full flex-col">
+    /* @container: raderna ska rätta sig efter KORTETS bredd, inte fönstrets.
+       Kortet är ~60 % av innehållsytan, så på en 1024–1280 px skärm fanns
+       inte plats för alla kolumner trots att fönstret var "stort" – reg.nr
+       och jobbtyp hamnade ovanpå varandra. Nu fälls kolumnerna in i takt med
+       att kortet faktiskt blir bredare. */
+    <Card className="@container flex h-full flex-col">
       <CardHeader
         tone="brand"
         title="Dagens jobb"
@@ -116,20 +121,20 @@ export function TodaysJobs({ jobs }: { jobs: DashboardData["todaysJobs"] }) {
                     </div>
                     <p className="mt-1 truncate text-sm font-medium text-ink-soft">
                       {job.vehicle ?? "Okänt fordon"}
-                      <span className="text-muted-foreground md:hidden">
+                      <span className="text-muted-foreground @lg:hidden">
                         {" "}
                         · {job.type}
                       </span>
                     </p>
                   </div>
 
-                  {/* Typ – från sm */}
-                  <span className="hidden w-28 shrink-0 text-sm font-medium text-ink-soft md:block">
+                  {/* Typ – när kortet är brett nog */}
+                  <span className="hidden w-28 shrink-0 text-sm font-medium text-ink-soft @lg:block">
                     {job.type}
                   </span>
 
-                  {/* Mekaniker – från lg */}
-                  <div className="hidden w-36 shrink-0 items-center gap-2 lg:flex">
+                  {/* Mekaniker – först när kortet är riktigt brett */}
+                  <div className="hidden w-36 shrink-0 items-center gap-2 @2xl:flex">
                     {job.mechanicName ? (
                       <>
                         <Avatar
@@ -147,8 +152,8 @@ export function TodaysJobs({ jobs }: { jobs: DashboardData["todaysJobs"] }) {
                     )}
                   </div>
 
-                  {/* Tid – från sm */}
-                  <div className="hidden w-20 shrink-0 text-right sm:block">
+                  {/* Tid – så snart kortet har plats */}
+                  <div className="hidden w-20 shrink-0 text-right @sm:block">
                     <p className="text-sm font-semibold text-ink tabular-nums">
                       {job.start ?? "—"}
                     </p>

@@ -43,9 +43,13 @@ export function FleetStatus({ fleet }: { fleet: DashboardData["fleet"] }) {
         title="Fordonsstatus"
         subtitle={`${fleet.total} fordon i flottan`}
       />
-      <div className="flex min-h-0 flex-1 flex-col justify-center gap-6 px-5 py-6">
+      {/* `overflow-y-auto` + `shrink-0` på blocken: utan dem pressade en låg
+          kortyta ihop innehållet så att stapeln och listan hamnade ovanpå det
+          stora talet. Nu behåller delarna sin höjd och kortet scrollar i
+          stället, precis som de andra korten på översikten. */}
+      <div className="flex min-h-0 flex-1 flex-col justify-start gap-6 overflow-y-auto px-5 py-6 roomy:justify-center">
         {/* Stort tal – hur många som faktiskt är tillgängliga */}
-        <div className="flex items-end gap-3">
+        <div className="flex shrink-0 flex-wrap items-end gap-x-3 gap-y-1">
           <span className="text-[3rem] font-semibold leading-[0.9] tracking-[-0.03em] text-ink tabular-nums">
             {fleet.available}
           </span>
@@ -57,7 +61,7 @@ export function FleetStatus({ fleet }: { fleet: DashboardData["fleet"] }) {
         </div>
 
         {/* Segmenterad stapel – ersätter donuten, samma info men lugnare */}
-        <div className="flex h-2.5 w-full gap-0.5 overflow-hidden rounded-full bg-surface-muted">
+        <div className="flex h-2.5 w-full shrink-0 gap-0.5 overflow-hidden rounded-full bg-surface-muted">
           {segments.map((seg) =>
             seg.value > 0 ? (
               <motion.div
@@ -73,7 +77,7 @@ export function FleetStatus({ fleet }: { fleet: DashboardData["fleet"] }) {
         </div>
 
         {/* Legend med antal */}
-        <ul className="space-y-2.5">
+        <ul className="shrink-0 space-y-2.5">
           {segments.map((seg) => (
             <li key={seg.label} className="flex items-center gap-2.5">
               <span className={`size-2.5 rounded-full ${seg.dot}`} aria-hidden />

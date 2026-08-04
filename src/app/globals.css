@@ -4,6 +4,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* "roomy" = skärmen är både bred och hög nog för en vy som fyller fönstret
+ * exakt, utan sidscroll. Bara bredd räcker inte: en bärbar dator är bred men
+ * ofta bara ~640 px hög i webbläsaren, och då blir korten så låga att
+ * innehållet klipps. Under den här gränsen får sidorna växa naturligt och
+ * sidan scrolla i stället. */
+@custom-variant roomy (@media (min-width: 64rem) and (min-height: 45rem));
+
 /* ------------------------------------------------------------------ *
  *  FE-Schrift – typsnittet på registreringsskyltar. Finns varken på
  *  Google Fonts eller som paket, så filen bor i projektet:

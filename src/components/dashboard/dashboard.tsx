@@ -42,7 +42,7 @@ export function Dashboard({
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 sm:p-5 lg:h-full lg:gap-5 lg:overflow-hidden lg:p-6">
+    <div className="flex flex-col gap-4 p-4 sm:p-5 lg:gap-5 lg:p-6 roomy:h-full roomy:overflow-hidden">
       {/* KPI – tappbara genvägar */}
       <motion.div
         variants={staggerContainer}
@@ -85,24 +85,32 @@ export function Dashboard({
         />
       </motion.div>
 
-      {/* Övre rad – dagens jobb + fordonsstatus. Delar den lediga höjden så
-          översikten fyller skärmen exakt utan sidscroll (interna listor
-          scrollar i sina kort). */}
-      <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-5">
-        <div className="min-h-0 lg:flex-[3]">
+      {/* Övre rad – dagens jobb + fordonsstatus.
+          På en tillräckligt stor skärm (roomy) delar raderna den lediga
+          höjden så översikten fyller fönstret exakt utan sidscroll, och
+          listorna scrollar inuti sina kort. På en låg laptopskärm blev de
+          raderna så korta att korten klipptes mitt i innehållet – där får de
+          i stället en rimlig minsta höjd och sidan scrollar.
+
+          `min-w-0` på kolumnerna är inte kosmetiskt: utan det kan en flexbox
+          inte krympa ett barn under innehållets naturliga bredd, och dagens
+          jobb (med sina fasta kolumner) tryckte då ut fordonsstatus ur bild
+          runt 1024–1280 px. */}
+      <div className="flex flex-col gap-4 lg:min-h-[19rem] lg:flex-row lg:gap-5 roomy:min-h-0 roomy:flex-1">
+        <div className="min-h-0 min-w-0 lg:flex-[3]">
           <TodaysJobs jobs={data?.todaysJobs ?? []} />
         </div>
-        <div className="min-h-0 lg:flex-[2]">
+        <div className="min-h-0 min-w-0 lg:flex-[2]">
           <FleetStatus fleet={fleet} />
         </div>
       </div>
 
       {/* Nedre rad – det som kräver åtgärd + mekanikernas beläggning */}
-      <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-5">
-        <div className="min-h-0 lg:flex-[3]">
+      <div className="flex flex-col gap-4 lg:min-h-[19rem] lg:flex-row lg:gap-5 roomy:min-h-0 roomy:flex-1">
+        <div className="min-h-0 min-w-0 lg:flex-[3]">
           <AttentionList items={data?.attention ?? []} />
         </div>
-        <div className="min-h-0 lg:flex-[2]">
+        <div className="min-h-0 min-w-0 lg:flex-[2]">
           <MechanicLoad mechanics={data?.mechanicLoad ?? []} />
         </div>
       </div>
