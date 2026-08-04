@@ -1,5 +1,6 @@
 /**
- * Matchning av svenska registreringsskyltar mot verkstadens KÄNDA flotta.
+ * Matchning av registreringsskyltar (svenska och albanska) mot verkstadens
+ * KÄNDA flotta.
  * Själva avläsningen görs av ALPR-motorn i `plate-alpr.ts`; den här modulen
  * städar och matchar resultatet. Matchningen mot flottan gör flödet robust:
  * även en halvbra avläsning kan landa rätt fordon.
@@ -37,45 +38,91 @@ export function normalizePlate(input: string): string {
     .replace(/[^A-Z0-9]/g, "");
 }
 
+/** Länder vars skyltformat skannern känner igen. */
+export type PlateCountry = "SE" | "AL";
+
 /**
- * Formaterar en svensk skylt för VISNING: "ABC 123" / "ABC 12A" med mellanslag
- * mellan bokstavsdelen och den avslutande delen. Databasen lagrar skylten
- * kompakt (ABC123); mellanslaget läggs bara till vid visning. Okända/utländska
- * format lämnas oförändrade (bara trimmade).
+ * Skyltformaten vi litar på, i den ordning de provas.
+ *
+ * Svenskt: tre bokstäver, två siffror och ett sista tecken som är en siffra
+ * (ABC123) eller en bokstav (ABC12A, formatet sedan 2019).
+ *
+ * Albanskt: nuvarande format sedan 2011 är två bokstäver, tre siffror och två
+ * bokstäver (AA 123 BB). Äldre skyltar från 1993 har distriktskod, fyra
+ * siffror och en bokstav (TR 1234 A) och rullar fortfarande, så båda finns med.
+ *
+ * Längderna skiljer sig åt (6 tecken svenskt, 7 albanskt), så ett format kan
+ * aldrig förväxlas med ett annat.
+ */
+const PLATE_FORMATS: {
+  country: PlateCountry;
+  re: RegExp;
+  /** Var mellanslagen ska sitta vid visning. */
+  groups: number[];
+}[] = [
+  { country: "SE", re: /^[A-Z]{3}[0-9]{2}[0-9A-Z]$/, groups: [3, 3] },
+  { country: "AL", re: /^[A-Z]{2}[0-9]{3}[A-Z]{2}$/, groups: [2, 3, 2] },
+  { country: "AL", re: /^[A-Z]{2}[0-9]{4}[A-Z]$/, groups: [2, 4, 1] },
+];
+
+/**
+ * Vilket lands skylt texten ser ut att vara, eller null om den inte matchar
+ * något känt format. Skannern agerar bara på skyltar som får ett svar här.
+ */
+export function plateCountry(
+  input: string | null | undefined,
+): PlateCountry | null {
+  if (!input) return null;
+  const compact = normalizePlate(input);
+  return PLATE_FORMATS.find((f) => f.re.test(compact))?.country ?? null;
+}
+
+/** Sant om texten är en skylt i något av de format vi känner igen. */
+export function isKnownPlate(input: string): boolean {
+  return plateCountry(input) !== null;
+}
+
+/**
+ * Formaterar en skylt för VISNING med mellanslag mellan grupperna:
+ * "ABC 123" och "ABC 12A" (svenskt), "AA 123 BB" och "TR 1234 A" (albanskt).
+ * Databasen lagrar skylten kompakt; mellanslagen läggs bara till vid visning.
+ * Format vi inte känner igen lämnas oförändrade (bara trimmade).
  */
 export function formatPlate(value: string | null | undefined): string {
   if (!value) return "";
   const compact = value.replace(/[\s-]/g, "").toUpperCase();
-  if (/^[A-Z]{3}[0-9]{2}[0-9A-Z]$/.test(compact)) {
-    return `${compact.slice(0, 3)} ${compact.slice(3)}`;
+  const format = PLATE_FORMATS.find((f) => f.re.test(compact));
+  if (!format) return value.trim();
+
+  const parts: string[] = [];
+  let at = 0;
+  for (const size of format.groups) {
+    parts.push(compact.slice(at, at + size));
+    at += size;
   }
-  return value.trim();
+  return parts.join(" ");
 }
 
 /**
- * Sant om texten är en giltig svensk personbilsskylt: tre bokstäver följt av
- * två siffror och ett sista tecken som är antingen en siffra (ABC123) eller
- * en bokstav (ABC12A, formatet sedan 2019). Skannern agerar BARA på skyltar
- * som klarar detta – utländska skyltar ignoreras.
- */
-export function isSwedishPlate(input: string): boolean {
-  return /^[A-Z]{3}[0-9]{2}[0-9A-Z]$/.test(normalizePlate(input));
-}
-
-/**
- * Plockar ut skylt-lika tokens ur rå OCR-text. Svenska format:
- * ABC 123 (3 bokstäver + 3 siffror) och ABC 12A (3 + 2 siffror + tecken).
+ * Plockar ut skylt-lika tokens ur rå OCR-text – både svenska och albanska
+ * format, med eller utan avskiljare mellan grupperna.
  */
 export function extractPlateCandidates(rawText: string): string[] {
   const upper = rawText.toUpperCase();
   const found = new Set<string>();
-  const pattern = /[A-Z]{3}[\s-]?\d{2}[\s-]?[A-Z0-9]/g;
+  const patterns = [
+    /[A-Z]{3}[\s-]?\d{2}[\s-]?[A-Z0-9]/g, // ABC 123 / ABC 12A
+    /[A-Z]{2}[\s-]?\d{3}[\s-]?[A-Z]{2}/g, // AA 123 BB
+    /[A-Z]{2}[\s-]?\d{4}[\s-]?[A-Z]/g, // TR 1234 A
+  ];
 
   for (const source of [upper, upper.replace(/[^A-Z0-9]/g, "")]) {
-    let m: RegExpExecArray | null;
-    const re = new RegExp(pattern.source, "g");
-    while ((m = re.exec(source)) !== null) {
-      found.add(normalizePlate(m[0]));
+    for (const pattern of patterns) {
+      let m: RegExpExecArray | null;
+      const re = new RegExp(pattern.source, "g");
+      while ((m = re.exec(source)) !== null) {
+        found.add(normalizePlate(m[0]));
+      }
     }
   }
 

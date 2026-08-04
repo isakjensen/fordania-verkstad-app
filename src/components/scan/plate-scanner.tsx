@@ -19,7 +19,8 @@ import {
   matchPlate,
   normalizePlate,
   formatPlate,
-  isSwedishPlate,
+  plateCountry,
+  type PlateCountry,
   type ScanFleetVehicle,
   type PlateMatch,
 } from "@/lib/plate-ocr";
@@ -48,6 +49,39 @@ const DETECT_H = 0.24;
 interface ScanResult {
   plate: string;
   matches: PlateMatch[];
+}
+
+/**
+ * Visar vilket land skannern läste skylten som. Utan den går det inte att se
+ * varför en skylt tolkades som den gjorde – och det är skillnaden mellan
+ * "AA 123 BB" och "AAI 23B" när avläsningen är på gränsen.
+ */
+function OriginChip({
+  country,
+  tone,
+}: {
+  country: PlateCountry;
+  tone: "dark" | "light";
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-[0.7rem] font-semibold",
+        tone === "dark"
+          ? "bg-white/15 text-white"
+          : "bg-surface-muted text-ink-soft",
+      )}
+    >
+      {/* Prick i skyltbandets färg: blå för EU-bandet, röd för det albanska. */}
+      <span
+        className={cn(
+          "size-1.5 rounded-full",
+          country === "AL" ? "bg-[#c8102e]" : "bg-[#0b4ecb]",
+        )}
+      />
+      {country === "AL" ? "Albansk skylt" : "Svensk skylt"}
+    </span>
+  );
 }
 
 /**
@@ -98,6 +132,11 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
 
   // Sheet-drag: i kameravyn kan man dra ner för att stänga (fingret följer).
+  // Landet läses ur skyltens format och visas både under skanningen och i
+  // resultatet, så man ser vad motorn tolkade skylten som.
+  const readingCountry = plateCountry(reading);
+  const resultCountry = plateCountry(result?.plate);
+
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
   const dragRef = useRef<{
@@ -178,8 +217,11 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
     if (!scanningRef.current) return;
     if (!reading_ || reading_.score < MIN_CHAR_SCORE) return;
 
+    // Skannern agerar bara på skyltar i ett format vi känner igen (svenskt
+    // eller albanskt). Övrigt är brus: reklamskyltar, dekaler, bakomvarande
+    // bilar från andra länder.
     const plate = normalizePlate(reading_.text);
-    if (!isSwedishPlate(plate)) return;
+    if (!plateCountry(plate)) return;
 
     const votes = votesRef.current;
     votes.push(plate);
@@ -515,6 +557,9 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
             <>
               <ScanLine className="size-3.5 text-brand-300" />
               {formatPlate(reading)}
+              {readingCountry ? (
+                <OriginChip country={readingCountry} tone="dark" />
+              ) : null}
               <span className="ml-0.5 tabular-nums text-white/70">
                 {Math.min(voteCount, REQUIRED_VOTES)}/{REQUIRED_VOTES}
               </span>
@@ -540,11 +585,14 @@ export function PlateScanner({ onClose }: { onClose: () => void }) {
       <div className="absolute inset-x-0 bottom-0 px-4 pb-safe">
         {result ? (
           <div className="mb-4 rounded-2xl bg-surface p-4 text-ink shadow-lift animate-fade-up">
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm">
               <span className="text-muted-foreground">Avläst:</span>
               <LicensePlate value={result.plate} size="sm" />
+              {resultCountry ? (
+                <OriginChip country={resultCountry} tone="light" />
+              ) : null}
               <span className="text-muted-foreground">
-                – finns inte i registret
+                finns inte i registret
               </span>
             </div>
 
