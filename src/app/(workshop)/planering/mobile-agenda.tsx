@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, useReducedMotion, type Transition } from "motion/react";
 import { Layers, Clock, CalendarRange, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,12 @@ import {
   UNASSIGNED_KEY,
 } from "./calendar-utils";
 
+/** Samma mjuka ease-out som resten av appen (se PageTransition). */
+const RISE: Transition = { duration: 0.3, ease: [0.22, 1, 0.36, 1] };
+/** Trappsteg mellan raderna, och tak för hur sent sista raden får komma. */
+const RISE_STEP = 0.04;
+const RISE_MAX_DELAY = 0.36;
+
 /**
  * Mobil/iPad-stående kalender: en vertikal dag-agenda med en veckoremsa för att
  * välja dag. Samma funktion som desktop-rutnätet fast touch-först – tryck på en
@@ -34,6 +41,7 @@ export function MobileAgenda({
   anchorISO,
   mechanics,
   jobs,
+  dayCounts,
   onOpen,
   createButton,
 }: {
@@ -42,12 +50,29 @@ export function MobileAgenda({
   anchorISO: string;
   mechanics: Mechanic[];
   jobs: ScheduleJob[];
+  /** Ordrar per dag ("YYYY-MM-DD") för tre veckor – prickarna i remsan. */
+  dayCounts: Record<string, number>;
   onOpen: (job: ScheduleJob) => void;
   createButton?: React.ReactNode;
 }) {
   const router = useRouter();
+  const reduce = useReducedMotion();
   const from = useMemo(() => new Date(fromISO), [fromISO]);
   const to = useMemo(() => new Date(toISO), [toISO]);
+
+  /**
+   * Rad nr `i` glider upp på plats. Fördröjningen trappas men taklas, så att
+   * en full dag inte tar orimligt lång tid att rita klart – sista kortet i en
+   * dag med tjugo ordrar ska inte vänta en sekund på sin tur.
+   */
+  const rise = (i: number) => ({
+    initial: reduce ? false : { opacity: 0, y: 12 },
+    animate: { opacity: 1, y: 0 },
+    transition: {
+      ...RISE,
+      delay: reduce ? 0 : Math.min(i * RISE_STEP, RISE_MAX_DELAY),
+    },
+  });
 
   // Vald dag – styr agendan. Initieras från ankardatumet.
   const [selected, setSelected] = useState(() => {
@@ -162,7 +187,7 @@ export function MobileAgenda({
     const dayJobs = jobs.filter(
       (j) => j.scheduledStart && sameDay(new Date(j.scheduledStart), selected),
     );
-    return groupByMechVehicle(mechanics, dayJobs)
+    const groups = groupByMechVehicle(mechanics, dayJobs)
       .map((g) => {
         // Platta ut fordonsrader → unika ordrar, sorterade på starttid.
         const seen = new Set<string>();
@@ -182,14 +207,30 @@ export function MobileAgenda({
         return { key: g.key, mech: g.mech, jobs: list };
       })
       .filter((g) => g.jobs.length > 0);
+
+    // Löpande nummer genom hela agendan (rubrik, kort, kort, rubrik …) så att
+    // intoningen vandrar uppifrån och ner i ett svep i stället för att starta
+    // om från noll i varje mekanikergrupp.
+    let order = 0;
+    return groups.map((g) => ({
+      ...g,
+      order: order++,
+      jobs: g.jobs.map((job) => ({ job, order: order++ })),
+    }));
   }, [jobs, mechanics, selected]);
 
   const totalDay = dayGroups.reduce((n, g) => n + g.jobs.length, 0);
   const monthLabel = `${MONTHS[selected.getMonth()]} ${selected.getFullYear()}`;
 
-  // En veckopanel i karusellen. `live` = den laddade veckan (klickbar, med
-  // orderprickar); grannveckorna ritas som förhandsvisning med rätt datum men
-  // utan prickar (den datan hämtas först när man landat på veckan).
+  // En veckopanel i karusellen. `live` = den laddade veckan (klickbar);
+  // grannveckorna ritas som förhandsvisning med rätt datum, men går inte att
+  // trycka på förrän man landat där.
+  //
+  // Prickarna ritas i alla tre panelerna. Den laddade veckan räknar dem ur
+  // `jobs`, så optimistiska ändringar (flyttad order) syns direkt. Grannveckorna
+  // saknar ordrar på klienten och använder `dayCounts` – serverns dygnsräknare
+  // för tre veckor – så att prickarna finns på plats redan när panelen tittar
+  // fram under draget, i stället för att dyka upp efter att veckan laddats.
   const weekPanel = (ws: Date, live: boolean) => {
     const selDay = addDays(ws, selDow);
     return (
@@ -205,7 +246,7 @@ export function MobileAgenda({
                 (j) =>
                   j.scheduledStart && sameDay(new Date(j.scheduledStart), d),
               ).length
-            : 0;
+            : (dayCounts[toParam(d)] ?? 0);
           return (
             <button
               key={toParam(d)}
@@ -314,12 +355,17 @@ export function MobileAgenda({
             </p>
           </div>
         ) : (
-          <div className="space-y-5 pb-6">
+          <div key={toParam(selected)} className="space-y-5 pb-6">
+            {/* Nyckeln ovan är den valda dagen: byter man dag monteras listan
+                om och korten glider in på nytt i stället för att bara bytas. */}
             {dayGroups.map((g) => {
               const unassigned = g.key === UNASSIGNED_KEY;
               return (
                 <section key={g.key}>
-                  <div className="flex items-center gap-2 px-0.5 pb-2">
+                  <motion.div
+                    {...rise(g.order)}
+                    className="flex items-center gap-2 px-0.5 pb-2"
+                  >
                     {unassigned ? (
                       <span className="flex size-6 items-center justify-center rounded-full bg-warning-soft text-warning">
                         <Layers className="size-3.5" />
@@ -331,12 +377,12 @@ export function MobileAgenda({
                     <span className="text-xs font-semibold tabular-nums text-muted-foreground">
                       {g.jobs.length}
                     </span>
-                  </div>
+                  </motion.div>
                   <ul className="space-y-2">
-                    {g.jobs.map((job) => (
-                      <li key={job.id}>
+                    {g.jobs.map(({ job, order }) => (
+                      <motion.li key={job.id} {...rise(order)}>
                         <AgendaCard job={job} onOpen={onOpen} />
-                      </li>
+                      </motion.li>
                     ))}
                   </ul>
                 </section>

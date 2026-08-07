@@ -4,7 +4,11 @@ import {
   getTenantRole,
   canManageUsers,
 } from "@/lib/session";
-import { getMechanics, getScheduleJobs } from "@/lib/data/schedule";
+import {
+  getMechanics,
+  getScheduleJobs,
+  getScheduleDayCounts,
+} from "@/lib/data/schedule";
 import { getVehicleOptions } from "@/lib/data/vehicles";
 import { getCustomerOptions } from "@/lib/data/customers";
 import { ScheduleCalendar } from "./schedule-calendar";
@@ -32,6 +36,26 @@ function weekRange(anchor: Date) {
   return { from, to };
 }
 
+/**
+ * Intervall för veckoremsans prickar – två veckor bakåt och två framåt.
+ *
+ * Remsan på mobil är en karusell med tre paneler (föregående | nuvarande |
+ * nästa). Grannpanelerna tittar fram redan när fingret drar, så deras prickar
+ * måste finnas på klienten innan man swipat klart. Bara antalet per dag hämtas
+ * för de veckorna – själva ordrarna laddas först när man landat där.
+ *
+ * Grannveckorna kräver bara ±1, men vi tar ±2: swipar man igen innan
+ * navigeringen laddat klart är nästa grannvecka redan täckt, i stället för att
+ * stå prickfri. Det kostar bara några tiotal extra starttider.
+ */
+function stripRange(from: Date) {
+  const stripFrom = new Date(from);
+  stripFrom.setDate(stripFrom.getDate() - 14);
+  const stripTo = new Date(from);
+  stripTo.setDate(stripTo.getDate() + 21);
+  return { stripFrom, stripTo };
+}
+
 function parseAnchor(value?: string) {
   if (value) {
     const d = new Date(value);
@@ -50,18 +74,20 @@ export default async function PlaneringPage({
     sp.view === "day" ? "day" : sp.view === "sheet" ? "sheet" : "week";
   const anchor = parseAnchor(sp.date);
   const { from, to } = weekRange(anchor);
+  const { stripFrom, stripTo } = stripRange(from);
 
   const organizationId = await getActiveOrganizationId();
   const role = organizationId ? await getTenantRole(organizationId) : null;
 
-  const [mechanics, jobs, vehicles, customers] = organizationId
+  const [mechanics, jobs, dayCounts, vehicles, customers] = organizationId
     ? await Promise.all([
         getMechanics(organizationId),
         getScheduleJobs(organizationId, from, to),
+        getScheduleDayCounts(organizationId, stripFrom, stripTo),
         getVehicleOptions(organizationId),
         getCustomerOptions(organizationId),
       ])
-    : [[], [], [], []];
+    : [[], [], {}, [], []];
 
   return (
     <ScheduleCalendar
@@ -71,6 +97,7 @@ export default async function PlaneringPage({
       toISO={to.toISOString()}
       mechanics={mechanics}
       jobs={jobs}
+      dayCounts={dayCounts}
       vehicles={vehicles}
       customers={customers}
       canManage={canManageUsers(role)}

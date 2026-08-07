@@ -30,6 +30,7 @@ export function ScheduleCalendar({
   toISO,
   mechanics,
   jobs,
+  dayCounts,
   vehicles,
   customers,
   canManage,
@@ -41,6 +42,8 @@ export function ScheduleCalendar({
   toISO: string;
   mechanics: Mechanic[];
   jobs: ScheduleJob[];
+  /** Ordrar per dag ("YYYY-MM-DD") för tre veckor – veckoremsans prickar. */
+  dayCounts: Record<string, number>;
   vehicles: { id: string; regNo: string; chassisNumber: string | null }[];
   customers: { id: string; name: string }[];
   canManage: boolean;
@@ -284,6 +287,7 @@ export function ScheduleCalendar({
             anchorISO={anchorISO}
             mechanics={mechanics}
             jobs={localJobs}
+            dayCounts={dayCounts}
             onOpen={openJob}
             createButton={
               <CreateWorkOrderButton
