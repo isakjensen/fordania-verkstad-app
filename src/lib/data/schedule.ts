@@ -69,6 +69,46 @@ export async function getScheduleJobs(
   });
 }
 
+/**
+ * Antal schemalagda ordrar per dag i [from, to), nycklade på lokalt datum
+ * ("YYYY-MM-DD" – samma nyckelformat som `toParam` i calendar-utils).
+ *
+ * Mobilens veckoremsa ritar en prick under varje datum som har ordrar. Remsan
+ * visar även föregående och nästa vecka – de tittar fram medan man drar – och
+ * de veckorna ligger utanför intervallet `getScheduleJobs` hämtar. Utan de här
+ * räknarna står grannveckorna prickfria tills navigeringen laddat klart, så
+ * man hinner swipa in på veckan innan prickarna dyker upp.
+ *
+ * Vi hämtar bara starttiderna och räknar i JS: Prismas `groupBy` grupperar på
+ * exakt tidsstämpel, inte på dygn, så en gruppering i databasen hade krävt rå
+ * SQL med date_trunc. Intervallet är tre veckor – några tiotal rader.
+ */
+export async function getScheduleDayCounts(
+  organizationId: string,
+  from: Date,
+  to: Date,
+) {
+  const rows = await db.job.findMany({
+    where: {
+      organizationId,
+      deletedAt: null,
+      scheduledStart: { gte: from, lt: to },
+    },
+    select: { scheduledStart: true },
+  });
+
+  const counts: Record<string, number> = {};
+  for (const { scheduledStart } of rows) {
+    if (!scheduledStart) continue;
+    const y = scheduledStart.getFullYear();
+    const m = String(scheduledStart.getMonth() + 1).padStart(2, "0");
+    const d = String(scheduledStart.getDate()).padStart(2, "0");
+    const key = `${y}-${m}-${d}`;
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return counts;
+}
+
 /** En enskild arbetsorder med full detalj för drawern. */
 export async function getJob(id: string, organizationId: string) {
   return db.job.findFirst({
