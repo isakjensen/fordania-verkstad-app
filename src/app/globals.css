@@ -101,6 +101,13 @@
   --animate-card-drop-in: card-drop-in 0.3s var(--ease-out-soft) both;
   /* Skannlinjen som sveper upp och ner över skyltramen i skanningsvyn. */
   --animate-scan: scan 2.2s ease-in-out infinite;
+  /* Raderna i mobilens dagagenda glider upp på plats när dagen ritas.
+   * Fördröjningen sätts per rad (se mobile-agenda.tsx) så att listan vandrar
+   * uppifrån och ner. `both` håller raden osynlig under sin fördröjning –
+   * utan den syns kortet först fullt och hoppar sedan till osynligt.
+   * Animationen rör bara opacity och transform, så den kan lämnas till
+   * kompositorn och glider jämnt även medan huvudtråden monterar listan. */
+  --animate-rise-in: rise-in 0.42s var(--ease-out-soft) both;
 
   @keyframes fade-up {
     from {
@@ -110,6 +117,17 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 14px, 0) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
     }
   }
 

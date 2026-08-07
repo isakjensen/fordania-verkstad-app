@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CloudOff, Info, RefreshCw, WifiOff } from "lucide-react";
 import {
   Dialog,
@@ -18,11 +19,14 @@ const LAST_SYNC_KEY = "fv-last-sync";
  *  1. Registrerar service workern (endast i produktion).
  *  2. Spårar online/offline och tidpunkten då datan senast hämtades färsk.
  *  3. Visar en tydlig offline-bar högst upp som öppnar en förklarande modal.
+ *  4. Byter ut den sparade sidan mot färsk data när service workern hunnit
+ *     hämta om den i bakgrunden (se punkt 2 i public/sw.js).
  *
  * Baren tar plats via CSS-variabeln `--fv-topgap` (sätts till barens
  * uppmätta höjd) så app-skalen kan knuffas ned i stället för att döljas.
  */
 export function PwaManager() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [online, setOnline] = useState(true);
   const [lastSync, setLastSync] = useState<number | null>(null);
@@ -110,6 +114,22 @@ export function PwaManager() {
       window.clearInterval(heartbeat);
     };
   }, [markSynced]);
+
+  // Service workern serverar sidan ur cachen direkt vid öppning och hämtar om
+  // den i bakgrunden. När den hämtningen är klar säger den till här, och vi
+  // hämtar om serverträdet så att den kort visade kopian byts mot färsk data.
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const onMessage = (event: MessageEvent) => {
+      if (event.data?.type === "FV_REVALIDATED") {
+        router.refresh();
+        markSynced();
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", onMessage);
+    return () =>
+      navigator.serviceWorker.removeEventListener("message", onMessage);
+  }, [router, markSynced]);
 
   // Reservera plats för baren (matchar dess faktiska höjd inkl. safe-area).
   useEffect(() => {

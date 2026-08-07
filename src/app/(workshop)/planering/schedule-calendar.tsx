@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, CalendarRange, Table2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -52,8 +52,18 @@ export function ScheduleCalendar({
   const router = useRouter();
   const [selected, setSelected] = useState<ScheduleJob | null>(null);
   const [open, setOpen] = useState(false);
+  // Optimistiska flyttar lever i state, men servern äger sanningen: kommer nya
+  // ordrar in ska de ta över. Nollställningen sker under render, inte i en
+  // effekt. En effekt hade målat en bildruta först och nollställt sedan – och
+  // i den bildrutan fick veckoremsan förra veckans ordrar att räkna på. Den
+  // hittade inga ordrar på de nya datumen, så prickarna slocknade en kort
+  // stund efter varje veckoswipe innan de kom tillbaka.
   const [localJobs, setLocalJobs] = useState(jobs);
-  useEffect(() => setLocalJobs(jobs), [jobs]);
+  const [jobsFromServer, setJobsFromServer] = useState(jobs);
+  if (jobsFromServer !== jobs) {
+    setJobsFromServer(jobs);
+    setLocalJobs(jobs);
+  }
   // Id på ordern som just släppts – kortet på sin nya plats får en "glid in"-
   // animation i stället för att hoppa dit. Nollas strax efter.
   const [movedId, setMovedId] = useState<string | null>(null);

@@ -6,8 +6,11 @@
  * skrivs offline; alla muterande flöden går alltid mot nätet.
  *
  * Strategi:
- *  - Sidnavigeringar (hela HTML-sidor): network-first. Färsk data när nätet
- *    finns, annars senast sparade kopia (< 24 h), och som sista utväg /offline.
+ *  - Sidnavigeringar (hela HTML-sidor): stale-while-revalidate. Den sparade
+ *    kopian visas direkt så att appen öppnas utan svart skärm, och färsk
+ *    hämtas i bakgrunden. När den landat säger vi till klienten, som gör en
+ *    router.refresh() och byter ut innehållet mot färsk data. Utan sparad
+ *    kopia (< 24 h) väntar vi på nätet som förut, med /offline som sista utväg.
  *  - RSC-flightdata (bakgrundsdatan Next.js hämtar vid klick inne i appen):
  *    network-first i en EGEN cache, med nyckeln normaliserad (utan `_rsc`-hash)
  *    så att offline-träffar faktiskt hittas. Egen cache = krockar aldrig med
@@ -17,11 +20,17 @@
  *  - /api/* rörs aldrig (auth och muterande flöden ska alltid gå mot nätet).
  *
  * Färskhet: alla cachade SIDOR och RSC-svar tidsstämplas. Är kopian äldre än
- * 24 h serveras den inte offline – den slängs och man får offline-sidan i
- * stället. Statiska assets har ingen utgång. Höj VERSION vid brytande
- * ändringar för att slänga alla gamla cachar.
+ * 24 h serveras den inte – den slängs och man får offline-sidan i stället.
+ * Statiska assets har ingen utgång. Höj VERSION vid brytande ändringar för att
+ * slänga alla gamla cachar.
+ *
+ * Sekretess: sidcachen är gemensam för enheten, inte per användare. Klienten
+ * tömmer den vid utloggning och vid byte av verkstad (clearOfflinePageCache i
+ * lib/offline-cache.ts), så att en sparad sida ur en tidigare session aldrig
+ * kan ritas upp för nästa person eller nästa tenant på samma enhet. Det är en
+ * förutsättning för att sidorna får serveras ur cachen innan nätet svarat.
  */
-const VERSION = "fv-v3";
+const VERSION = "fv-v4";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGE_CACHE = `${VERSION}-pages`;
 const RSC_CACHE = `${VERSION}-rsc`;
@@ -108,11 +117,9 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Sidnavigeringar → network-first med offline-fallback, 24 h utgång.
+  // Sidnavigeringar → stale-while-revalidate, 24 h utgång.
   if (request.mode === "navigate") {
-    event.respondWith(
-      networkFirst(event, { cacheName: PAGE_CACHE, navigate: true }),
-    );
+    event.respondWith(staleWhileRevalidate(event));
     return;
   }
 
@@ -128,6 +135,61 @@ function normalizedKey(url) {
   const u = new URL(url.href);
   u.searchParams.delete("_rsc");
   return u.toString();
+}
+
+/**
+ * Sidnavigeringar: visa den sparade kopian direkt och hämta färskt i bakgrunden.
+ *
+ * Det är det här som gör att PWA:n öppnas utan svart skärm. Network-first
+ * innebar att varje öppning väntade på ett helt serversvar innan en enda pixel
+ * målades – cachen användes bara när nätet var nere, så andra öppningen var
+ * precis lika seg som den första.
+ *
+ * Kopian får inte bli stående: när bakgrundshämtningen är klar postar vi ett
+ * meddelande till fönstret, som gör en router.refresh(). Innehållet byts då ut
+ * mot färsk data inom någon sekund. Klick INNE i appen går fortfarande alltid
+ * mot nätet (RSC-grenen ovan) – det här gäller bara första ritningen.
+ */
+async function staleWhileRevalidate(event) {
+  const cache = await caches.open(PAGE_CACHE);
+  const cached = await cache.match(event.request, { ignoreVary: true });
+
+  const network = fetch(event.request).then(async (response) => {
+    if (response && response.ok) {
+      await putStamped(cache, event.request, response.clone());
+    }
+    return response;
+  });
+
+  if (cached && !isExpired(cached)) {
+    // Servera direkt. Uppdateringen får leva vidare efter att svaret gått ut.
+    event.waitUntil(
+      network.then(() => notifyRevalidated()).catch(() => {}),
+    );
+    return cached;
+  }
+
+  // Ingen duglig kopia – uppför oss som förut och vänta på nätet.
+  if (cached) await cache.delete(event.request, { ignoreVary: true });
+  try {
+    return await network;
+  } catch {
+    let offline = await cache.match(OFFLINE_URL);
+    if (!offline) {
+      await ensureOfflineCached();
+      offline = await cache.match(OFFLINE_URL);
+    }
+    return offline ?? offlineFallbackResponse();
+  }
+}
+
+// Talar om för öppna fönster att en sida hämtats färsk i bakgrunden, så att
+// de kan byta ut den kopia de just visade mot aktuell data.
+async function notifyRevalidated() {
+  const windows = await self.clients.matchAll({ type: "window" });
+  for (const client of windows) {
+    client.postMessage({ type: "FV_REVALIDATED" });
+  }
 }
 
 async function networkFirst(event, { cacheName, key, navigate }) {
